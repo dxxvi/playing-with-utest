@@ -1,0 +1,56 @@
+// https://api.robinhood.com/quotes/?symbols=AMD,TSLA,HTZ
+{
+  "results": [
+    {
+      "adjusted_previous_close": "13.7300",
+      "ask_price": "14.5000",
+      "ask_size": 16100,
+      "bid_price": "14.4900",
+      "bid_size": 6600,
+      "has_traded": true,
+      "instrument": "https://api.robinhood.com/instruments/940fc3f5-1db5-4fed-b452-f3a2e4562b5f/",
+      "last_extended_hours_trade_price": "14.4600",
+      "last_trade_price": "14.4000",
+      "last_trade_price_source": "consolidated",
+      "previous_close": "13.7300",
+      "previous_close_date": "2018-05-31",
+      "symbol": "AMD",
+      "trading_halted": false,
+      "updated_at": "2018-06-01T23:59:48Z"
+    },
+    {
+      "adjusted_previous_close": "284.7300",
+      "ask_price": "292.0000",
+      "ask_size": 3200,
+      "bid_price": "291.7900",
+      "bid_size": 100,
+      "has_traded": true,
+      "instrument": "https://api.robinhood.com/instruments/e39ed23a-7bd1-4587-b060-71988d9ef483/",
+      "last_extended_hours_trade_price": "292.0000",
+      "last_trade_price": "291.8200",
+      "last_trade_price_source": "consolidated",
+      "previous_close": "284.7300",
+      "previous_close_date": "2018-05-31",
+      "symbol": "TSLA",
+      "trading_halted": false,
+      "updated_at": "2018-06-01T23:59:50Z"
+    },
+    {
+      "adjusted_previous_close": "15.0900",
+      "ask_price": "14.9600",
+      "ask_size": 1100,
+      "bid_price": "14.9500",
+      "bid_size": 100,
+      "has_traded": true,
+      "instrument": "https://api.robinhood.com/instruments/8e08c691-869f-482c-8bed-39d026215a85/",
+      "last_extended_hours_trade_price": "14.8000",
+      "last_trade_price": "14.9700",
+      "last_trade_price_source": "consolidated",
+      "previous_close": "15.0900",
+      "previous_close_date": "2018-05-31",
+      "symbol": "HTZ",
+      "trading_halted": false,
+      "updated_at": "2018-06-01T21:33:10Z"
+    }
+  ]
+}

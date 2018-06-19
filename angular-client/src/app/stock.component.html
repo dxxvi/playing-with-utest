@@ -1,0 +1,9 @@
+<div class="table">
+  <div class="row">
+    <div class="cell"><small>High</small> {{ high }}</div><div class="cell">{{ open * 1.03 }}</div><div class="cell">{{ symbol }} {{ quantity }}</div>
+  </div>
+  <div class="row">
+    <div class="cell"><small>Low</small> {{ low }}</div>  <div class="cell">{{ open * 0.97 }}</div><div class="cell">{{ lastTradePrice }}</div>
+  </div>
+</div>
+<button (click)="test()">Test</button>

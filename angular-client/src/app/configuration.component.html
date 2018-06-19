@@ -1,0 +1,18 @@
+<div style="display: table-row;">
+  <div class="c" [ngStyle]="{'display': open ? 'table-cell' : 'none'}">
+    <form>
+      <mat-form-field>
+        <input matInput placeholder="Symbols to be added" name="addedSymbols" [(ngModel)]="addedSymbols">
+      </mat-form-field>
+      <button mat-button="" (click)="addSymbols()">Add Symbols</button>
+      <br/><br/>
+      <mat-form-field>
+        <input matInput placeholder="Symbols to be removed" name="removedSymbols" [(ngModel)]="removedSymbols">
+      </mat-form-field>
+      <button mat-button="" (click)="removeSymbols()">Remove Symbols</button>
+    </form>
+  </div>
+  <div class="handle" (click)="clickConfiguration()">
+    C<br/>o<br/>n<br/>f<br/>i<br/>g<br/>u<br/>r<br/>a<br/>t<br/>i<br/>o<br/>n
+  </div>
+</div>
