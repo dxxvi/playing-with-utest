@@ -37,23 +37,9 @@ object HelloTests extends TestSuite {
             new AkkaPlayground().httpRequest()
         }
 
-        "test Trait with member variable" - {
-            trait MyTrait {
-                val trieMap: TrieMap[String, String] = TrieMap()
-            }
-
-            class ClassA extends MyTrait {
-                def put(k: String, v: String): Unit = trieMap += ((k, v))
-            }
-
-            class ClassB extends MyTrait {
-                def get(k: String): Option[String] = trieMap.get(k)
-            }
-
-            val a = new ClassA
-            val b = new ClassB
-            a.put("one", "mot")
-            println(b.get("one"))
+        "test splitting timestamp" - {
+            val ts = "2018-06-04T19:36:43.251000Z".split("[-T:Z]")
+            println(ts.length)
         }
     }
 }

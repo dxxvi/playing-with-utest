@@ -14,7 +14,13 @@ case class OrderExecution(
 
 object OrderExecutionProtocol extends DefaultJsonProtocol {
     implicit object OrderExecutionJsonFormat extends RootJsonFormat[OrderExecution] with Util {
-        override def write(obj: OrderExecution): JsValue = ???
+        override def write(oe: OrderExecution): JsValue = JsObject(Map[String, JsValue](
+            "timestamp" -> JsString(oe.timestamp),
+            "price" -> JsNumber(oe.price),
+            "settlementDate" -> JsString(oe.settlementDate),
+            "id" -> JsString(oe.id),
+            "quantity" -> JsNumber(oe.quantity)
+        ))
 
         override def read(json: JsValue): OrderExecution = {
             implicit val fields: Map[String, JsValue] = json.asJsObject("Unable to convert to JsObject").fields
@@ -57,7 +63,7 @@ case class Order(
         createdAt: String,                                 // "2018-06-04T19:10:50.440368Z"
         side: String,
 //        overrideDayTradeChecks: Boolean,
-        position: String,
+        position: String,                                  // this is the position url
 //        averagePrice: Double,
         quantity: Double
 )
@@ -98,6 +104,18 @@ object OrderProtocol extends DefaultJsonProtocol {
             )
         }
 
-        override def write(order: Order): JsValue = ???
+        override def write(o: Order): JsValue = JsObject(Map[String, JsValue](
+            "updatedAt" -> JsString(o.updatedAt),
+            "fees" -> JsNumber(o.fees),
+            "id" -> JsString(o.id),
+            "cummulativeQuantity" -> JsNumber(o.cummulativeQuantity),
+            "instrument" -> JsString(o.instrument),
+            "state" -> JsString(o.state),
+            "lastTransactionAt" -> JsString(o.lastTransactionAt),
+            "price" -> JsNumber(o.price),
+            "createdAt" -> JsString(o.createdAt),
+            "side" -> JsString(o.side),
+            "quantity" -> JsNumber(o.quantity)
+        ))
     }
 }

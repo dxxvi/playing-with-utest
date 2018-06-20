@@ -1,5 +1,7 @@
 package home.sparkjava
 
+import java.util.Comparator
+
 import akka.actor.{Actor, ActorLogging, Props}
 import com.typesafe.scalalogging.Logger
 import home.sparkjava.model.{Fundamental, Order, Quote}
@@ -15,6 +17,8 @@ class StockActor(symbol: String) extends Actor with ActorLogging {
 
     var qo: Option[Quote] = None
     var fo: Option[Fundamental] = None
+    val orders: collection.mutable.SortedSet[Order] =
+        collection.mutable.SortedSet[Order]()(Ordering.by[Order, String](_.createdAt)(Main.timestampOrdering))
 
     val logger: Logger = Logger[StockActor]
 
@@ -22,6 +26,10 @@ class StockActor(symbol: String) extends Actor with ActorLogging {
         case q: Quote =>
             this.qo = Some(q)
             context.actorSelection(s"../../${WebSocketActor.NAME}") ! s"${q.symbol}: QUOTE: ${q.toJson.compactPrint}"
+
+            new Comparator[Order] {
+                override def compare(t: Order, t1: Order): Int = ???
+            }
         case f: Fundamental =>
             this.fo = Some(f)
             context.actorSelection(s"../../${WebSocketActor.NAME}") ! s"${this.symbol}: FUNDAMENTAL: ${f.toJson.compactPrint}"

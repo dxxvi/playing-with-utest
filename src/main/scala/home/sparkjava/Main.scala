@@ -10,6 +10,16 @@ import scala.io.StdIn
 object Main {
     val instrument2Symbol: TrieMap[String, String] = TrieMap()
 
+    // compare 2 timestamps of the format yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'. The '.SSSSSS' is optional.
+    val timestampOrdering: Ordering[String] = Ordering.comparatorToOrdering[String]((a: String, b: String) => {
+        val array: Array[Double] = (for {
+            m <- a.split("[-T:Z]").map(_.toDouble)
+            n <- b.split("[-T:Z]").map(_.toDouble)
+            if m != n
+        } yield m - n).take(1)
+        if (array.isEmpty) 0 else if (array(0) > 0) 1 else -1
+    })
+
     def main(args: Array[String]): Unit = {
         val config = ConfigFactory.load()
 

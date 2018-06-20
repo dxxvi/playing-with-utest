@@ -1,6 +1,7 @@
 import {Component, ElementRef, Input, OnDestroy, OnInit} from '@angular/core';
 import {WebsocketService} from './websocket.service';
 import {Subscription} from 'rxjs';
+import {Order} from './order';
 
 @Component({
   selector: 'li.stock-panel',
@@ -15,6 +16,7 @@ export class StockComponent implements OnInit, OnDestroy {
   low: number = 0;
   high: number = 0;
   quantity: number = 0;
+  orders: Array<Order> = [];
   private subscription: Subscription;
 
   @Input('_symbol') set _symbol(value: string) {
