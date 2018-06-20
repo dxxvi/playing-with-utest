@@ -69,6 +69,7 @@ trait Util {
             case x: Some[JsValue] => typeOf[T] match {
                 case t if t =:= typeOf[String] => x.get match {
                     case y: JsString => y.value.asInstanceOf[T]
+                    case JsNull => "NULL".asInstanceOf[T]
                     case _ =>
                         logger.error(s"Field $field in $prettyJson is not a string.")
                         defaultValue[String]().asInstanceOf[T]
@@ -76,6 +77,7 @@ trait Util {
                 case t if t =:= typeOf[Int] => x.get match {
                     case y: JsNumber => y.value.intValue().asInstanceOf[T]
                     case y: JsString => y.value.toInt.asInstanceOf[T]
+                    case JsNull => Int.MinValue.asInstanceOf[T]
                     case _ =>
                         logger.error(s"Field $field in $prettyJson is not an integer.")
                         defaultValue[Int]().asInstanceOf[T]
@@ -89,6 +91,7 @@ trait Util {
                 case t if t =:= typeOf[Double] => x.get match {
                     case y: JsNumber => y.value.doubleValue().asInstanceOf[T]
                     case y: JsString => y.value.toDouble.asInstanceOf[T]
+                    case JsNull => Double.NaN.asInstanceOf[T]
                     case _ =>
                         logger.error(s"Field $field in $prettyJson is not a double.")
                         defaultValue[Double]().asInstanceOf[T]

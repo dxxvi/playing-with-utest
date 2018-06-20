@@ -23,7 +23,7 @@ class MainActor extends Actor with Timers with ActorLogging {
         case x: AddSymbol =>
             if (!symbolsHavingActor.contains(x.symbol)) {
                 symbolsHavingActor += x.symbol
-                context.actorOf(StockActor.props(), s"symbol-${x.symbol}")
+                context.actorOf(StockActor.props(x.symbol), s"symbol-${x.symbol}")
             }
 
             context.actorSelection(s"../${QuoteActor.NAME}") ! x

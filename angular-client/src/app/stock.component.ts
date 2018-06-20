@@ -1,5 +1,5 @@
 import {Component, ElementRef, Input, OnDestroy, OnInit} from '@angular/core';
-import {WebsocketService} from "./websocket.service";
+import {WebsocketService} from './websocket.service';
 import {Subscription} from 'rxjs';
 
 @Component({
@@ -26,7 +26,7 @@ export class StockComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.subscription = this.websocketService.getSubject(this.symbol).asObservable().subscribe(message => {
-      console.log(`Component ${this.symbol} got a message ${message.text}`);
+      // console.log(`Component ${this.symbol} got a message ${message.text}`);
       const i = message.text.indexOf(': ');
       if (i === -1) {
         console.error(`Unknown message ${message.text}`);
@@ -41,8 +41,10 @@ export class StockComponent implements OnInit, OnDestroy {
         else if (type === 'POSITION') {
           this.quantity = x.quantity;
         }
-        else if (type === '....') {
-
+        else if (type === 'FUNDAMENTAL') {
+          this.open = x.open;
+          this.low = x.low;
+          this.high = x.high;
         }
       }
     });
@@ -50,6 +52,17 @@ export class StockComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
+  }
+
+  formatMoney(value: number): string {
+    if (Number.isNaN(value)) {
+      return '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'; // 7 spaces
+    }
+    const a: number = Math.floor(value);
+    const b: number = Math.round(value * 100) - a*100;
+    const stringA: string = (a < 10 ? '&nbsp;&nbsp;&nbsp;' : (a < 100 ? '&nbsp;&nbsp;' : (a < 1000 ? '&nbsp;' : ''))) + a;
+    const stringB: string = (b < 10 ? '0' : '') + b;
+    return stringA + '.' + stringB;
   }
 
   test() {

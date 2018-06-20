@@ -37,6 +37,7 @@ import {
   MatSnackBarModule, MatSortModule,
   MatStepperModule, MatTableModule, MatTabsModule, MatToolbarModule, MatTooltipModule, MatTreeModule
 } from '@angular/material';
+import {PipeModule} from './pipe.module';
 
 @NgModule({
   exports: [
@@ -75,7 +76,8 @@ import {
     MatToolbarModule,
     MatTooltipModule,
     MatTreeModule,
-  ]
+  ],
+  declarations: []
 })
 export class MaterialModule {}
 
@@ -86,7 +88,7 @@ export class MaterialModule {}
     ConfigurationComponent
   ],
   imports: [
-    BrowserModule, FormsModule, MaterialModule, BrowserAnimationsModule
+    BrowserModule, FormsModule, MaterialModule, BrowserAnimationsModule, PipeModule.forRoot()
   ],
   providers: [],
   bootstrap: [AppComponent]
