@@ -12,12 +12,16 @@ object Main {
 
     // compare 2 timestamps of the format yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'. The '.SSSSSS' is optional.
     val timestampOrdering: Ordering[String] = Ordering.comparatorToOrdering[String]((a: String, b: String) => {
-        val array: Array[Double] = (for {
-            m <- a.split("[-T:Z]").map(_.toDouble)
-            n <- b.split("[-T:Z]").map(_.toDouble)
-            if m != n
-        } yield m - n).take(1)
-        if (array.isEmpty) 0 else if (array(0) > 0) 1 else -1
+        val aa = a.split("[-T:Z]")
+        val bb = b.split("[-T:Z]")
+        (aa.iterator zip bb.iterator)                      // reason to use iterator: to make it lazy
+                .map {
+                    case (a0, b0) =>
+                        println(s"a: $a, b: $b, a0: $a0, b0: $b0, hi")
+                        a0.toDouble.compareTo(b0.toDouble)
+                }
+                .find(_ != 0)
+                .getOrElse(0)
     })
 
     def main(args: Array[String]): Unit = {
@@ -25,7 +29,7 @@ object Main {
 
         val actorSystem = ActorSystem("R")
 
-        val mainActor = actorSystem.actorOf(MainActor.props(), "mainActor")
+        val mainActor = actorSystem.actorOf(MainActor.props(), MainActor.NAME)
         val webSocketListener = initializeSpark(mainActor)
         actorSystem.actorOf(PositionActor.props(config), PositionActor.NAME)
         actorSystem.actorOf(FundamentalActor.props(config), FundamentalActor.NAME)
