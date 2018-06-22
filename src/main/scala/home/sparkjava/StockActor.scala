@@ -30,11 +30,11 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
         case f: Fundamental =>
             this.fo = Some(f)
             context.actorSelection(s"../../${WebSocketActor.NAME}") ! s"${this.symbol}: FUNDAMENTAL: ${f.toJson.compactPrint}"
-        case Tick if justStarted => context.actorSelection(s"../../${QuoteActor.NAME}") ! AllOrders.Get(symbol)
+        case Tick if justStarted => context.actorSelection(s"../../${OrderActor.NAME}") ! AllOrders.Get(symbol)
         case Tick =>  // do nothing
         case AllOrders.Here(_orders) =>
             justStarted = false
-            orders --= _orders
+            orders.clear()
             orders ++= _orders
         case x => logger.info(s"Don't know what to do with $x yet")
     }

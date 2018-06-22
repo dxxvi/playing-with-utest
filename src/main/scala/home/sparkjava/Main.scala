@@ -15,11 +15,7 @@ object Main {
         val aa = a.split("[-T:Z]")
         val bb = b.split("[-T:Z]")
         (aa.iterator zip bb.iterator)                      // reason to use iterator: to make it lazy
-                .map {
-                    case (a0, b0) =>
-                        println(s"a: $a, b: $b, a0: $a0, b0: $b0, hi")
-                        a0.toDouble.compareTo(b0.toDouble)
-                }
+                .map { case (a0, b0) => a0.toDouble.compareTo(b0.toDouble) }
                 .find(_ != 0)
                 .getOrElse(0)
     })
