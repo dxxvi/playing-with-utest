@@ -1,5 +1,9 @@
 div.table { display: table; }
 div.row { display: table-row; }
 div.cell { display: table-cell; }
+div.cell:not(last-child) { padding-right: .5em; }
 div.small { font-size: small; }
 div.code { font-family: monospace; font-size: large; }
+div.row.buy { color: hsl(0, 50%, 40%); }
+div.row.sell { color: hsl(240, 50%, 40%); }
+div.row.buy.confirmed, div.row.sell.confirmed { color: #444; }

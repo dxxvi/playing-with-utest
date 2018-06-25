@@ -5,8 +5,9 @@ export class Order {
   cummulativeQuantity: number;
   state: string;
   lastTransactionAt: string;
-  price: number;
+  averagePrice: number;
   createdAt: string;
   side: string;
   quantity: number;
+  matchId: string;
 }

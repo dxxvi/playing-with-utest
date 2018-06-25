@@ -10,7 +10,7 @@ import {Order} from './order';
 })
 export class StockComponent implements OnInit, OnDestroy {
   symbol: string;
-  lastTradePrice: number;
+  lastTradePrice: number = 0;
   updatedAt: string;
   open: number = 0;
   low: number = 0;
@@ -39,6 +39,7 @@ export class StockComponent implements OnInit, OnDestroy {
         if (type === 'QUOTE') {
           this.lastTradePrice = x.lastTradePrice;
           this.updatedAt = x.updatedAt;
+          this.setThisComponentBackgroundColor();
         }
         else if (type === 'POSITION') {
           this.quantity = x.quantity;
@@ -47,6 +48,10 @@ export class StockComponent implements OnInit, OnDestroy {
           this.open = x.open;
           this.low = x.low;
           this.high = x.high;
+          this.setThisComponentBackgroundColor();
+        }
+        else if (type == 'ORDERS') {
+          this.orders = x;
         }
       }
     });
@@ -54,6 +59,34 @@ export class StockComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
+  }
+
+  setThisComponentBackgroundColor() {
+    if (this.open === 0 || this.lastTradePrice === 0) {
+      return;
+    }
+
+    const h = this.lastTradePrice > this.open ? 82 : 0;
+    const sv = {
+      // s, v are from 0 - 100
+      s: this.lastTradePrice <= this.open ? 0 : Math.min((this.lastTradePrice - this.open)/this.open*600, 100),
+      v: this.lastTradePrice <= this.open ? 100 - Math.min((this.open - this.lastTradePrice)/this.open*500, 100) : 100   // from 0 - 100
+    };
+    const sl = {
+      s: -1,
+      l: (2 - sv.s / 100) * sv.v / 2
+    };
+    sl.s = sv.s * sv.v / (sl.l < 50 ? sl.l * 2 : 200 - sl.l * 2);
+    this.el.nativeElement.style.backgroundColor = `hsl(${h}, ${sl.s}%, ${sl.l}%)`;
+  }
+
+  calculateClasses(order: Order): string {
+    let result = 'row';
+    result = result + ' ' + order.side;
+    if (order.state === 'confirmed') {
+      result = result + ' confirmed';
+    }
+    return result;
   }
 
   formatMoney(value: number): string {
@@ -65,6 +98,18 @@ export class StockComponent implements OnInit, OnDestroy {
     const stringA: string = (a < 10 ? '&nbsp;&nbsp;&nbsp;' : (a < 100 ? '&nbsp;&nbsp;' : (a < 1000 ? '&nbsp;' : ''))) + a;
     const stringB: string = (b < 10 ? '0' : '') + b;
     return stringA + '.' + stringB;
+  }
+
+  // ts can be in these formats 2018-04-19T19:04:41.123456Z
+  minifyTimestamp(ts: string): string {
+    return ts.replace(/^2018-/, '')
+      .replace('T', ' ')
+      .replace(/\.\d+Z$/, '')
+      .replace(/Z$/, '');
+  }
+
+  trackByFunction(i: number, order: Order): string {
+    return order.createdAt;
   }
 
   test() {

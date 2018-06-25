@@ -4,6 +4,8 @@ import com.typesafe.scalalogging.Logger
 import home.sparkjava.Util
 import spray.json._
 
+import scala.collection.mutable
+
 case class OrderExecution(
         timestamp: String,                                 // "2018-06-04T19:36:43.251000Z"
         price: Double,
@@ -38,34 +40,35 @@ object OrderExecutionProtocol extends DefaultJsonProtocol {
     }
 }
 
-case class Order(
-        updatedAt: String,                                 // "2018-06-04T19:36:43.517428Z"
+class Order(
+        val updatedAt: String,                                 // "2018-06-04T19:36:43.517428Z"
 //        refId: String,
 //        timeInForce: String,
-        fees: Double,
+        val fees: Double,
 //        cancel: Option[String],
 //        responseCategory: String,
-        id: String,
-        cummulativeQuantity: Double,
+        val id: String,
+        val cummulativeQuantity: Double,
 //        stopPrice: Option[Double],
 //        rejectReason: Option[String],
-        instrument: String,
-        state: String,
+        val instrument: String,
+        val state: String,
 //        trigger: String,
 //        overrideDtbpChecks: Boolean,
 //        orderType: String,
-        lastTransactionAt: String,
-        price: Double,
-        executions: Array[OrderExecution],
+        val lastTransactionAt: String,
+        val price: Double,
+        val executions: Array[OrderExecution],
 //        extendedHours: Boolean,
 //        account: String,
 //        url: String,
-        createdAt: String,                                 // "2018-06-04T19:10:50.440368Z"
-        side: String,
+        val createdAt: String,                                 // "2018-06-04T19:10:50.440368Z"
+        val side: String,
 //        overrideDayTradeChecks: Boolean,
-        position: String,                                  // this is the position url
-//        averagePrice: Double,
-        quantity: Double
+        val position: String,                                  // this is the position url
+        val averagePrice: Double,
+        val quantity: Double,
+        var matchId: String
 )
 
 object OrderProtocol extends DefaultJsonProtocol {
@@ -76,7 +79,7 @@ object OrderProtocol extends DefaultJsonProtocol {
             implicit val prettyJson: String = json.prettyPrint
             implicit val logger: Logger = Logger[Order]
 
-            Order(
+            new Order(
                 getFieldValue[String]("updated_at"),
                 getFieldValue[Double]("fees"),
                 getFieldValue[String]("id"),
@@ -99,8 +102,9 @@ object OrderProtocol extends DefaultJsonProtocol {
                 getFieldValue[String]("created_at"),
                 getFieldValue[String]("side"),
                 getFieldValue[String]("position"),
-                getFieldValue[Double]("quantity")
-
+                getFieldValue[Double]("average_price"),
+                getFieldValue[Double]("quantity"),
+                ""
             )
         }
 
@@ -113,9 +117,17 @@ object OrderProtocol extends DefaultJsonProtocol {
             "state" -> JsString(o.state),
             "lastTransactionAt" -> JsString(o.lastTransactionAt),
             "price" -> JsNumber(o.price),
+            "averagePrice" -> JsNumber(o.averagePrice),
             "createdAt" -> JsString(o.createdAt),
             "side" -> JsString(o.side),
-            "quantity" -> JsNumber(o.quantity)
+            "quantity" -> JsNumber(o.quantity),
+            "matchId" -> (if (o.matchId.isEmpty) JsNull else JsString(o.matchId))
         ))
+    }
+
+    implicit object OrderListJsonFormat extends RootJsonFormat[List[Order]] with Util {
+        override def read(json: JsValue): List[Order] = ???
+
+        override def write(orders: List[Order]): JsValue = JsArray(orders.map(_.toJson).toVector)
     }
 }

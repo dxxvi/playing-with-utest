@@ -1,9 +1,17 @@
 <div class="table">
   <div class="row">
-    <div class="cell code" [innerHTML]="formatMoney(high)"></div><div class="cell"><sup>High</sup></div><div class="cell code" [innerHTML]="formatMoney(open * 1.03)"></div><div class="cell" style="text-align: right;"><span style="font-size: larger;">{{ symbol }}</span> {{ quantity }}</div>
+    <div class="cell code" [innerHTML]="formatMoney(high)"></div><div class="cell"><sup>High</sup></div><div class="cell code" [innerHTML]="formatMoney(open * 1.03)"></div><div class="cell" style="text-align: right;"><span style="font-size: larger;" [title]="'open: ' + open">{{ symbol }}</span> {{ quantity }}</div>
   </div>
   <div class="row">
     <div class="cell code" [innerHTML]="formatMoney(low)"></div> <div class="cell"><sub>Low</sub></div><div class="cell code" [innerHTML]="formatMoney(open * 0.97)"></div><div class="cell code" [innerHTML]="'&nbsp;&nbsp;&nbsp;' + formatMoney(lastTradePrice)"></div>
+  </div>
+</div>
+<div class="table" style="font-family: monospace; font-size: larger; margin-top: 1em;">
+  <div *ngFor="let order of orders; trackBy: trackByFunction" [class]="calculateClasses(order)">
+    <div class="cell">{{ minifyTimestamp(order.createdAt) }}</div>
+    <div class="cell" [title]="order.createdAt" style="text-align: right;">{{ order.quantity }}</div>
+    <div class="cell" [title]="order.id" style="font-size: small;">&#8903;</div>
+    <div class="cell">{{ order.averagePrice }}</div>
   </div>
 </div>
 

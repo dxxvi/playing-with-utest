@@ -1,5 +1,8 @@
 package home.sparkjava
 
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
 import scala.concurrent.duration._
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Timers}
 import akka.http.scaladsl.Http
@@ -61,7 +64,26 @@ class OrderActor(config: Config) extends Actor with Timers with ActorLogging wit
                     logger.error(s"Error in getting orders for $symbol: $statusCode, body: ${body.utf8String}")
                 }
         }
-        case Tick if symbols.nonEmpty => logger.debug("I need to get the orders here")
+        case Tick if symbols.nonEmpty =>
+            val x = LocalDateTime.now().plusHours(3).plusMinutes(41).format(DateTimeFormatter.ISO_INSTANT)
+            logger.debug(s"Getting recent orders since $x")
+            val uri = Uri(SERVER + "orders/") withQuery Query(("updated_at", x))
+            val httpRequest = HttpRequest(uri = uri) withHeaders RawHeader("Authorization", authorization)
+            http.singleRequest(httpRequest, settings = connectionPoolSettings) pipeTo self
+        case HttpResponse(StatusCodes.OK, _, entity, _) =>
+            entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
+                getOrders(body.utf8String)
+                        .filter(order => order.state == "filled" || order.state == "confirmed")
+                        .foreach { order =>
+                            Main.instrument2Symbol.get(order.instrument).foreach { symbol =>
+                                context.actorSelection(s"../${MainActor.NAME}/symbol-$symbol") ! order
+                            }
+                        }
+            }
+        case HttpResponse(statusCode, _, entity, _) =>
+            entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
+                log.error(s"Error in getting orders with updated_at: $statusCode, body: ${body.utf8String}")
+            }
         case Tick =>  // do nothing
         case x => logger.debug(s"Don't know what to do with $x yet")
     }

@@ -19,7 +19,6 @@ class MainActor extends Actor with Timers with ActorLogging {
 
     override def receive: Receive = {
         case Tick =>
-            logger.debug(s"instrument2Symbol: ${Main.instrument2Symbol.size}")
         case x: AddSymbol =>
             if (!symbolsHavingActor.contains(x.symbol)) {
                 symbolsHavingActor += x.symbol
