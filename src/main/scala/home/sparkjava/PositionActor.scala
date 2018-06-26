@@ -46,6 +46,7 @@ class PositionActor(config: Config) extends Actor with Timers with ActorLogging 
                 getPositions(body.utf8String).foreach { position =>
                     Main.instrument2Symbol.get(position.instrument).foreach { symbol =>
                         context.actorSelection(s"../${WebSocketActor.NAME}") ! s"$symbol: POSITION: ${position.toJson.compactPrint}"
+                        context.actorSelection(s"../${MainActor.NAME}/symbol-$symbol") ! position
                     }
                 }
             }

@@ -8,10 +8,10 @@
 </div>
 <div class="table" style="font-family: monospace; font-size: larger; margin-top: 1em;">
   <div *ngFor="let order of orders; trackBy: trackByFunction" [class]="calculateClasses(order)">
-    <div class="cell">{{ minifyTimestamp(order.createdAt) }}</div>
+    <div class="cell" [title]="order.matchId">{{ minifyTimestamp(order.createdAt) }}</div>
     <div class="cell" [title]="order.createdAt" style="text-align: right;">{{ order.quantity }}</div>
     <div class="cell" [title]="order.id" style="font-size: small;">&#8903;</div>
-    <div class="cell">{{ order.averagePrice }}</div>
+    <div class="cell">{{ order.averagePrice ? order.averagePrice : order.price }}</div>
   </div>
 </div>
 

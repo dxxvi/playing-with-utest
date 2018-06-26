@@ -6,6 +6,7 @@ export class Order {
   state: string;
   lastTransactionAt: string;
   averagePrice: number;
+  price: number;
   createdAt: string;
   side: string;
   quantity: number;

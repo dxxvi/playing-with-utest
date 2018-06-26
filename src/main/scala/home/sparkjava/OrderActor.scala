@@ -14,6 +14,7 @@ import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.util.ByteString
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
+import home.sparkjava.model.Order
 
 object OrderActor {
     val NAME = "orderActor"
@@ -38,6 +39,7 @@ class OrderActor(config: Config) extends Actor with Timers with ActorLogging wit
     val symbols: collection.mutable.Set[String] = collection.mutable.Set[String]()
     val http = Http(context.system)
 
+    val today: String = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
     timers.startPeriodicTimer(Tick, Tick, 4019.millis)
 
     override def receive: Receive = {
@@ -65,20 +67,19 @@ class OrderActor(config: Config) extends Actor with Timers with ActorLogging wit
                 }
         }
         case Tick if symbols.nonEmpty =>
-            val x = LocalDateTime.now().plusHours(3).plusMinutes(41).format(DateTimeFormatter.ISO_INSTANT)
-            logger.debug(s"Getting recent orders since $x")
-            val uri = Uri(SERVER + "orders/") withQuery Query(("updated_at", x))
-            val httpRequest = HttpRequest(uri = uri) withHeaders RawHeader("Authorization", authorization)
+            val httpRequest = HttpRequest(uri = Uri(SERVER + "orders/")) withHeaders RawHeader("Authorization", authorization)
             http.singleRequest(httpRequest, settings = connectionPoolSettings) pipeTo self
         case HttpResponse(StatusCodes.OK, _, entity, _) =>
             entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
-                getOrders(body.utf8String)
-                        .filter(order => order.state == "filled" || order.state == "confirmed")
-                        .foreach { order =>
-                            Main.instrument2Symbol.get(order.instrument).foreach { symbol =>
-                                context.actorSelection(s"../${MainActor.NAME}/symbol-$symbol") ! order
-                            }
-                        }
+                val orders: Vector[Order] = getOrders(body.utf8String)
+                orders.foreach { order =>
+                    Main.instrument2Symbol.get(order.instrument).foreach { symbol =>
+                        context.actorSelection(s"../${MainActor.NAME}/symbol-$symbol") ! order
+                    }
+                }
+                if (orders.nonEmpty && orders.last.createdAt.startsWith(today)) {
+                    logger.debug("Need to follow the next url")
+                }
             }
         case HttpResponse(statusCode, _, entity, _) =>
             entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>

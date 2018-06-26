@@ -86,6 +86,9 @@ export class StockComponent implements OnInit, OnDestroy {
     if (order.state === 'confirmed') {
       result = result + ' confirmed';
     }
+    if (order.matchId && order.matchId != "") {
+      result = result + ' matched'
+    }
     return result;
   }
 
