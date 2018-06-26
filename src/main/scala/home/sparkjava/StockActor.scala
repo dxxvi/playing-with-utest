@@ -60,11 +60,10 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
         context.actorSelection(s"../../${WebSocketActor.NAME}") ! s"$symbol: ORDERS: ${orders.toList.toJson.compactPrint}"
     }
 
-    private var printed = false
     private val lines = collection.mutable.MutableList[String]()
     private def updateOrdersWithMatchId(): Unit = {
         def updateWithMatchId(a: Array[Order]): Unit = {
-            if (symbol == "CY" && !printed) {
+            if (symbol == "HTZ") {
                 orders.foreach { b =>
                     lines += s"${b.matchId} ${b.side} ${b.createdAt.replace("2018-", "").replace("T", " ").replaceAll("\\.\\d+Z$", "")} ${b.quantity} x ${b.averagePrice}"
                 }
@@ -73,7 +72,7 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
 
             var i = 0
             var breakFlag = false
-            while ((i < a.length - 1) && !breakFlag && !printed) {
+            while ((i < a.length - 1) && !breakFlag) {
                 if (a(i).quantity == a(i+1).quantity) {
                     if (a(i).side == "buy" && a(i+1).side == "sell" && a(i).averagePrice < a(i+1).averagePrice) {
                         breakFlag = true
@@ -119,16 +118,11 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
             }
         }
 
-        if (!printed) {
-            orders foreach {
-                _.matchId = ""
-            }
-            updateWithMatchId(orders.filter(_.state == "filled").toArray)
-            printed = true
-        }
-        else if (lines.nonEmpty) {
+        orders foreach { _.matchId = "" }
+        updateWithMatchId(orders.filter(_.state == "filled").toArray)
+        if (lines.nonEmpty) {
             import collection.JavaConverters._
-            Files.write(Paths.get("/dev/shm/CY.txt"), lines.asJava, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)
+//            Files.write(Paths.get(s"C:\\tdangvu\\HTZ-${System.currentTimeMillis}.txt"), lines.asJava, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)
             lines.clear()
         }
     }
@@ -136,7 +130,7 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
     // keep orders until we have 0 share of this stock
     private def trimOrders(): Unit = {
         if (po.nonEmpty) {
-            var n = po.get.quantity
+            var n = -po.get.quantity
             val trimmedOrders = orders.takeWhile { order =>
                 if (n != 0) {
                     if (order.state == "filled") {

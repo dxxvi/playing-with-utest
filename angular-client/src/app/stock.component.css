@@ -6,6 +6,7 @@ div.small { font-size: small; }
 div.code { font-family: monospace; font-size: large; }
 div.row.buy { color: hsl(0, 50%, 40%); }
 div.row.sell { color: hsl(240, 50%, 40%); }
-div.row.buy.confirmed, div.row.sell.confirmed { color: #444; }
+div.row.buy.confirmed { font-style: italic; color: hsl(0, 50%, 60%); }
+div.row.sell.confirmed { font-style: italic; color: hsl(240, 50%, 60%); }
 div.row.buy.matched { color: hsl(0, 50%, 82%); }
 div.row.sell.matched { color: hsl(240, 50%, 82%); }
