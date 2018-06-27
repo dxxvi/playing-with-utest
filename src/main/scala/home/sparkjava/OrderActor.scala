@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter
 import scala.concurrent.duration._
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Timers}
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes, Uri}
+import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, StatusCodes, Uri}
 import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.settings.ConnectionPoolSettings
@@ -15,6 +15,8 @@ import akka.util.ByteString
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 import home.sparkjava.model.Order
+
+import scala.util.{Failure, Success}
 
 object OrderActor {
     val NAME = "orderActor"
@@ -86,6 +88,16 @@ class OrderActor(config: Config) extends Actor with Timers with ActorLogging wit
                 log.error(s"Error in getting orders with updated_at: $statusCode, body: ${body.utf8String}")
             }
         case Tick =>  // do nothing
+        case CancelOrder(orderId) =>
+            val uri = Uri(SERVER + s"orders/$orderId/cancel/")
+            val httpRequest = HttpRequest(HttpMethods.POST, uri) withHeaders RawHeader("Authorization", authorization)
+            http.singleRequest(httpRequest, settings = connectionPoolSettings).onComplete {
+                case Success(httpResponse) =>
+                    logger.debug(s"Order $orderId was cancelled: ${httpResponse.status}")
+                    httpResponse.entity.discardBytes()
+                case Failure(exception) =>
+                    logger.error(s"Unable to cancel order $orderId: ${exception.getMessage}")
+            }
         case x => logger.debug(s"Don't know what to do with $x yet")
     }
 }

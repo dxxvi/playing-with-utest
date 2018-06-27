@@ -26,7 +26,7 @@ object Main {
         val actorSystem = ActorSystem("R")
 
         val mainActor = actorSystem.actorOf(MainActor.props(), MainActor.NAME)
-        val webSocketListener = initializeSpark(mainActor)
+        val webSocketListener = initializeSpark(actorSystem, mainActor.path.toString)
         actorSystem.actorOf(PositionActor.props(config), PositionActor.NAME)
         actorSystem.actorOf(FundamentalActor.props(config), FundamentalActor.NAME)
         actorSystem.actorOf(DefaultWatchListActor.props(config), DefaultWatchListActor.NAME)
@@ -40,8 +40,8 @@ object Main {
         actorSystem.terminate()
     }
 
-    private def initializeSpark(mainActor: ActorRef): WebSocketListener = {
-        val webSocketListener = new WebSocketListener(mainActor)
+    private def initializeSpark(system: ActorSystem, mainActorPath: String): WebSocketListener = {
+        val webSocketListener = new WebSocketListener(system, mainActorPath)
         Spark.staticFiles.location("/static")
         Spark.webSocket("/ws", webSocketListener)
 

@@ -1,10 +1,12 @@
 package home.sparkjava
 
-import akka.actor.ActorRef
+import akka.actor.ActorSystem
 import com.typesafe.scalalogging.Logger
 import org.eclipse.jetty.websocket.api.Session
 
-class WebSocketListener(mainActor: ActorRef) extends org.eclipse.jetty.websocket.api.WebSocketListener {
+class WebSocketListener(system: ActorSystem, mainActorPath: String)
+        extends org.eclipse.jetty.websocket.api.WebSocketListener {
+    private val CANCEL: String = "CANCEL: "
     private val logger: Logger = Logger[WebSocketListener]
     private var session: Option[Session] = None
 
@@ -31,6 +33,7 @@ class WebSocketListener(mainActor: ActorRef) extends org.eclipse.jetty.websocket
     }
 
     override def onWebSocketText(s: String): Unit = {
-        mainActor ! s
+        if (s startsWith CANCEL)
+            system.actorSelection(s"$mainActorPath/../${OrderActor.NAME}") ! CancelOrder(s.replace(CANCEL, ""))
     }
 }

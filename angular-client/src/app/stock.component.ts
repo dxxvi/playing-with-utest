@@ -17,6 +17,7 @@ export class StockComponent implements OnInit, OnDestroy {
   high: number = 0;
   quantity: number = 0;
   orders: Array<Order> = [];
+  buysell: { quantity: number, price: number} = { quantity: null, price: null };
   private subscription: Subscription;
 
   @Input('_symbol') set _symbol(value: string) {
@@ -61,23 +62,13 @@ export class StockComponent implements OnInit, OnDestroy {
     this.subscription.unsubscribe();
   }
 
-  setThisComponentBackgroundColor() {
-    if (this.open === 0 || this.lastTradePrice === 0) {
-      return;
-    }
+  buySell() {
+    const action = this.buysell.price < this.lastTradePrice ? 'buy' : 'sell';
+    console.log(`Going to ${action} ${this.buysell.quantity} shares ${this.symbol} at ${this.buysell.price}/share`)
+  }
 
-    const h = this.lastTradePrice > this.open ? 82 : 0;
-    const sv = {
-      // s, v are from 0 - 100
-      s: this.lastTradePrice <= this.open ? 0 : Math.min((this.lastTradePrice - this.open)/this.open*600, 100),
-      v: this.lastTradePrice <= this.open ? 100 - Math.min((this.open - this.lastTradePrice)/this.open*500, 100) : 100   // from 0 - 100
-    };
-    const sl = {
-      s: -1,
-      l: (2 - sv.s / 100) * sv.v / 2
-    };
-    sl.s = sv.s * sv.v / (sl.l < 50 ? sl.l * 2 : 200 - sl.l * 2);
-    this.el.nativeElement.style.backgroundColor = `hsl(${h}, ${sl.s}%, ${sl.l}%)`;
+  cancelOrder(orderId: string) {
+    this.websocketService.sendMessageThroughWebsocket(`CANCEL: ${orderId}`);
   }
 
   calculateClasses(order: Order): string {
@@ -109,6 +100,25 @@ export class StockComponent implements OnInit, OnDestroy {
       .replace('T', ' ')
       .replace(/\.\d+Z$/, '')
       .replace(/Z$/, '');
+  }
+
+  setThisComponentBackgroundColor() {
+    if (this.open === 0 || this.lastTradePrice === 0) {
+      return;
+    }
+
+    const h = this.lastTradePrice > this.open ? 82 : 0;
+    const sv = {
+      // s, v are from 0 - 100
+      s: this.lastTradePrice <= this.open ? 0 : Math.min((this.lastTradePrice - this.open)/this.open*600, 100),
+      v: this.lastTradePrice <= this.open ? 100 - Math.min((this.open - this.lastTradePrice)/this.open*500, 100) : 100   // from 0 - 100
+    };
+    const sl = {
+      s: -1,
+      l: (2 - sv.s / 100) * sv.v / 2
+    };
+    sl.s = sv.s * sv.v / (sl.l < 50 ? sl.l * 2 : 200 - sl.l * 2);
+    this.el.nativeElement.style.backgroundColor = `hsl(${h}, ${sl.s}%, ${sl.l}%)`;
   }
 
   trackByFunction(i: number, order: Order): string {

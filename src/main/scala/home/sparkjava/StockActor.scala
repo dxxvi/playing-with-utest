@@ -41,6 +41,7 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
             case x if x == "filled" || x == "confirmed" =>
                 orders -= o
                 orders += o
+            case "queued" =>  // ignore it
             case x => logger.debug(s"What to do with this order state ${o.state}")
         }
         case Tick if justStarted => context.actorSelection(s"../../${OrderActor.NAME}") ! AllOrders.Get(symbol)
