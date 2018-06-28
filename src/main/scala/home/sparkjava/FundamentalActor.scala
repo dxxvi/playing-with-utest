@@ -16,8 +16,6 @@ object FundamentalActor {
 }
 
 class FundamentalActor(config: Config) extends Actor with Timers with ActorLogging with Util {
-    import spray.json._
-    import model.FundamentalProtocol._
     import akka.pattern.pipe
     import context.dispatcher
 

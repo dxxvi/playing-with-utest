@@ -1,6 +1,6 @@
 package home.sparkjava
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorSelection, ActorSystem}
 import com.typesafe.scalalogging.Logger
 import org.eclipse.jetty.websocket.api.Session
 
@@ -35,7 +35,15 @@ class WebSocketListener(system: ActorSystem, mainActorPath: String)
     }
 
     override def onWebSocketText(s: String): Unit = {
+        val orderActor: ActorSelection = system.actorSelection(s"$mainActorPath/../${OrderActor.NAME}")
         if (s startsWith CANCEL)
-            system.actorSelection(s"$mainActorPath/../${OrderActor.NAME}") ! CancelOrder(s.replace(CANCEL, ""))
+             ! CancelOrder(s.replace(CANCEL, ""))
+        else if (s.startsWith(BUY) && s.count(_ == ' ') == 3) {  // s looks like this BUY: AMD: 19 11.07
+            val array = s.split(" ")
+            system.actorSelection(s"$mainActorPath/../${OrderActor.NAME}") ! Buy(array(0).replace(":", ""), array(1).toInt, array(2).toDouble)
+        }
+        else if (s.startsWith(SELL) && s.count(_ == ' ') == 3) {  // s looks like this SELL: HTZ: 82 19.04
+
+        }
     }
 }
