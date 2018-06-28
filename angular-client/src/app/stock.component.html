@@ -3,19 +3,27 @@
     <div class="cell code" [innerHTML]="formatMoney(high)"></div><div class="cell"><sup>High</sup></div><div class="cell code" [innerHTML]="formatMoney(open * 1.03)"></div><div class="cell" style="text-align: right;"><span style="font-size: larger;" [title]="'open: ' + open">{{ symbol }}</span> {{ quantity }}</div>
   </div>
   <div class="row">
-    <div class="cell code" [innerHTML]="formatMoney(low)"></div> <div class="cell"><sub>Low</sub></div><div class="cell code" [innerHTML]="formatMoney(open * 0.97)"></div><div class="cell code" [innerHTML]="'&nbsp;&nbsp;&nbsp;' + formatMoney(lastTradePrice)"></div>
+    <div class="cell code" [innerHTML]="formatMoney(low)"></div> <div class="cell"><sub>Low</sub></div> <div class="cell code" [innerHTML]="formatMoney(open * 0.97)"></div><div class="cell code" [innerHTML]="'&nbsp;&nbsp;&nbsp;' + formatMoney(lastTradePrice)"></div>
   </div>
 </div>
 <form class="buy-sell">
+  <mat-form-field style="width: 3em;">
+    <input matInput name="quantity" type="number" [(ngModel)]="buysell.quantity">
+  </mat-form-field>
+  &nbsp;
   <mat-form-field style="width: 4em;">
-    <input matInput placeholder="Shares" name="quantity" [(ngModel)]="buysell.quantity">
+    <input matInput placeholder="Price" name="price" type="number" step="0.01" [(ngModel)]="buysell.price">
   </mat-form-field>
   &nbsp;
-  <mat-form-field style="width: 5em !important;">
-    <input matInput placeholder="Price" name="price" [(ngModel)]="buysell.price">
-  </mat-form-field>
+  <button mat-button="" (click)="buySell()"
+          [disabled]="buysell.quantity == null || buysell.price == null || buysell.quantity < 0 || buysell.price < 0">
+    Buy / Sell
+  </button>
   &nbsp;
-  <button mat-button="" (click)="buySell()">Buy / Sell</button>
+  <span class="button" (click)="toggleShowMatchedTransactions()">
+    <span *ngIf="!showMatchedTransactions">&#8610;</span>
+    <span *ngIf="showMatchedTransactions">&#8611;</span>
+  </span>
 </form>
 <div class="table" style="font-family: monospace; font-size: larger;">
   <div *ngFor="let order of orders; trackBy: trackByFunction" [class]="calculateClasses(order)">
@@ -23,7 +31,7 @@
     <div class="cell" [title]="order.createdAt" style="text-align: right;">{{ order.quantity }}</div>
     <div class="cell" [title]="order.id" style="font-size: small;">&#8903;</div>
     <div class="cell">{{ order.averagePrice ? order.averagePrice : order.price }}</div>
-    <div class="cell"><span class="cancel" *ngIf="order.state == 'confirmed'" (click)="cancelOrder(order.id)">&#10008;</span></div>
+    <div class="cell"><span class="button" *ngIf="order.state == 'confirmed'" (click)="cancelOrder(order.id)">&#10008;</span></div>
   </div>
 </div>
 

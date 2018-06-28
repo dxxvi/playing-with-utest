@@ -10,4 +10,5 @@ div.row.buy.confirmed { font-style: italic; color: hsl(0, 50%, 60%); }
 div.row.sell.confirmed { font-style: italic; color: hsl(240, 50%, 60%); }
 div.row.buy.matched { color: hsl(0, 50%, 82%); }
 div.row.sell.matched { color: hsl(240, 50%, 82%); }
-div.cell > span.cancel { color: red; cursor: pointer; font-size: large; }
+div.row.matched.hide { display: none; }
+span.button { color: red; cursor: pointer; font-size: large; }

@@ -6,7 +6,9 @@ import org.eclipse.jetty.websocket.api.Session
 
 class WebSocketListener(system: ActorSystem, mainActorPath: String)
         extends org.eclipse.jetty.websocket.api.WebSocketListener {
+    private val BUY: String = "BUY: "
     private val CANCEL: String = "CANCEL: "
+    private val SELL: String = "SELL: "
     private val logger: Logger = Logger[WebSocketListener]
     private var session: Option[Session] = None
 

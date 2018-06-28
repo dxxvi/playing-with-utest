@@ -130,6 +130,9 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
 
     // keep orders until we have 0 share of this stock
     private def trimOrders(): Unit = {
+        if (symbol == "CLNY") {
+            println(s"$symbol: $po")
+        }
         if (po.nonEmpty) {
             var n = -po.get.quantity
             val trimmedOrders = orders.takeWhile { order =>

@@ -18,6 +18,7 @@ export class StockComponent implements OnInit, OnDestroy {
   quantity: number = 0;
   orders: Array<Order> = [];
   buysell: { quantity: number, price: number} = { quantity: null, price: null };
+  showMatchedTransactions: boolean = false;
   private subscription: Subscription;
 
   @Input('_symbol') set _symbol(value: string) {
@@ -63,7 +64,8 @@ export class StockComponent implements OnInit, OnDestroy {
   }
 
   buySell() {
-    const action = this.buysell.price < this.lastTradePrice ? 'buy' : 'sell';
+    const action = this.buysell.price < this.lastTradePrice ? 'BUY' : 'SELL';
+    this.websocketService.sendMessageThroughWebsocket(`${action}: ${this.symbol}: ${this.buysell.quantity} ${this.buysell.price}`)
     console.log(`Going to ${action} ${this.buysell.quantity} shares ${this.symbol} at ${this.buysell.price}/share`)
   }
 
@@ -78,7 +80,7 @@ export class StockComponent implements OnInit, OnDestroy {
       result = result + ' confirmed';
     }
     if (order.matchId && order.matchId != "") {
-      result = result + ' matched'
+      result = result + ' matched' + (this.showMatchedTransactions ? '' : ' hide');
     }
     return result;
   }
@@ -119,6 +121,10 @@ export class StockComponent implements OnInit, OnDestroy {
     };
     sl.s = sv.s * sv.v / (sl.l < 50 ? sl.l * 2 : 200 - sl.l * 2);
     this.el.nativeElement.style.backgroundColor = `hsl(${h}, ${sl.s}%, ${sl.l}%)`;
+  }
+
+  toggleShowMatchedTransactions() {
+    this.showMatchedTransactions = !this.showMatchedTransactions;
   }
 
   trackByFunction(i: number, order: Order): string {

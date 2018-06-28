@@ -36,6 +36,9 @@ class OrderActor(config: Config) extends Actor with Timers with ActorLogging wit
 
     val SERVER: String = config.getString("server")
     val authorization: String = if (config.hasPath("Authorization")) config.getString("Authorization") else "No token"
+    val account: String =
+        if (config.hasPath("AccountNumber")) s"${SERVER}accounts/${config.getString("AccountNumber")}/"
+        else "No_account_number"
     val connectionPoolSettings: ConnectionPoolSettings = getConnectionPoolSettings(config, context.system)
 
     val symbols: collection.mutable.Set[String] = collection.mutable.Set[String]()
