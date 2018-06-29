@@ -5,8 +5,9 @@ import java.time.format.DateTimeFormatter
 
 import scala.concurrent.duration._
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Timers}
+import akka.http.javadsl.model.ContentTypes
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, StatusCodes, Uri}
+import akka.http.scaladsl.model.{ContentType, HttpEntity, HttpMethods, HttpRequest, HttpResponse, MediaType, MediaTypes, RequestEntity, StatusCodes, Uri}
 import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.settings.ConnectionPoolSettings
@@ -27,6 +28,7 @@ object OrderActor {
 
 class OrderActor(config: Config) extends Actor with Timers with ActorLogging with Util {
     import OrderActor._
+    import spray.json._
     import akka.pattern.pipe
     import context.dispatcher
 
@@ -95,12 +97,42 @@ class OrderActor(config: Config) extends Actor with Timers with ActorLogging wit
             val uri = Uri(SERVER + s"orders/$orderId/cancel/")
             val httpRequest = HttpRequest(HttpMethods.POST, uri) withHeaders RawHeader("Authorization", authorization)
             http.singleRequest(httpRequest, settings = connectionPoolSettings).onComplete {
-                case Success(httpResponse) =>
-                    logger.debug(s"Order $orderId was cancelled: ${httpResponse.status}")
-                    httpResponse.entity.discardBytes()
-                case Failure(exception) =>
-                    logger.error(s"Unable to cancel order $orderId: ${exception.getMessage}")
+                case Success(httpResponse) => httpResponse.entity.discardBytes()
+                case Failure(exception) => logger.error(s"Unable to cancel order $orderId: ${exception.getMessage}")
             }
+        case Buy(symbol, quantity, price) => sendBuySellRequest("buy", symbol, quantity, price)
+        case Sell(symbol, quantity, price) => sendBuySellRequest("sell", symbol, quantity, price)
         case x => logger.debug(s"Don't know what to do with $x yet")
+    }
+
+    private def sendBuySellRequest(action: String, symbol: String, quantity: Int, price: Double) {
+        def createJsonString(action: String, instrument: String, symbol: String, quantity: Int, price: Double): String = {
+            JsObject(Map[String, JsValue](
+                "account" -> JsString(account),
+                "instrument" -> JsString(instrument),
+                "symbol" -> JsString(symbol),
+                "type" -> JsString("limit"),
+                "time_in_force" -> JsString("gfd"),
+                "trigger" -> JsString("immediate"),
+                "price" -> JsNumber(price),
+                "quantity" -> JsNumber(quantity),
+                "side" -> JsString(action)
+            )).compactPrint
+        }
+
+        Main.instrument2Symbol.find(_._2 == symbol).foreach { tuple2 =>
+            val byteArray: Array[Byte] = createJsonString(action, tuple2._1, tuple2._2, quantity, price).getBytes
+            val entity: RequestEntity = HttpEntity(ContentType(MediaTypes.`application/json`), byteArray)
+            val httpRequest = HttpRequest(HttpMethods.POST, Uri(SERVER + "orders/"), entity = entity)
+                    .withHeaders(RawHeader("Authorization", authorization))
+            http.singleRequest(httpRequest, settings = connectionPoolSettings).onComplete {
+                case Success(httpResponse) =>
+                    httpResponse.entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
+                        logger.debug(body.utf8String.toJson.prettyPrint)
+                    }
+                case Failure(exception) => logger.error(s"$exception")
+            }
+            logger.debug(s"Just $action $quantity shares of $symbol at $$$price/share")
+        }
     }
 }

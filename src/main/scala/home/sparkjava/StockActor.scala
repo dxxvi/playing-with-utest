@@ -62,16 +62,9 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
         context.actorSelection(s"../../${WebSocketActor.NAME}") ! s"$symbol: ORDERS: ${orders.toList.toJson.compactPrint}"
     }
 
-    private val lines = collection.mutable.MutableList[String]()
+    // gives transactions, that are next to each other, have different sides, same quantity and make profit, match ids
     private def updateOrdersWithMatchId(): Unit = {
         def updateWithMatchId(a: Array[Order]): Unit = {
-            if (symbol == "HTZ") {
-                orders.foreach { b =>
-                    lines += s"${b.matchId} ${b.side} ${b.createdAt.replace("2018-", "").replace("T", " ").replaceAll("\\.\\d+Z$", "")} ${b.quantity} x ${b.averagePrice}"
-                }
-                lines += "--------------------------------------------------------"
-            }
-
             var i = 0
             var breakFlag = false
             while ((i < a.length - 1) && !breakFlag) {
@@ -81,12 +74,8 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
                         val matchId = UUID.randomUUID().toString.substring(9)
                         if (i+2 < a.length && a(i+2).side == "buy" && a(i+2).quantity == a(i).quantity &&
                                 a(i+2).averagePrice < a(i+1).averagePrice) {
-                            if (a(i).averagePrice > a(i+2).averagePrice) {
-                                a(i).matchId = matchId
-                            }
-                            else {
-                                a(i+2).matchId = matchId
-                            }
+                            val j = if (a(i).averagePrice > a(i+2).averagePrice) i else i + 2
+                            a(j).matchId = matchId
                             a(i+1).matchId = matchId
                         }
                         else {
@@ -99,12 +88,8 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
                         val matchId = UUID.randomUUID().toString.substring(10)
                         if (i+2 < a.length && a(i+2).side == "sell" && a(i+2).quantity == a(i).quantity &&
                                 a(i+2).averagePrice > a(i+1).averagePrice) {
-                            if (a(i).averagePrice < a(i+2).averagePrice) {
-                                a(i).matchId = matchId
-                            }
-                            else {
-                                a(i+2).matchId = matchId
-                            }
+                            val j = if (a(i).averagePrice < a(i+2).averagePrice) i else i + 2
+                            a(j).matchId = matchId
                             a(i+1).matchId = matchId
                         }
                         else {
@@ -122,18 +107,15 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
 
         orders foreach { _.matchId = "" }
         updateWithMatchId(orders.filter(_.state == "filled").toArray)
-        if (lines.nonEmpty) {
-            import collection.JavaConverters._
-//            Files.write(Paths.get(s"C:\\tdangvu\\HTZ-${System.currentTimeMillis}.txt"), lines.asJava, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)
-            lines.clear()
-        }
+    }
+
+    // gives transactions, that are 1 sell which cancels some next buys, match ids
+    private def updateOrdersWithMatchId2(): Unit = {
+        val a = orders.filter(o => o.state == "filled" && o.matchId == "").dropWhile(_.side == "buy").toArray
     }
 
     // keep orders until we have 0 share of this stock
     private def trimOrders(): Unit = {
-        if (symbol == "CLNY") {
-            println(s"$symbol: $po")
-        }
         if (po.nonEmpty) {
             var n = -po.get.quantity
             val trimmedOrders = orders.takeWhile { order =>

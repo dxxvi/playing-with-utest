@@ -66,6 +66,10 @@ export class StockComponent implements OnInit, OnDestroy {
   buySell() {
     const action = this.buysell.price < this.lastTradePrice ? 'BUY' : 'SELL';
     this.websocketService.sendMessageThroughWebsocket(`${action}: ${this.symbol}: ${this.buysell.quantity} ${this.buysell.price}`)
+    setTimeout(() => {
+      this.buysell.quantity = null;
+      this.buysell.price = null;
+    }, 3456);
   }
 
   cancelOrder(orderId: string) {

@@ -37,13 +37,14 @@ class WebSocketListener(system: ActorSystem, mainActorPath: String)
     override def onWebSocketText(s: String): Unit = {
         val orderActor: ActorSelection = system.actorSelection(s"$mainActorPath/../${OrderActor.NAME}")
         if (s startsWith CANCEL)
-             ! CancelOrder(s.replace(CANCEL, ""))
+            orderActor ! CancelOrder(s.replace(CANCEL, ""))
         else if (s.startsWith(BUY) && s.count(_ == ' ') == 3) {  // s looks like this BUY: AMD: 19 11.07
             val array = s.split(" ")
-            system.actorSelection(s"$mainActorPath/../${OrderActor.NAME}") ! Buy(array(0).replace(":", ""), array(1).toInt, array(2).toDouble)
+            orderActor ! Buy(array(1).replace(":", ""), array(2).toInt, array(3).toDouble)
         }
         else if (s.startsWith(SELL) && s.count(_ == ' ') == 3) {  // s looks like this SELL: HTZ: 82 19.04
-
+            val array = s.split(" ")
+            orderActor ! Sell(array(1).replace(":", ""), array(2).toInt, array(3).toDouble)
         }
     }
 }
