@@ -8,7 +8,11 @@ class WebSocketListener(system: ActorSystem, mainActorPath: String)
         extends org.eclipse.jetty.websocket.api.WebSocketListener {
     private val BUY: String = "BUY: "
     private val CANCEL: String = "CANCEL: "
+    private val DEBUG_OFF: String = "DEBUG_OFF: "
+    private val DEBUG_ON: String = "DEBUG_ON: "
     private val SELL: String = "SELL: "
+    private val FUNDAMENTAL_REVIEW: String = "FUNDAMENTAL_REVIEW: "
+
     private val logger: Logger = Logger[WebSocketListener]
     private var session: Option[Session] = None
 
@@ -45,6 +49,18 @@ class WebSocketListener(system: ActorSystem, mainActorPath: String)
         else if (s.startsWith(SELL) && s.count(_ == ' ') == 3) {  // s looks like this SELL: HTZ: 82 19.04
             val array = s.split(" ")
             orderActor ! Sell(array(1).replace(":", ""), array(2).toInt, array(3).toDouble)
+        }
+        else if (s startsWith DEBUG_OFF) {
+            val symbol = s.replace(DEBUG_OFF, "")
+            system.actorSelection(s"$mainActorPath/symbol-$symbol") ! "DEBUG_OFF"
+        }
+        else if (s startsWith DEBUG_ON) {
+            val symbol = s.replace(DEBUG_ON, "")
+            system.actorSelection(s"$mainActorPath/symbol-$symbol") ! "DEBUG_ON"
+        }
+        else if (s startsWith FUNDAMENTAL_REVIEW) {
+            val symbol = s.replace(FUNDAMENTAL_REVIEW, "")
+            system.actorSelection(s"$mainActorPath/../${FundamentalActor.NAME}") ! symbol
         }
     }
 }

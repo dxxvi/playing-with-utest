@@ -15,7 +15,7 @@
     <input matInput placeholder="Price" name="price" type="number" step="0.01" [(ngModel)]="buysell.price">
   </mat-form-field>
   &nbsp;
-  <button mat-button="" (click)="buySell()"
+  <button mat-button (click)="buySell()"
           [disabled]="buysell.quantity == null || buysell.price == null || buysell.quantity < 0 || buysell.price < 0">
     Buy / Sell
   </button>

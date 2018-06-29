@@ -37,7 +37,7 @@ class PositionActor(config: Config) extends Actor with Timers with ActorLogging 
 
     override def receive: Receive = {
         case Tick if Main.instrument2Symbol.nonEmpty =>
-            val httpRequest = HttpRequest(uri = Uri(SERVER + s"accounts/$accountNumber/positions/?nonzero=true"))
+            val httpRequest = HttpRequest(uri = Uri(SERVER + s"accounts/$accountNumber/positions/"))
                     .withHeaders(RawHeader("Authorization", authorization))
             http.singleRequest(httpRequest, settings = connectionPoolSettings).pipeTo(self)
         case Tick =>  // do nothing

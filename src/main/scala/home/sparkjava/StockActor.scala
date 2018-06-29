@@ -24,6 +24,7 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
     val orders: collection.mutable.SortedSet[Order] =
         collection.mutable.SortedSet[Order]()(Ordering.by[Order, String](_.createdAt)(Main.timestampOrdering.reverse))
     var justStarted = true
+    var debug = false
     val logger: Logger = Logger[StockActor]
 
     timers.startPeriodicTimer(Tick, Tick, 4019.millis)
@@ -31,30 +32,44 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
     override def receive: Receive = {
         case q: Quote =>
             this.qo = Some(q)
-            context.actorSelection(s"../../${WebSocketActor.NAME}") ! s"${q.symbol}: QUOTE: ${q.toJson.compactPrint}"
+            val message = s"${q.symbol}: QUOTE: ${q.toJson.compactPrint}"
+            context.actorSelection(s"../../${WebSocketActor.NAME}") ! message
+            if (debug) logger.debug(s"Received a $q, sent $message to browser.")
         case f: Fundamental =>
             this.fo = Some(f)
-            context.actorSelection(s"../../${WebSocketActor.NAME}") ! s"${this.symbol}: FUNDAMENTAL: ${f.toJson.compactPrint}"
-        case p: Position => this.po = Some(p)
+            val message = s"${this.symbol}: FUNDAMENTAL: ${f.toJson.compactPrint}"
+            context.actorSelection(s"../../${WebSocketActor.NAME}") ! message
+            if (debug) logger.debug(s"Received a $f, sent $message to browser.")
+        case p: Position =>
+            this.po = Some(p)
+            if (debug) logger.debug(s"Received a $p")
         case o: Order => o.state match {
             case "cancelled" => orders -= o
             case x if x == "filled" || x == "confirmed" =>
                 orders -= o
                 orders += o
             case "partially_filled" =>  // ignore it
-            case "queued" =>  // ignore it
+            case "queued" =>            // ignore it
+            case "unconfirmed" =>       // ignore it
             case x => logger.debug(s"What to do with this order state ${o.state}")
         }
         case Tick if justStarted => context.actorSelection(s"../../${OrderActor.NAME}") ! AllOrders.Get(symbol)
         case Tick if orders.nonEmpty =>
+            if (debug) logger.debug("Trimming orders")
             trimOrders()
+            if (debug) logger.debug("Update orders with match id")
             updateOrdersWithMatchId()
+            if (debug) logger.debug("Update orders with match id 2")
+            updateOrdersWithMatchId2()
+            if (debug) logger.debug("Sending all orders enriched with matchIds to browser")
             sendOrdersToBrowser()
         case Tick =>  // do nothing
         case AllOrders.Here(_orders) =>
             justStarted = false
             orders.clear()
             orders ++= _orders
+        case "DEBUG_ON" => debug = true
+        case "DEBUG_OFF" => debug = false
         case x => logger.info(s"Don't know what to do with $x yet")
     }
 

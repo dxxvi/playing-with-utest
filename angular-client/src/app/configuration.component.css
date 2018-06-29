@@ -3,6 +3,6 @@ div.handle {
   padding: .2em .5em; display: table-cell;
 }
 
-div.c {
-  padding: .5em; background-color: #fff;
-}
+div.c { padding: .5em; background-color: #fff; }
+
+span.button { color: #f00; cursor: pointer; }

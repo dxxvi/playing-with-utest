@@ -1,6 +1,37 @@
 <div style="display: table-row;">
   <div class="c" [ngStyle]="{'display': open ? 'table-cell' : 'none'}">
-
+    <form>
+      <mat-form-field style="width: 15em;">
+        <input matInput placeholder="Message" name="message" [(ngModel)]="message">
+      </mat-form-field>
+      &nbsp;
+      <button mat-button (click)="sendMessageToBrowser()">Send to Browser</button>
+      &nbsp;
+      <button mat-button (click)="sendMessageToServer()">Send to Server</button>
+      <br/><br/>
+      <mat-form-field style="width: 4em;">
+        <input matInput placeholder="Symbol" name="symbol" [(ngModel)]="symbol">
+      </mat-form-field>
+      &nbsp;
+      <button mat-button (click)="setDebug(true)">DEBUG_ON</button>
+      &nbsp;
+      <button mat-button (click)="setDebug(false)">DEBUG_OFF</button>
+      &nbsp;
+      <button mat-button (click)="getFundamental()">Fundamental</button>
+    </form>
+    <table *ngIf="fundamental != null">
+      <tr>
+        <td><span class="button" (click)="fundamental = null">&#9209;</span>&nbsp; {{ fundamental.symbol }}</td>
+        <td>Low: {{fundamental.low}}</td>
+        <td>High: {{fundamental.high}}</td>
+      </tr>
+      <tr>
+        <td>Dividend: {{fundamental.dividendYield}}</td>
+        <td>52 weeks Low: {{fundamental.low52weeks}}</td>
+        <td>52 weeks High: {{fundamental.high52weeks}}</td>
+      </tr>
+      <tr><td colspan="3">Description: {{fundamental.description}}</td></tr>
+    </table>
   </div>
   <div class="handle" (click)="clickConfiguration()">
     C<br/>o<br/>n<br/>f<br/>i<br/>g<br/>u<br/>r<br/>a<br/>t<br/>i<br/>o<br/>n

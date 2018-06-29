@@ -12,16 +12,7 @@ export class WebsocketService {
     const url = new URL(location.href);
     this.ws = new WebSocket(`ws://${url.hostname}:${url.port}/ws`);
     this.ws.onmessage = (event) => {
-      const message: string = event.data;
-      const i = message.indexOf(': ');
-      if (i === -1) {
-        console.error(`Unknown message ${message}`);
-      }
-      else {
-        const symbol = message.substring(0, i);
-        this.sendMessageThroughSubject('SYMBOL_FOUND', symbol);
-        this.sendMessageThroughSubject(symbol, `${message.substr(i + 2)}`);
-      }
+      this.processReceivedString(event.data);
     };
     this.ws.onerror   = (event) => {
       console.log(`websocket error ${event}`);
@@ -29,10 +20,6 @@ export class WebsocketService {
     this.ws.onclose   = (event) => {
       console.log('websocket closes');
     };
-  }
-
-  sendMessageThroughWebsocket(message: string) {
-    this.ws.send(message);
   }
 
   getSubject(name: string): Subject<any> {
@@ -45,7 +32,28 @@ export class WebsocketService {
     return subject;
   }
 
-  sendMessageThroughSubject(name: string, message: string) {
+  processReceivedString(message: string) {
+    const i = message.indexOf(': ');
+    if (i === -1) {
+      console.error(`Unknown message ${message}`);
+    }
+    else if (message.includes('FUNDAMENTAL_REVIEW: ')) {
+      this.sendMessageThroughSubject('FUNDAMENTAL_REVIEW', message.replace('FUNDAMENTAL_REVIEW: ', ''));
+      // the sent message looks like this: AMD: {...}
+    }
+    else {
+      const symbol = message.substring(0, i);
+      const rest   = message.substr(i + 2);
+      this.sendMessageThroughSubject('SYMBOL_FOUND', { symbol: symbol, rest: rest });
+      this.sendMessageThroughSubject(symbol, rest);
+    }
+  }
+
+  sendMessageThroughSubject(name: string, message: any) {
     this.getSubject(name).next({ text: message });
+  }
+
+  sendMessageThroughWebsocket(message: string) {
+    this.ws.send(message);
   }
 }

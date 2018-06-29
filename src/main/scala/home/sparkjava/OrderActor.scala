@@ -128,7 +128,7 @@ class OrderActor(config: Config) extends Actor with Timers with ActorLogging wit
             http.singleRequest(httpRequest, settings = connectionPoolSettings).onComplete {
                 case Success(httpResponse) =>
                     httpResponse.entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
-                        logger.debug(body.utf8String.toJson.prettyPrint)
+                        logger.debug(body.utf8String)
                     }
                 case Failure(exception) => logger.error(s"$exception")
             }
