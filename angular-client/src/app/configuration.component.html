@@ -21,7 +21,11 @@
     </form>
     <table *ngIf="fundamental != null">
       <tr>
-        <td><span class="button" (click)="fundamental = null">&#9209;</span>&nbsp; {{ fundamental.symbol }}</td>
+        <td>
+          <span class="button" (click)="fundamental = null" title="Close this fundamental review">&#10006;</span>
+          {{ fundamental.symbol }}
+          <span class="button" (click)="addToWatchList(fundamental.symbol)" title="Add to watch list">&#10010;</span>
+        </td>
         <td>Low: {{fundamental.low}}</td>
         <td>High: {{fundamental.high}}</td>
       </tr>

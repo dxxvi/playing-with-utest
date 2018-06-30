@@ -28,12 +28,12 @@ object PositionProtocol extends DefaultJsonProtocol {
             )
         }
 
-        override def write(p: Position): JsValue = JsObject(Map[String, JsValue](
+        override def write(p: Position): JsValue = JsObject(
             "updatedAt" -> JsString(p.updatedAt),
             "averageBuyPrice" -> JsNumber(p.averageBuyPrice),
             "instrument" -> JsString(p.instrument),
             "sharesHeldForSell" -> JsNumber(p.sharesHeldForSell),
             "quantity" -> JsNumber(p.quantity)
-        ))
+        )
     }
 }

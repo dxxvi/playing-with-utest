@@ -4,14 +4,14 @@ import scala.concurrent.duration._
 import akka.actor.{Actor, ActorLogging, Props, Timers}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.RawHeader
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes, Uri}
+import akka.http.scaladsl.model.{ContentType, HttpEntity, HttpMethods, HttpRequest, HttpResponse, MediaTypes, RequestEntity, StatusCodes, Uri}
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.util.ByteString
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.Logger
 
-import scala.util.Failure
+import scala.util.{Failure, Success}
 
 object DefaultWatchListActor {
     val NAME = "defaultWatchListActor"
@@ -31,8 +31,8 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with Actor
     val authorization: String = if (config.hasPath("Authorization")) config.getString("Authorization") else "No token"
     val connectionPoolSettings: ConnectionPoolSettings = getConnectionPoolSettings(config, context.system)
 
-    val symbols: collection.mutable.Set[String] = collection.mutable.Set[String]()
     val http = Http(context.system)
+    var debug = false
 
     timers.startPeriodicTimer(Tick, Tick, 19482.millis)
 
@@ -65,6 +65,24 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with Actor
             entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
                 log.error(s"Error in getting default watchlist: $statusCode, body: ${body.utf8String}")
             }
+        case AddSymbol(symbol) =>
+            val entity: RequestEntity = HttpEntity(ContentType(MediaTypes.`application/json`),
+                JsObject("symbols" -> JsString(symbol)).compactPrint.getBytes)
+            val httpRequest = HttpRequest(
+                HttpMethods.POST,
+                Uri(SERVER + "watchlists/Default/bulk_add/"),
+                entity = entity
+            ).withHeaders(RawHeader("Authorization", authorization))
+            http.singleRequest(httpRequest, settings = connectionPoolSettings).onComplete {
+                case Success(HttpResponse(statusCode, _, ent, _)) =>
+                    ent.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
+                        logger.debug(s"Add $symbol to the Default watch list: $statusCode - ${body.utf8String}")
+                    }
+                case Failure(exception) =>
+                    logger.error(s"Unable to add $symbol to the Default watch list: ${exception.getMessage}")
+            }
+        case "DEBUG_ON" => debug = true
+        case "DEBUG_OFF" => debug = false
         case x => logger.debug(s"Don't know what to do with $x yet")
     }
 }

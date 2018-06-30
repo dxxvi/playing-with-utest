@@ -19,7 +19,7 @@ case class Fundamental(
 
 object FundamentalProtocol extends DefaultJsonProtocol {
     implicit object FundamentalJsonFormat extends RootJsonFormat[Fundamental] with Util {
-        override def write(f: Fundamental): JsValue = JsObject(Map[String, JsValue](
+        override def write(f: Fundamental): JsValue = JsObject(
             "open" -> JsNumber(f.open),
             "low" -> JsNumber(f.low),
             "high" -> JsNumber(f.high),
@@ -28,7 +28,7 @@ object FundamentalProtocol extends DefaultJsonProtocol {
             "dividendYield" -> JsNumber(f.dividendYield),
             "description" -> JsString(f.description),
             "yearFounded" -> JsNumber(f.yearFounded)
-        ))
+        )
 
         override def read(json: JsValue): Fundamental = {
             implicit val fields: Map[String, JsValue] = json.asJsObject().fields

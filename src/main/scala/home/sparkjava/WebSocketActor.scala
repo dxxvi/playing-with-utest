@@ -10,9 +10,14 @@ object WebSocketActor {
 
 class WebSocketActor(webSocketListener: WebSocketListener) extends Actor with ActorLogging {
     val logger: Logger = Logger[WebSocketActor]
+    var debug = false
 
     override def receive: Receive = {
-        case x: String => webSocketListener.send(x)
+        case "DEBUG_ON" => debug = true
+        case "DEBUG_OFF" => debug = false
+        case x: String =>
+            webSocketListener.send(x)
+            if (debug) logger.debug(s"`$x` was sent to browser")
         case x => logger.debug(s"Don't know what to do with $x yet")
     }
 }

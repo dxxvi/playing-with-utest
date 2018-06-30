@@ -107,7 +107,7 @@ class OrderActor(config: Config) extends Actor with Timers with ActorLogging wit
 
     private def sendBuySellRequest(action: String, symbol: String, quantity: Int, price: Double) {
         def createJsonString(action: String, instrument: String, symbol: String, quantity: Int, price: Double): String = {
-            JsObject(Map[String, JsValue](
+            JsObject(
                 "account" -> JsString(account),
                 "instrument" -> JsString(instrument),
                 "symbol" -> JsString(symbol),
@@ -117,7 +117,7 @@ class OrderActor(config: Config) extends Actor with Timers with ActorLogging wit
                 "price" -> JsNumber(price),
                 "quantity" -> JsNumber(quantity),
                 "side" -> JsString(action)
-            )).compactPrint
+            ).compactPrint
         }
 
         Main.instrument2Symbol.find(_._2 == symbol).foreach { tuple2 =>

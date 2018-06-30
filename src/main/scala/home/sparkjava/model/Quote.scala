@@ -43,9 +43,9 @@ object QuoteProtocol extends DefaultJsonProtocol {
             )
         }
 
-        override def write(q: Quote): JsValue = JsObject(Map[String, JsValue](
+        override def write(q: Quote): JsValue = JsObject(
             "updatedAt" -> JsString(q.updatedAt),
             "lastTradePrice" -> JsNumber(q.lastTradePrice)
-        ))
+        )
     }
 }

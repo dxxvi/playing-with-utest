@@ -43,6 +43,13 @@ export class ConfigurationComponent implements OnInit, OnDestroy {
     this.subscription.unsubscribe();
   }
 
+  addToWatchList(symbol: string) {
+    if (this.symbol != null && this.symbol.trim() != '') {
+      this.message = `WATCHLIST_ADD: ${symbol}`;
+      this.sendMessageToServer();
+    }
+  }
+
   clickConfiguration() {
     this.open = !this.open;
     this.el.nativeElement.style.position = this.open ? 'static' : 'fixed';

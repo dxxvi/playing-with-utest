@@ -24,10 +24,10 @@ class InstrumentActor(config: Config) extends Actor with ActorLogging with Util 
     val logger: Logger = Logger[InstrumentActor]
 
     implicit val materializer: ActorMaterializer = ActorMaterializer(ActorMaterializerSettings(context.system))
-
     val connectionPoolSettings: ConnectionPoolSettings = getConnectionPoolSettings(config, context.system)
-
     val http = Http(context.system)
+
+    var debug = false
 
     override def receive: Receive = {
         case instrument: String =>
@@ -49,6 +49,8 @@ class InstrumentActor(config: Config) extends Actor with ActorLogging with Util 
             entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
                 log.error(s"Error in getting instrument: $statusCode, body: ${body.utf8String}")
             }
+        case "DEBUG_ON" => debug = true
+        case "DEBUG_OFF" => debug = false
         case x => logger.debug(s"Don't know what to do with $x yet")
     }
 }

@@ -30,6 +30,7 @@ class QuoteActor(config: Config) extends Actor with Timers with ActorLogging wit
     val symbols: collection.mutable.Set[String] = collection.mutable.Set[String]()
     val http = Http(context.system)
 
+    var debug = false
     timers.startPeriodicTimer(Tick, Tick, 4019.millis)
 
     override def receive: Receive = {
@@ -53,6 +54,8 @@ class QuoteActor(config: Config) extends Actor with Timers with ActorLogging wit
             entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
                 log.error(s"Error in getting quotes: $statusCode, body: ${body.utf8String}")
             }
+        case "DEBUG_ON" => debug = true
+        case "DEBUG_OFF" => debug = false
         case x => logger.debug(s"Don't know what to do with $x yet")
     }
 }

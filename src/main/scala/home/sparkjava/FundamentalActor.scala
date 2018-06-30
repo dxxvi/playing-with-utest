@@ -33,6 +33,7 @@ class FundamentalActor(config: Config) extends Actor with Timers with ActorLoggi
     val http = Http(context.system)
 
     timers.startPeriodicTimer(Tick, Tick, 19824.millis)
+    var debug = false
 
     override def receive: Receive = {
         case Tick if Main.instrument2Symbol.nonEmpty =>
@@ -53,6 +54,8 @@ class FundamentalActor(config: Config) extends Actor with Timers with ActorLoggi
             entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
                 log.error(s"Error in getting fundamentals: $statusCode, body: ${body.utf8String}")
             }
+        case "DEBUG_ON" => debug = true
+        case "DEBUG_OFF" => debug = false
         case symbol: String =>
             http.singleRequest(HttpRequest(uri = Uri(SERVER + s"fundamentals/$symbol/")), settings = connectionPoolSettings)
                 .map(SingleFundamental(symbol, _))
