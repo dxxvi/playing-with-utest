@@ -57,6 +57,7 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
         case Tick if orders.nonEmpty =>
             if (debug) logger.debug("Trimming orders")
             trimOrders()
+            checkToBuyOrSell(0)
             if (debug) logger.debug("Update orders with match id")
             updateOrdersWithMatchId()
             if (debug) logger.debug("Update orders with match id 2")
@@ -144,6 +145,23 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
             }
             orders.clear()
             orders ++= trimmedOrders
+        }
+    }
+
+    private def checkToBuyOrSell(alreadyBoughtOrSold: Int): Int = {
+        val noConfirmedSell = !orders.exists(o => o.state == "confirmed" && o.side == "sell")
+        val noConfirmedBuy  = !orders.exists(o => o.state == "confirmed" && o.side == "buy")
+        orders.find(_.state == "filled").foreach { firstFilled =>
+            if (firstFilled.side == "buy"
+                    && noConfirmedSell
+                    && qo.nonEmpty && qo.get.lastTradePrice > 0.99 * firstFilled.averagePrice
+                    && fo.nonEmpty && qo.get.lastTradePrice > 1.015 * fo.get.open
+            ) logger.info(s"You should sell ${firstFilled.quantity} $symbol at ${qo.get.lastTradePrice}.")
+            if (firstFilled.side == "sell"
+                    && noConfirmedBuy
+                    && qo.nonEmpty && qo.get.lastTradePrice < 0.99 * firstFilled.averagePrice
+                    && fo.nonEmpty && qo.get.lastTradePrice < 1.025 * fo.get.open
+            ) logger.info(s"You should buy ${firstFilled.quantity} $symbol at ${qo.get.lastTradePrice}.")
         }
     }
 }
