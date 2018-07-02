@@ -40,7 +40,7 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with Actor
         case Tick =>
             val httpRequest = HttpRequest(uri = Uri(SERVER + "watchlists/Default/"))
                     .withHeaders(RawHeader("Authorization", authorization))
-            http.singleRequest(httpRequest, settings = connectionPoolSettings).pipeTo(self)
+            http.singleRequest(httpRequest, settings = connectionPoolSettings) pipeTo self
         case HttpResponse(StatusCodes.OK, _, entity, _) =>
             entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
                 body.utf8String.parseJson.asJsObject.fields.get("results") match {
@@ -65,7 +65,8 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with Actor
             entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
                 log.error(s"Error in getting default watchlist: $statusCode, body: ${body.utf8String}")
             }
-        case AddSymbol(symbol) =>
+        case x @ AddSymbol(symbol) =>
+            if (debug) logger.debug(s"Received $x")
             val entity: RequestEntity = HttpEntity(ContentType(MediaTypes.`application/json`),
                 JsObject("symbols" -> JsString(symbol)).compactPrint.getBytes)
             val httpRequest = HttpRequest(
@@ -76,7 +77,7 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with Actor
             http.singleRequest(httpRequest, settings = connectionPoolSettings).onComplete {
                 case Success(HttpResponse(statusCode, _, ent, _)) =>
                     ent.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
-                        logger.debug(s"Add $symbol to the Default watch list: $statusCode - ${body.utf8String}")
+                        if (debug) logger.debug(s"Add $symbol to the Default watch list: $statusCode - ${body.utf8String}")
                     }
                 case Failure(exception) =>
                     logger.error(s"Unable to add $symbol to the Default watch list: ${exception.getMessage}")

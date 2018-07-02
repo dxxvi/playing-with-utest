@@ -1,0 +1,3911 @@
+// https://api.robinhood.com/quotes/historicals/MN/?interval=5minute&span=week
+{
+  "quote": "https://api.robinhood.com/quotes/306a770e-bd00-456d-a7ab-66a63b47c4cb/",
+  "symbol": "MN",
+  "interval": "5minute",
+  "span": "week",
+  "bounds": "regular",
+  "instrument": "https://api.robinhood.com/instruments/306a770e-bd00-456d-a7ab-66a63b47c4cb/",
+  "historicals": [
+    {
+      "begins_at": "2018-06-25T13:30:00Z",
+      "open_price": "3.0500",
+      "close_price": "3.0500",
+      "high_price": "3.0500",
+      "low_price": "3.0500",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T13:35:00Z",
+      "open_price": "3.0500",
+      "close_price": "3.0500",
+      "high_price": "3.0500",
+      "low_price": "3.0500",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T13:40:00Z",
+      "open_price": "3.0500",
+      "close_price": "3.0500",
+      "high_price": "3.0500",
+      "low_price": "3.0500",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T13:45:00Z",
+      "open_price": "3.0500",
+      "close_price": "3.0500",
+      "high_price": "3.0500",
+      "low_price": "3.0500",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T13:50:00Z",
+      "open_price": "3.0500",
+      "close_price": "3.0500",
+      "high_price": "3.0500",
+      "low_price": "3.0500",
+      "volume": 300,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-25T13:55:00Z",
+      "open_price": "3.0500",
+      "close_price": "3.0500",
+      "high_price": "3.0500",
+      "low_price": "3.0500",
+      "volume": 200,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-25T14:00:00Z",
+      "open_price": "3.0500",
+      "close_price": "3.0500",
+      "high_price": "3.0500",
+      "low_price": "3.0500",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T14:05:00Z",
+      "open_price": "3.0500",
+      "close_price": "3.0500",
+      "high_price": "3.0500",
+      "low_price": "3.0500",
+      "volume": 600,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-25T14:10:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 806,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-25T14:15:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 100,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-25T14:20:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T14:25:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T14:30:00Z",
+      "open_price": "3.0100",
+      "close_price": "3.0250",
+      "high_price": "3.0500",
+      "low_price": "3.0100",
+      "volume": 5854,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-25T14:35:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T14:40:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T14:45:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 1100,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-25T14:50:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T14:55:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T15:00:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T15:05:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T15:10:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 200,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-25T15:15:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T15:20:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T15:25:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T15:30:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T15:35:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T15:40:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T15:45:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T15:50:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T15:55:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T16:00:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T16:05:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T16:10:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 200,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-25T16:15:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T16:20:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T16:25:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T16:30:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T16:35:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T16:40:00Z",
+      "open_price": "3.0100",
+      "close_price": "3.0100",
+      "high_price": "3.0100",
+      "low_price": "3.0100",
+      "volume": 3000,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-25T16:45:00Z",
+      "open_price": "3.0100",
+      "close_price": "3.0100",
+      "high_price": "3.0100",
+      "low_price": "3.0100",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T16:50:00Z",
+      "open_price": "3.0100",
+      "close_price": "3.0100",
+      "high_price": "3.0100",
+      "low_price": "3.0100",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T16:55:00Z",
+      "open_price": "3.0100",
+      "close_price": "3.0100",
+      "high_price": "3.0100",
+      "low_price": "3.0100",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T17:00:00Z",
+      "open_price": "3.0285",
+      "close_price": "3.0285",
+      "high_price": "3.0285",
+      "low_price": "3.0285",
+      "volume": 1639,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-25T17:05:00Z",
+      "open_price": "3.0285",
+      "close_price": "3.0285",
+      "high_price": "3.0285",
+      "low_price": "3.0285",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T17:10:00Z",
+      "open_price": "3.0285",
+      "close_price": "3.0285",
+      "high_price": "3.0285",
+      "low_price": "3.0285",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T17:15:00Z",
+      "open_price": "3.0285",
+      "close_price": "3.0285",
+      "high_price": "3.0285",
+      "low_price": "3.0285",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T17:20:00Z",
+      "open_price": "3.0285",
+      "close_price": "3.0285",
+      "high_price": "3.0285",
+      "low_price": "3.0285",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T17:25:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0400",
+      "high_price": "3.0400",
+      "low_price": "3.0250",
+      "volume": 720,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-25T17:30:00Z",
+      "open_price": "3.0400",
+      "close_price": "3.0400",
+      "high_price": "3.0400",
+      "low_price": "3.0400",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T17:35:00Z",
+      "open_price": "3.0400",
+      "close_price": "3.0400",
+      "high_price": "3.0400",
+      "low_price": "3.0400",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T17:40:00Z",
+      "open_price": "3.0400",
+      "close_price": "3.0400",
+      "high_price": "3.0400",
+      "low_price": "3.0400",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T17:45:00Z",
+      "open_price": "3.0400",
+      "close_price": "3.0400",
+      "high_price": "3.0400",
+      "low_price": "3.0400",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T17:50:00Z",
+      "open_price": "3.0248",
+      "close_price": "3.0248",
+      "high_price": "3.0248",
+      "low_price": "3.0248",
+      "volume": 248,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-25T17:55:00Z",
+      "open_price": "3.0248",
+      "close_price": "3.0248",
+      "high_price": "3.0248",
+      "low_price": "3.0248",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T18:00:00Z",
+      "open_price": "3.0248",
+      "close_price": "3.0248",
+      "high_price": "3.0248",
+      "low_price": "3.0248",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T18:05:00Z",
+      "open_price": "3.0248",
+      "close_price": "3.0248",
+      "high_price": "3.0248",
+      "low_price": "3.0248",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T18:10:00Z",
+      "open_price": "3.0248",
+      "close_price": "3.0248",
+      "high_price": "3.0248",
+      "low_price": "3.0248",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T18:15:00Z",
+      "open_price": "3.0248",
+      "close_price": "3.0248",
+      "high_price": "3.0248",
+      "low_price": "3.0248",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T18:20:00Z",
+      "open_price": "3.0248",
+      "close_price": "3.0248",
+      "high_price": "3.0248",
+      "low_price": "3.0248",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T18:25:00Z",
+      "open_price": "3.0248",
+      "close_price": "3.0248",
+      "high_price": "3.0248",
+      "low_price": "3.0248",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T18:30:00Z",
+      "open_price": "3.0248",
+      "close_price": "3.0248",
+      "high_price": "3.0248",
+      "low_price": "3.0248",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T18:35:00Z",
+      "open_price": "3.0248",
+      "close_price": "3.0248",
+      "high_price": "3.0248",
+      "low_price": "3.0248",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T18:40:00Z",
+      "open_price": "3.0248",
+      "close_price": "3.0248",
+      "high_price": "3.0248",
+      "low_price": "3.0248",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T18:45:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 100,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-25T18:50:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 3450,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-25T18:55:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0400",
+      "high_price": "3.0400",
+      "low_price": "3.0250",
+      "volume": 3500,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-25T19:00:00Z",
+      "open_price": "3.0400",
+      "close_price": "3.0340",
+      "high_price": "3.0400",
+      "low_price": "3.0340",
+      "volume": 2820,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-25T19:05:00Z",
+      "open_price": "3.0340",
+      "close_price": "3.0340",
+      "high_price": "3.0340",
+      "low_price": "3.0340",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T19:10:00Z",
+      "open_price": "3.0340",
+      "close_price": "3.0340",
+      "high_price": "3.0340",
+      "low_price": "3.0340",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T19:15:00Z",
+      "open_price": "3.0340",
+      "close_price": "3.0340",
+      "high_price": "3.0340",
+      "low_price": "3.0340",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T19:20:00Z",
+      "open_price": "3.0340",
+      "close_price": "3.0340",
+      "high_price": "3.0340",
+      "low_price": "3.0340",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T19:25:00Z",
+      "open_price": "3.0340",
+      "close_price": "3.0340",
+      "high_price": "3.0340",
+      "low_price": "3.0340",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T19:30:00Z",
+      "open_price": "3.0340",
+      "close_price": "3.0340",
+      "high_price": "3.0340",
+      "low_price": "3.0340",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T19:35:00Z",
+      "open_price": "3.0340",
+      "close_price": "3.0340",
+      "high_price": "3.0340",
+      "low_price": "3.0340",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T19:40:00Z",
+      "open_price": "3.0340",
+      "close_price": "3.0340",
+      "high_price": "3.0340",
+      "low_price": "3.0340",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-25T19:45:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 100,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-25T19:50:00Z",
+      "open_price": "3.0285",
+      "close_price": "3.0285",
+      "high_price": "3.0285",
+      "low_price": "3.0285",
+      "volume": 1000,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-25T19:55:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0000",
+      "high_price": "3.0250",
+      "low_price": "3.0000",
+      "volume": 600,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-26T13:30:00Z",
+      "open_price": "3.0000",
+      "close_price": "3.0000",
+      "high_price": "3.0000",
+      "low_price": "3.0000",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T13:35:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.0950",
+      "high_price": "3.1000",
+      "low_price": "3.0950",
+      "volume": 200,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-26T13:40:00Z",
+      "open_price": "3.0950",
+      "close_price": "3.0950",
+      "high_price": "3.0950",
+      "low_price": "3.0950",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T13:45:00Z",
+      "open_price": "3.0950",
+      "close_price": "3.0950",
+      "high_price": "3.0950",
+      "low_price": "3.0950",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T13:50:00Z",
+      "open_price": "3.0950",
+      "close_price": "3.0950",
+      "high_price": "3.0950",
+      "low_price": "3.0950",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T13:55:00Z",
+      "open_price": "3.0950",
+      "close_price": "3.0950",
+      "high_price": "3.0950",
+      "low_price": "3.0950",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T14:00:00Z",
+      "open_price": "3.0950",
+      "close_price": "3.0950",
+      "high_price": "3.0950",
+      "low_price": "3.0950",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T14:05:00Z",
+      "open_price": "3.0950",
+      "close_price": "3.0950",
+      "high_price": "3.0950",
+      "low_price": "3.0950",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T14:10:00Z",
+      "open_price": "3.0950",
+      "close_price": "3.0950",
+      "high_price": "3.0950",
+      "low_price": "3.0950",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T14:15:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.1000",
+      "high_price": "3.1000",
+      "low_price": "3.1000",
+      "volume": 634,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-26T14:20:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.1000",
+      "high_price": "3.1000",
+      "low_price": "3.1000",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T14:25:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.1000",
+      "high_price": "3.1000",
+      "low_price": "3.1000",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T14:30:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.1000",
+      "high_price": "3.1000",
+      "low_price": "3.1000",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T14:35:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.1000",
+      "high_price": "3.1000",
+      "low_price": "3.1000",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T14:40:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.1000",
+      "high_price": "3.1000",
+      "low_price": "3.1000",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T14:45:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.1000",
+      "high_price": "3.1000",
+      "low_price": "3.1000",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T14:50:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.1000",
+      "high_price": "3.1000",
+      "low_price": "3.1000",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T14:55:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.1000",
+      "high_price": "3.1000",
+      "low_price": "3.1000",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T15:00:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.1000",
+      "high_price": "3.1000",
+      "low_price": "3.1000",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T15:05:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.1000",
+      "high_price": "3.1000",
+      "low_price": "3.1000",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T15:10:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.1000",
+      "high_price": "3.1000",
+      "low_price": "3.1000",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T15:15:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.1000",
+      "high_price": "3.1000",
+      "low_price": "3.1000",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T15:20:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.1000",
+      "high_price": "3.1000",
+      "low_price": "3.1000",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T15:25:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.1000",
+      "high_price": "3.1000",
+      "low_price": "3.1000",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T15:30:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.1000",
+      "high_price": "3.1000",
+      "low_price": "3.1000",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T15:35:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.1000",
+      "high_price": "3.1000",
+      "low_price": "3.1000",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T15:40:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.1000",
+      "high_price": "3.1000",
+      "low_price": "3.1000",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T15:45:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.1000",
+      "high_price": "3.1000",
+      "low_price": "3.1000",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T15:50:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.1000",
+      "high_price": "3.1000",
+      "low_price": "3.1000",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T15:55:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.1000",
+      "high_price": "3.1000",
+      "low_price": "3.1000",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T16:00:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.1000",
+      "high_price": "3.1000",
+      "low_price": "3.1000",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T16:05:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.1000",
+      "high_price": "3.1000",
+      "low_price": "3.1000",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T16:10:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 125,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-26T16:15:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T16:20:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T16:25:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T16:30:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T16:35:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T16:40:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T16:45:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T16:50:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T16:55:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T17:00:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T17:05:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T17:10:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T17:15:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T17:20:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T17:25:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T17:30:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T17:35:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T17:40:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T17:45:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T17:50:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T17:55:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T18:00:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T18:05:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T18:10:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T18:15:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T18:20:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T18:25:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T18:30:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T18:35:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T18:40:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T18:45:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T18:50:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T18:55:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T19:00:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T19:05:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T19:10:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T19:15:00Z",
+      "open_price": "3.0700",
+      "close_price": "3.0700",
+      "high_price": "3.0700",
+      "low_price": "3.0700",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T19:20:00Z",
+      "open_price": "3.0500",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0500",
+      "volume": 390,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-26T19:25:00Z",
+      "open_price": "3.0600",
+      "close_price": "3.0600",
+      "high_price": "3.0600",
+      "low_price": "3.0600",
+      "volume": 350,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-26T19:30:00Z",
+      "open_price": "3.0600",
+      "close_price": "3.0600",
+      "high_price": "3.0600",
+      "low_price": "3.0600",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T19:35:00Z",
+      "open_price": "3.0600",
+      "close_price": "3.0600",
+      "high_price": "3.0600",
+      "low_price": "3.0600",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T19:40:00Z",
+      "open_price": "3.0600",
+      "close_price": "3.0600",
+      "high_price": "3.0600",
+      "low_price": "3.0600",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T19:45:00Z",
+      "open_price": "3.0600",
+      "close_price": "3.0600",
+      "high_price": "3.0600",
+      "low_price": "3.0600",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T19:50:00Z",
+      "open_price": "3.0600",
+      "close_price": "3.0600",
+      "high_price": "3.0600",
+      "low_price": "3.0600",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-26T19:55:00Z",
+      "open_price": "3.0600",
+      "close_price": "3.0600",
+      "high_price": "3.0600",
+      "low_price": "3.0600",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T13:30:00Z",
+      "open_price": "3.0600",
+      "close_price": "3.0600",
+      "high_price": "3.0600",
+      "low_price": "3.0600",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T13:35:00Z",
+      "open_price": "3.0600",
+      "close_price": "3.0600",
+      "high_price": "3.0600",
+      "low_price": "3.0600",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T13:40:00Z",
+      "open_price": "3.0600",
+      "close_price": "3.0600",
+      "high_price": "3.0600",
+      "low_price": "3.0600",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T13:45:00Z",
+      "open_price": "3.0550",
+      "close_price": "3.0550",
+      "high_price": "3.0550",
+      "low_price": "3.0550",
+      "volume": 500,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-27T13:50:00Z",
+      "open_price": "3.0550",
+      "close_price": "3.0550",
+      "high_price": "3.0550",
+      "low_price": "3.0550",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T13:55:00Z",
+      "open_price": "3.0550",
+      "close_price": "3.0550",
+      "high_price": "3.0550",
+      "low_price": "3.0550",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T14:00:00Z",
+      "open_price": "3.0550",
+      "close_price": "3.0550",
+      "high_price": "3.0550",
+      "low_price": "3.0550",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T14:05:00Z",
+      "open_price": "3.0550",
+      "close_price": "3.0550",
+      "high_price": "3.0550",
+      "low_price": "3.0550",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T14:10:00Z",
+      "open_price": "3.0550",
+      "close_price": "3.0550",
+      "high_price": "3.0550",
+      "low_price": "3.0550",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T14:15:00Z",
+      "open_price": "3.0550",
+      "close_price": "3.0550",
+      "high_price": "3.0550",
+      "low_price": "3.0550",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T14:20:00Z",
+      "open_price": "3.0550",
+      "close_price": "3.0550",
+      "high_price": "3.0550",
+      "low_price": "3.0550",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T14:25:00Z",
+      "open_price": "3.0550",
+      "close_price": "3.0550",
+      "high_price": "3.0550",
+      "low_price": "3.0550",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T14:30:00Z",
+      "open_price": "3.0550",
+      "close_price": "3.0550",
+      "high_price": "3.0550",
+      "low_price": "3.0550",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T14:35:00Z",
+      "open_price": "3.0550",
+      "close_price": "3.0550",
+      "high_price": "3.0550",
+      "low_price": "3.0550",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T14:40:00Z",
+      "open_price": "3.0550",
+      "close_price": "3.0550",
+      "high_price": "3.0550",
+      "low_price": "3.0550",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T14:45:00Z",
+      "open_price": "3.0550",
+      "close_price": "3.0550",
+      "high_price": "3.0550",
+      "low_price": "3.0550",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T14:50:00Z",
+      "open_price": "3.0550",
+      "close_price": "3.0550",
+      "high_price": "3.0550",
+      "low_price": "3.0550",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T14:55:00Z",
+      "open_price": "3.0550",
+      "close_price": "3.0550",
+      "high_price": "3.0550",
+      "low_price": "3.0550",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T15:00:00Z",
+      "open_price": "3.0550",
+      "close_price": "3.0550",
+      "high_price": "3.0550",
+      "low_price": "3.0550",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T15:05:00Z",
+      "open_price": "3.0550",
+      "close_price": "3.0550",
+      "high_price": "3.0550",
+      "low_price": "3.0550",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T15:10:00Z",
+      "open_price": "3.0550",
+      "close_price": "3.0550",
+      "high_price": "3.0550",
+      "low_price": "3.0550",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T15:15:00Z",
+      "open_price": "3.0550",
+      "close_price": "3.0550",
+      "high_price": "3.0550",
+      "low_price": "3.0550",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T15:20:00Z",
+      "open_price": "3.0550",
+      "close_price": "3.0550",
+      "high_price": "3.0550",
+      "low_price": "3.0550",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T15:25:00Z",
+      "open_price": "3.0550",
+      "close_price": "3.0550",
+      "high_price": "3.0550",
+      "low_price": "3.0550",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T15:30:00Z",
+      "open_price": "3.0550",
+      "close_price": "3.0550",
+      "high_price": "3.0550",
+      "low_price": "3.0550",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T15:35:00Z",
+      "open_price": "3.0950",
+      "close_price": "3.0950",
+      "high_price": "3.0950",
+      "low_price": "3.0950",
+      "volume": 3200,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-27T15:40:00Z",
+      "open_price": "3.0950",
+      "close_price": "3.0950",
+      "high_price": "3.0950",
+      "low_price": "3.0950",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T15:45:00Z",
+      "open_price": "3.0950",
+      "close_price": "3.0950",
+      "high_price": "3.0950",
+      "low_price": "3.0950",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T15:50:00Z",
+      "open_price": "3.0950",
+      "close_price": "3.0950",
+      "high_price": "3.0950",
+      "low_price": "3.0950",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T15:55:00Z",
+      "open_price": "3.0950",
+      "close_price": "3.0950",
+      "high_price": "3.0950",
+      "low_price": "3.0950",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T16:00:00Z",
+      "open_price": "3.0950",
+      "close_price": "3.0950",
+      "high_price": "3.0950",
+      "low_price": "3.0950",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T16:05:00Z",
+      "open_price": "3.0950",
+      "close_price": "3.0950",
+      "high_price": "3.0950",
+      "low_price": "3.0950",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T16:10:00Z",
+      "open_price": "3.0753",
+      "close_price": "3.0100",
+      "high_price": "3.0753",
+      "low_price": "3.0100",
+      "volume": 26947,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-27T16:15:00Z",
+      "open_price": "3.0100",
+      "close_price": "3.0100",
+      "high_price": "3.0100",
+      "low_price": "3.0100",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T16:20:00Z",
+      "open_price": "3.0100",
+      "close_price": "3.0100",
+      "high_price": "3.0100",
+      "low_price": "3.0100",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T16:25:00Z",
+      "open_price": "3.0100",
+      "close_price": "3.0100",
+      "high_price": "3.0100",
+      "low_price": "3.0100",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T16:30:00Z",
+      "open_price": "3.0100",
+      "close_price": "3.0100",
+      "high_price": "3.0100",
+      "low_price": "3.0000",
+      "volume": 29100,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-27T16:35:00Z",
+      "open_price": "3.0250",
+      "close_price": "3.0250",
+      "high_price": "3.0250",
+      "low_price": "3.0250",
+      "volume": 800,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-27T16:40:00Z",
+      "open_price": "3.0330",
+      "close_price": "3.0330",
+      "high_price": "3.0330",
+      "low_price": "3.0330",
+      "volume": 100,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-27T16:45:00Z",
+      "open_price": "3.0330",
+      "close_price": "3.0330",
+      "high_price": "3.0330",
+      "low_price": "3.0330",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T16:50:00Z",
+      "open_price": "3.0330",
+      "close_price": "3.0330",
+      "high_price": "3.0330",
+      "low_price": "3.0330",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T16:55:00Z",
+      "open_price": "3.0330",
+      "close_price": "3.0330",
+      "high_price": "3.0330",
+      "low_price": "3.0330",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T17:00:00Z",
+      "open_price": "3.0330",
+      "close_price": "3.0330",
+      "high_price": "3.0330",
+      "low_price": "3.0330",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T17:05:00Z",
+      "open_price": "3.0330",
+      "close_price": "3.0330",
+      "high_price": "3.0330",
+      "low_price": "3.0330",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T17:10:00Z",
+      "open_price": "3.0330",
+      "close_price": "3.0330",
+      "high_price": "3.0330",
+      "low_price": "3.0330",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T17:15:00Z",
+      "open_price": "3.0330",
+      "close_price": "3.0330",
+      "high_price": "3.0330",
+      "low_price": "3.0330",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T17:20:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 2000,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-27T17:25:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T17:30:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T17:35:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T17:40:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T17:45:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T17:50:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T17:55:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T18:00:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T18:05:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T18:10:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T18:15:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T18:20:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T18:25:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T18:30:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T18:35:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T18:40:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T18:45:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T18:50:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T18:55:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T19:00:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T19:05:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T19:10:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T19:15:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T19:20:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T19:25:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T19:30:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T19:35:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T19:40:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T19:45:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T19:50:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-27T19:55:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T13:30:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T13:35:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T13:40:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T13:45:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T13:50:00Z",
+      "open_price": "3.0310",
+      "close_price": "3.0310",
+      "high_price": "3.0310",
+      "low_price": "3.0310",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T13:55:00Z",
+      "open_price": "3.0500",
+      "close_price": "3.0500",
+      "high_price": "3.0500",
+      "low_price": "3.0500",
+      "volume": 267,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-28T14:00:00Z",
+      "open_price": "3.0500",
+      "close_price": "3.0500",
+      "high_price": "3.0500",
+      "low_price": "3.0500",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T14:05:00Z",
+      "open_price": "3.0500",
+      "close_price": "3.0500",
+      "high_price": "3.0500",
+      "low_price": "3.0500",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T14:10:00Z",
+      "open_price": "3.0750",
+      "close_price": "3.0750",
+      "high_price": "3.0750",
+      "low_price": "3.0750",
+      "volume": 862,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-28T14:15:00Z",
+      "open_price": "3.0750",
+      "close_price": "3.0750",
+      "high_price": "3.0750",
+      "low_price": "3.0750",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T14:20:00Z",
+      "open_price": "3.0750",
+      "close_price": "3.0750",
+      "high_price": "3.0750",
+      "low_price": "3.0750",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T14:25:00Z",
+      "open_price": "3.0750",
+      "close_price": "3.0750",
+      "high_price": "3.0750",
+      "low_price": "3.0750",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T14:30:00Z",
+      "open_price": "3.0750",
+      "close_price": "3.0750",
+      "high_price": "3.0750",
+      "low_price": "3.0750",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T14:35:00Z",
+      "open_price": "3.0750",
+      "close_price": "3.0750",
+      "high_price": "3.0750",
+      "low_price": "3.0750",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T14:40:00Z",
+      "open_price": "3.0750",
+      "close_price": "3.0750",
+      "high_price": "3.0750",
+      "low_price": "3.0750",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T14:45:00Z",
+      "open_price": "3.0750",
+      "close_price": "3.0750",
+      "high_price": "3.0750",
+      "low_price": "3.0750",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T14:50:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.0852",
+      "high_price": "3.1000",
+      "low_price": "3.0852",
+      "volume": 2900,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-28T14:55:00Z",
+      "open_price": "3.0852",
+      "close_price": "3.0852",
+      "high_price": "3.0852",
+      "low_price": "3.0852",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T15:00:00Z",
+      "open_price": "3.0852",
+      "close_price": "3.0852",
+      "high_price": "3.0852",
+      "low_price": "3.0852",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T15:05:00Z",
+      "open_price": "3.0852",
+      "close_price": "3.0852",
+      "high_price": "3.0852",
+      "low_price": "3.0852",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T15:10:00Z",
+      "open_price": "3.0852",
+      "close_price": "3.0852",
+      "high_price": "3.0852",
+      "low_price": "3.0852",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T15:15:00Z",
+      "open_price": "3.0808",
+      "close_price": "3.0808",
+      "high_price": "3.0808",
+      "low_price": "3.0808",
+      "volume": 105,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-28T15:20:00Z",
+      "open_price": "3.0808",
+      "close_price": "3.0808",
+      "high_price": "3.0808",
+      "low_price": "3.0808",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T15:25:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 100,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-28T15:30:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T15:35:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T15:40:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T15:45:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T15:50:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T15:55:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T16:00:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T16:05:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T16:10:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T16:15:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T16:20:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T16:25:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T16:30:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T16:35:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T16:40:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T16:45:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T16:50:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T16:55:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T17:00:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T17:05:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T17:10:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T17:15:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T17:20:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T17:25:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T17:30:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T17:35:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T17:40:00Z",
+      "open_price": "3.0748",
+      "close_price": "3.0748",
+      "high_price": "3.0748",
+      "low_price": "3.0748",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T17:45:00Z",
+      "open_price": "3.0555",
+      "close_price": "3.0555",
+      "high_price": "3.0555",
+      "low_price": "3.0555",
+      "volume": 100,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-28T17:50:00Z",
+      "open_price": "3.0555",
+      "close_price": "3.0555",
+      "high_price": "3.0555",
+      "low_price": "3.0555",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T17:55:00Z",
+      "open_price": "3.0555",
+      "close_price": "3.0555",
+      "high_price": "3.0555",
+      "low_price": "3.0555",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T18:00:00Z",
+      "open_price": "3.0555",
+      "close_price": "3.0555",
+      "high_price": "3.0555",
+      "low_price": "3.0555",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T18:05:00Z",
+      "open_price": "3.0555",
+      "close_price": "3.0555",
+      "high_price": "3.0555",
+      "low_price": "3.0555",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T18:10:00Z",
+      "open_price": "3.0555",
+      "close_price": "3.0555",
+      "high_price": "3.0555",
+      "low_price": "3.0555",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T18:15:00Z",
+      "open_price": "3.0555",
+      "close_price": "3.0555",
+      "high_price": "3.0555",
+      "low_price": "3.0555",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T18:20:00Z",
+      "open_price": "3.0555",
+      "close_price": "3.0555",
+      "high_price": "3.0555",
+      "low_price": "3.0555",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T18:25:00Z",
+      "open_price": "3.0555",
+      "close_price": "3.0555",
+      "high_price": "3.0555",
+      "low_price": "3.0555",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T18:30:00Z",
+      "open_price": "3.0555",
+      "close_price": "3.0555",
+      "high_price": "3.0555",
+      "low_price": "3.0555",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T18:35:00Z",
+      "open_price": "3.0555",
+      "close_price": "3.0555",
+      "high_price": "3.0555",
+      "low_price": "3.0555",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T18:40:00Z",
+      "open_price": "3.0555",
+      "close_price": "3.0555",
+      "high_price": "3.0555",
+      "low_price": "3.0555",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T18:45:00Z",
+      "open_price": "3.0555",
+      "close_price": "3.0555",
+      "high_price": "3.0555",
+      "low_price": "3.0555",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T18:50:00Z",
+      "open_price": "3.0555",
+      "close_price": "3.0555",
+      "high_price": "3.0555",
+      "low_price": "3.0555",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T18:55:00Z",
+      "open_price": "3.0555",
+      "close_price": "3.0555",
+      "high_price": "3.0555",
+      "low_price": "3.0555",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T19:00:00Z",
+      "open_price": "3.0555",
+      "close_price": "3.0555",
+      "high_price": "3.0555",
+      "low_price": "3.0555",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T19:05:00Z",
+      "open_price": "3.0555",
+      "close_price": "3.0555",
+      "high_price": "3.0555",
+      "low_price": "3.0555",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T19:10:00Z",
+      "open_price": "3.0555",
+      "close_price": "3.0555",
+      "high_price": "3.0555",
+      "low_price": "3.0555",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T19:15:00Z",
+      "open_price": "3.0750",
+      "close_price": "3.1000",
+      "high_price": "3.1000",
+      "low_price": "3.0750",
+      "volume": 1500,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-28T19:20:00Z",
+      "open_price": "3.1000",
+      "close_price": "3.1000",
+      "high_price": "3.1000",
+      "low_price": "3.1000",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T19:25:00Z",
+      "open_price": "3.1271",
+      "close_price": "3.1250",
+      "high_price": "3.1271",
+      "low_price": "3.1250",
+      "volume": 2800,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-28T19:30:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 300,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-28T19:35:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-28T19:40:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 1000,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-28T19:45:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 700,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-28T19:50:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 300,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-28T19:55:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T13:30:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T13:35:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T13:40:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T13:45:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T13:50:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T13:55:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T14:00:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T14:05:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T14:10:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T14:15:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T14:20:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T14:25:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T14:30:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T14:35:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T14:40:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T14:45:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T14:50:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T14:55:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T15:00:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T15:05:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T15:10:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T15:15:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T15:20:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T15:25:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T15:30:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T15:35:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T15:40:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T15:45:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T15:50:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T15:55:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T16:00:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T16:05:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T16:10:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T16:15:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T16:20:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T16:25:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T16:30:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T16:35:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T16:40:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T16:45:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T16:50:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T16:55:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T17:00:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T17:05:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T17:10:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T17:15:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T17:20:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T17:25:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T17:30:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T17:35:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T17:40:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T17:45:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T17:50:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T17:55:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T18:00:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T18:05:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T18:10:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T18:15:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T18:20:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T18:25:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T18:30:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T18:35:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T18:40:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T18:45:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T18:50:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T18:55:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 100,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-29T19:00:00Z",
+      "open_price": "3.1500",
+      "close_price": "3.1250",
+      "high_price": "3.1500",
+      "low_price": "3.1250",
+      "volume": 1075,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-29T19:05:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T19:10:00Z",
+      "open_price": "3.1193",
+      "close_price": "3.1193",
+      "high_price": "3.1193",
+      "low_price": "3.1193",
+      "volume": 2000,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-29T19:15:00Z",
+      "open_price": "3.1193",
+      "close_price": "3.1193",
+      "high_price": "3.1193",
+      "low_price": "3.1193",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T19:20:00Z",
+      "open_price": "3.1193",
+      "close_price": "3.1193",
+      "high_price": "3.1193",
+      "low_price": "3.1193",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T19:25:00Z",
+      "open_price": "3.1193",
+      "close_price": "3.1193",
+      "high_price": "3.1193",
+      "low_price": "3.1193",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T19:30:00Z",
+      "open_price": "3.1193",
+      "close_price": "3.1193",
+      "high_price": "3.1193",
+      "low_price": "3.1193",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T19:35:00Z",
+      "open_price": "3.1193",
+      "close_price": "3.1193",
+      "high_price": "3.1193",
+      "low_price": "3.1193",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T19:40:00Z",
+      "open_price": "3.1193",
+      "close_price": "3.1193",
+      "high_price": "3.1193",
+      "low_price": "3.1193",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T19:45:00Z",
+      "open_price": "3.1148",
+      "close_price": "3.1148",
+      "high_price": "3.1148",
+      "low_price": "3.1148",
+      "volume": 6600,
+      "session": "reg",
+      "interpolated": false
+    },
+    {
+      "begins_at": "2018-06-29T19:50:00Z",
+      "open_price": "3.1148",
+      "close_price": "3.1148",
+      "high_price": "3.1148",
+      "low_price": "3.1148",
+      "volume": 0,
+      "session": "reg",
+      "interpolated": true
+    },
+    {
+      "begins_at": "2018-06-29T19:55:00Z",
+      "open_price": "3.1250",
+      "close_price": "3.1250",
+      "high_price": "3.1250",
+      "low_price": "3.1250",
+      "volume": 200,
+      "session": "reg",
+      "interpolated": false
+    }
+  ]
+}

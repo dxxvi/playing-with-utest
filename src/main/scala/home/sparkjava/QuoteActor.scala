@@ -37,9 +37,10 @@ class QuoteActor(config: Config) extends Actor with Timers with ActorLogging wit
         case x: AddSymbol => symbols += x.symbol.toUpperCase
         case x: RemoveSymbol => symbols -= x.symbol.toUpperCase
         case Tick if symbols.nonEmpty =>
-            val uri = Uri(SERVER + "quotes/").withQuery(Query(("symbols", symbols.mkString(","))))
-            http.singleRequest(HttpRequest(uri = uri), settings = connectionPoolSettings).pipeTo(self)
+            val uri = Uri(SERVER + "quotes/").withQuery(Query("symbols" -> symbols.mkString(",")))
+            http.singleRequest(HttpRequest(uri = uri), settings = connectionPoolSettings) pipeTo self
         case Tick =>  // do nothing
+
         case HttpResponse(StatusCodes.OK, _, entity, _) =>
             entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
                 getQuotes(body.utf8String) foreach { quote =>

@@ -1,40 +1,49 @@
 <div style="display: table-row;">
   <div class="c" [ngStyle]="{'display': open ? 'table-cell' : 'none'}">
-    <form>
-      <mat-form-field style="width: 15em;">
-        <input matInput placeholder="Message" name="message" [(ngModel)]="message">
-      </mat-form-field>
-      &nbsp;
-      <button mat-button (click)="sendMessageToBrowser()">Send to Browser</button>
-      &nbsp;
-      <button mat-button (click)="sendMessageToServer()">Send to Server</button>
-      <br/><br/>
-      <mat-form-field style="width: 4em;">
-        <input matInput placeholder="Symbol" name="symbol" [(ngModel)]="symbol">
-      </mat-form-field>
-      &nbsp;
-      <button mat-button (click)="setDebug(true)">DEBUG_ON</button>
-      &nbsp;
-      <button mat-button (click)="setDebug(false)">DEBUG_OFF</button>
-      &nbsp;
-      <button mat-button (click)="getFundamental()">Fundamental</button>
-    </form>
-    <table *ngIf="fundamental != null">
+    <table>
       <tr>
         <td>
-          <span class="button" (click)="fundamental = null" title="Close this fundamental review">&#10006;</span>
-          {{ fundamental.symbol }}
-          <span class="button" (click)="addToWatchList(fundamental.symbol)" title="Add to watch list">&#10010;</span>
+          <form>
+            <mat-form-field style="width: 15em;">
+              <input matInput placeholder="Message" name="message" [(ngModel)]="message">
+            </mat-form-field>
+            &nbsp;
+            <button mat-button (click)="sendMessageToBrowser()">Send to Browser</button>
+            &nbsp;
+            <button mat-button (click)="sendMessageToServer()">Send to Server</button>
+            <br/>
+            <mat-form-field style="width: 4em;">
+              <input matInput placeholder="Symbol" name="symbol" [(ngModel)]="symbol">
+            </mat-form-field>
+            &nbsp;
+            <button mat-button (click)="setDebug(true)">DEBUG_ON</button>
+            &nbsp;
+            <button mat-button (click)="setDebug(false)">DEBUG_OFF</button>
+            &nbsp;
+            <button mat-button (click)="getFundamental()">Fundamental</button>
+          </form>
+          <table *ngIf="compound != null">
+            <tr>
+              <td>
+                <span class="button" (click)="compound = null" title="Close this fundamental review">&#10006;</span>
+                {{ compound.symbol }}
+                <span class="button" (click)="addToWatchList(fundamental.symbol)" title="Add to watch list">&#10010;</span>
+              </td>
+              <td>Low: {{compound.fundamental.low}}</td>
+              <td>High: {{compound.fundamental.high}}</td>
+            </tr>
+            <tr>
+              <td>Dividend: {{compound.fundamental.dividendYield}}</td>
+              <td>52 weeks Low: {{compound.fundamental.low52weeks}}</td>
+              <td>52 weeks High: {{compound.fundamental.high52weeks}}</td>
+            </tr>
+            <tr><td colspan="3">Description: {{compound.fundamental.description}}</td></tr>
+          </table>
         </td>
-        <td>Low: {{fundamental.low}}</td>
-        <td>High: {{fundamental.high}}</td>
+        <td [ngStyle]="{'display': compound != null && compound.quotes != null ? 'block' : 'none'}">
+          <div class="highcharts" style="width: 40em; height: 20em;"></div>
+        </td>
       </tr>
-      <tr>
-        <td>Dividend: {{fundamental.dividendYield}}</td>
-        <td>52 weeks Low: {{fundamental.low52weeks}}</td>
-        <td>52 weeks High: {{fundamental.high52weeks}}</td>
-      </tr>
-      <tr><td colspan="3">Description: {{fundamental.description}}</td></tr>
     </table>
   </div>
   <div class="handle" (click)="clickConfiguration()">

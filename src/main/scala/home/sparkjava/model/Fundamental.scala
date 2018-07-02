@@ -12,7 +12,7 @@ case class Fundamental(
     low52Weeks: Double,
     dividendYield: Double,
     instrument: String,
-    peRation: Option[Double],
+    peRatio: Option[Double],
     description: String,
     yearFounded: Int
 )

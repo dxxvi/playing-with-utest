@@ -38,6 +38,7 @@ export class WebsocketService {
       console.error(`Unknown message ${message}`);
     }
     else if (message.includes('FUNDAMENTAL_REVIEW: ')) {
+      // the message looks like FUNDAMENTAL_REVIEW: AMD: { fundamental: { ... }, quotes: [...] }
       this.sendMessageThroughSubject('FUNDAMENTAL_REVIEW', message.replace('FUNDAMENTAL_REVIEW: ', ''));
       // the sent message looks like this: AMD: {...}
     }
