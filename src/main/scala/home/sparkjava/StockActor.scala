@@ -1,6 +1,5 @@
 package home.sparkjava
 
-import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.util.UUID
 
 import concurrent.duration._
@@ -11,6 +10,7 @@ import home.sparkjava.model.{Fundamental, Order, Position, Quote}
 object StockActor {
     def props(symbol: String): Props = Props(new StockActor(symbol))
 }
+class LastCreatedAt(var buy: Long = 0, var sell: Long = 0)
 
 class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
     import spray.json._
@@ -25,6 +25,7 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
         collection.mutable.SortedSet[Order]()(Ordering.by[Order, String](_.createdAt)(Main.timestampOrdering.reverse))
     var justStarted = true
     var debug = false
+    val lastCreatedAt = new LastCreatedAt
     val logger: Logger = Logger[StockActor]
 
     timers.startPeriodicTimer(Tick, Tick, 4019.millis)
@@ -49,7 +50,7 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
                 orders -= o
                 orders += o
             case "partially_filled" =>  // ignore it
-            case "queued" =>            // ignore it
+            case "queued" =>           // ignore it
             case "unconfirmed" =>       // ignore it
             case x => logger.debug(s"What to do with this order state ${o.state}")
         }
@@ -57,7 +58,7 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
         case Tick if orders.nonEmpty =>
             if (debug) logger.debug("Trimming orders")
             trimOrders()
-            checkToBuyOrSell(0)
+            checkToBuyOrSell()
             if (debug) logger.debug("Update orders with match id")
             updateOrdersWithMatchId()
             if (debug) logger.debug("Update orders with match id 2")
@@ -148,20 +149,32 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
         }
     }
 
-    private def checkToBuyOrSell(alreadyBoughtOrSold: Int): Int = {
+    private def checkToBuyOrSell() {
         val noConfirmedSell = !orders.exists(o => o.state == "confirmed" && o.side == "sell")
         val noConfirmedBuy  = !orders.exists(o => o.state == "confirmed" && o.side == "buy")
-        orders.find(_.state == "filled").foreach { firstFilled =>
+        val firstFilledOption = orders.find(_.state == "filled")
+        firstFilledOption.foreach { firstFilled =>
+            if (debug) logger.debug(s"""noConfirmedSell: $noConfirmedSell, noConfirmedBuy: $noConfirmedBuy,
+                   | first filled order: $firstFilled""".stripMargin)
             if (firstFilled.side == "buy"
+                    && (System.currentTimeMillis - lastCreatedAt.sell > 15000)
                     && noConfirmedSell
                     && qo.nonEmpty && qo.get.lastTradePrice > 0.99 * firstFilled.averagePrice
                     && fo.nonEmpty && qo.get.lastTradePrice > 1.015 * fo.get.open
-            ) logger.info(s"You should sell ${firstFilled.quantity} $symbol at ${qo.get.lastTradePrice}.")
+            ) {
+                logger.info(s"You should sell ${firstFilled.quantity} $symbol at ${qo.get.lastTradePrice}.")
+                lastCreatedAt.sell = System.currentTimeMillis
+            }
             if (firstFilled.side == "sell"
+                    && (System.currentTimeMillis - lastCreatedAt.buy > 15000)
                     && noConfirmedBuy
                     && qo.nonEmpty && qo.get.lastTradePrice < 0.99 * firstFilled.averagePrice
                     && fo.nonEmpty && qo.get.lastTradePrice < 1.025 * fo.get.open
-            ) logger.info(s"You should buy ${firstFilled.quantity} $symbol at ${qo.get.lastTradePrice}.")
+            ) {
+                logger.info(s"You should buy ${firstFilled.quantity} $symbol at ${qo.get.lastTradePrice}.")
+                lastCreatedAt.buy = System.currentTimeMillis
+            }
         }
+
     }
 }
