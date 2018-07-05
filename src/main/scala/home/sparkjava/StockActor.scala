@@ -176,5 +176,11 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
             }
         }
 
+        if (firstFilledOption.isEmpty && fo.nonEmpty
+                && qo.nonEmpty && qo.get.lastTradePrice < 0.97 * fo.get.open
+                && (System.currentTimeMillis - lastCreatedAt.buy > 15000) ) {
+            logger.info(s"You should buy 1 $symbol at ${qo.get.lastTradePrice}")
+            lastCreatedAt.buy = System.currentTimeMillis
+        }
     }
 }
