@@ -19,11 +19,11 @@ export class ConfigurationComponent implements OnInit, OnDestroy {
       open: number,
       low: number,
       high: number,
-      high52weeks: number,
-      low52weeks: number,
-      dividendYield: number,
+      high_52_weeks: number,
+      low_52_weeks: number,
+      dividend_yield: string,
       description: string,
-      yearFound: number
+      year_found: number
     },
     quotes: Array<{
       beginsAt: string,
@@ -37,11 +37,16 @@ export class ConfigurationComponent implements OnInit, OnDestroy {
     }>
   } = null;
   private subscription: Subscription;
-  private chart: any;
+  private hc: any;
+  private cdiv: any;
+  private chart: any = null;
 
   constructor(private el: ElementRef, private websocketService: WebsocketService) { }
 
   ngOnInit() {
+    this.hc = this.el.nativeElement.querySelector('div.highcharts');
+    this.cdiv = this.el.nativeElement.querySelector('div.c');
+
     this.subscription = this.websocketService.getSubject('FUNDAMENTAL_REVIEW').asObservable().subscribe(message => {
       const i = message.text.indexOf(': ');
       if (i == -1) {
@@ -50,43 +55,49 @@ export class ConfigurationComponent implements OnInit, OnDestroy {
       else {
         this.compound = JSON.parse(message.text.substr(i + 2));
         this.compound.symbol = message.text.substring(0, i);
-        const highchartsData = this.compound.quotes.map(q => {
-          const a = q.beginsAt.split(/[TZ:-]/);
-          return [Date.UTC(parseInt(a[0]), parseInt(a[1])-1, parseInt(a[2]), parseInt(a[3]), parseInt(a[4]), parseInt(a[5])), q.openPrice];
-        });
-        this.chart.series[0].setData(highchartsData);
-      }
-    });
-
-    const hc = this.el.nativeElement.querySelector('div.highcharts');
-    const colorIndex = 0;
-    this.chart = Highcharts.chart(hc, {
-      chart: { zoomType: 'x' },
-      credits: { enabled: false },
-      plotOptions: {
-        area: {
-          fillColor: {
-            linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1},
-            stops: [
-              [0, Highcharts.getOptions().colors[colorIndex]],
-              [1, this.hexToRGBA(Highcharts.getOptions().colors[colorIndex], 0)]
-            ]
-          },
-          lineWidth: 1,
-          states: { hover: { lineWidth: 1 }},
-          threshold: null
+        this.hc.innerHTML = '';
+        if (this.compound != null && this.compound.quotes != null) {
+          this.cdiv.style.width = document.body.clientWidth / 2 - 50 + 'px';
+          setTimeout(() => {
+            const colorIndex = 0;
+            const highchartsData = this.compound.quotes.map(q => {
+              const a = q.beginsAt.split(/[TZ:-]/);
+              return [Date.UTC(parseInt(a[0]), parseInt(a[1])-1, parseInt(a[2]), parseInt(a[3]), parseInt(a[4]), parseInt(a[5])), q.openPrice];
+            });
+            this.hc.style.width = this.cdiv.clientWidth - 20 + 'px';
+            this.hc.style.height = this.cdiv.clientHeight + 'px';
+            this.chart = Highcharts.chart(this.hc, {
+              chart: { zoomType: 'x' },
+              credits: { enabled: false },
+              plotOptions: {
+                area: {
+                  fillColor: {
+                    linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1},
+                    stops: [
+                      [0, Highcharts.getOptions().colors[colorIndex]],
+                      [1, this.hexToRGBA(Highcharts.getOptions().colors[colorIndex], 0)]
+                    ]
+                  },
+                  lineWidth: 1,
+                  states: { hover: { lineWidth: 1 }},
+                  threshold: null
+                }
+              },
+              title: { text: null },
+              xAxis: { type: 'datetime' },
+              yAxis: { title: { text: null } },
+              legend: { enabled: false },
+              series: [{
+                type: 'area',
+                name: 'seriesX',
+                color: Highcharts.getOptions().colors[0],
+                data: []
+              }]
+            });
+            this.chart.series[0].setData(highchartsData);
+          }, 1904);  // wait a bit for the cdiv having clientWidth and clientHeight
         }
-      },
-      title: { text: null },
-      xAxis: { type: 'datetime' },
-      yAxis: { title: { text: null } },
-      legend: { enabled: false },
-      series: [{
-        type: 'area',
-        name: 'seriesX',
-        color: Highcharts.getOptions().colors[0],
-        data: []
-      }]
+      }
     });
   }
 
@@ -114,6 +125,12 @@ export class ConfigurationComponent implements OnInit, OnDestroy {
         this.symbol = null;
       }, 3456);
     }
+  }
+
+  removeFundamentalReviewSymbol() {
+    this.compound = null;
+    this.cdiv.style.width = 'auto';
+    this.hc.innerHTML = '';
   }
 
   sendMessageToBrowser() {

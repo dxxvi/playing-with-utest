@@ -1,8 +1,5 @@
 <div style="display: table-row;">
   <div class="c" [ngStyle]="{'display': open ? 'table-cell' : 'none'}">
-    <table>
-      <tr>
-        <td>
           <form>
             <mat-form-field style="width: 15em;">
               <input matInput placeholder="Message" name="message" [(ngModel)]="message">
@@ -25,26 +22,23 @@
           <table *ngIf="compound != null">
             <tr>
               <td>
-                <span class="button" (click)="compound = null" title="Close this fundamental review">&#10006;</span>
+                <span class="button" (click)="removeFundamentalReviewSymbol()" title="Close this fundamental review">&#10006;</span>
                 {{ compound.symbol }}
-                <span class="button" (click)="addToWatchList(fundamental.symbol)" title="Add to watch list">&#10010;</span>
+                <span class="button" (click)="addToWatchList(compound.symbol)" title="Add to watch list">&#10010;</span>
               </td>
-              <td>Low: {{compound.fundamental.low}}</td>
-              <td>High: {{compound.fundamental.high}}</td>
+              <td><span class="label">Low:</span> {{compound.fundamental.low}}</td>
+              <td><span class="label">High:</span> {{compound.fundamental.high}}</td>
             </tr>
             <tr>
-              <td>Dividend: {{compound.fundamental.dividendYield}}</td>
-              <td>52 weeks Low: {{compound.fundamental.low52weeks}}</td>
-              <td>52 weeks High: {{compound.fundamental.high52weeks}}</td>
+              <td>Dividend: {{compound.fundamental.dividend_yield}}</td>
+              <td><span class="label">52 weeks Low:</span> {{compound.fundamental.low_52_weeks}}</td>
+              <td><span class="label">52 weeks High:</span> {{compound.fundamental.high_52_weeks}}</td>
             </tr>
-            <tr><td colspan="3">Description: {{compound.fundamental.description}}</td></tr>
+            <tr><td colspan="3" style="color: #666;">{{compound.fundamental.description}}</td></tr>
           </table>
-        </td>
-        <td [ngStyle]="{'display': compound != null && compound.quotes != null ? 'block' : 'none'}">
-          <div class="highcharts" style="width: 40em; height: 20em;"></div>
-        </td>
-      </tr>
-    </table>
+  </div>
+  <div [ngStyle]="{'display': (compound != null && compound.quotes != null) ? 'table-cell' : 'none'}">
+    <div class="highcharts"></div>
   </div>
   <div class="handle" (click)="clickConfiguration()">
     C<br/>o<br/>n<br/>f<br/>i<br/>g<br/>u<br/>r<br/>a<br/>t<br/>i<br/>o<br/>n

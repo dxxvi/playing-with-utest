@@ -3,6 +3,7 @@ div.handle {
   padding: .2em .5em; display: table-cell; vertical-align: middle;
 }
 
-div.c { padding: .5em; background-color: #fff; }
+div.c { vertical-align: top; padding: .5em; background-color: #fff; }
+div.c td span.label { display: inline-block; text-align: right; width: 7em; }
 
 span.button { color: #f00; cursor: pointer; }
