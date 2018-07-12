@@ -47,6 +47,7 @@ class OrderActor(config: Config) extends Actor with Timers with ActorLogging wit
     val http = Http(context.system)
 
     val today: String = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
+    var debug = false
     timers.startPeriodicTimer(Tick, Tick, 4019.millis)
 
     override def receive: Receive = {
@@ -102,6 +103,8 @@ class OrderActor(config: Config) extends Actor with Timers with ActorLogging wit
             }
         case Buy(symbol, quantity, price) => sendBuySellRequest("buy", symbol, quantity, price)
         case Sell(symbol, quantity, price) => sendBuySellRequest("sell", symbol, quantity, price)
+        case "DEBUG_ON" => debug = true
+        case "DEBUG_OFF" => debug = false
         case x => logger.debug(s"Don't know what to do with $x yet")
     }
 
@@ -128,11 +131,12 @@ class OrderActor(config: Config) extends Actor with Timers with ActorLogging wit
             http.singleRequest(httpRequest, settings = connectionPoolSettings).onComplete {
                 case Success(httpResponse) =>
                     httpResponse.entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
-                        logger.debug(body.utf8String)
+                        if (debug) logger.debug(s"Response of ${action}ing $quantity shares of $symbol at " +
+                          s"$$$price/share ${body.utf8String}")
                     }
                 case Failure(exception) => logger.error(s"$exception")
             }
-            logger.debug(s"Just $action $quantity shares of $symbol at $$$price/share")
+            if (debug) logger.debug(s"Just $action $quantity shares of $symbol at $$$price/share")
         }
     }
 }

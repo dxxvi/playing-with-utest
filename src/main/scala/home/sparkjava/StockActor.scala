@@ -26,7 +26,7 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
     var justStarted = true
     var debug = false
     val lastCreatedAt = new LastCreatedAt
-    val logger: Logger = Logger[StockActor]
+    val logger: Logger = Logger(s"${classOf[StockActor].getName}.$symbol")
 
     timers.startPeriodicTimer(Tick, Tick, 4019.millis)
 
@@ -46,12 +46,10 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
             if (debug) logger.debug(s"Received a $p")
         case o: Order => o.state match {
             case "cancelled" => orders -= o
-            case x if x == "filled" || x == "confirmed" =>
+            case x if x == "filled" || x == "confirmed" || x == "unconfirmed" =>
                 orders -= o
                 orders += o
-            case "partially_filled" =>  // ignore it
-            case "queued" =>           // ignore it
-            case "unconfirmed" =>       // ignore it
+            case "partially_filled" | "queued" =>  // ignore it
             case x => logger.debug(s"What to do with this order state ${o.state}")
         }
         case Tick if justStarted => context.actorSelection(s"../../${OrderActor.NAME}") ! AllOrders.Get(symbol)
@@ -155,7 +153,9 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
         val firstFilledOption = orders.find(_.state == "filled")
         firstFilledOption.foreach { firstFilled =>
             if (debug) logger.debug(s"""noConfirmedSell: $noConfirmedSell, noConfirmedBuy: $noConfirmedBuy,
-                   | first filled order: $firstFilled""".stripMargin)
+                   |first filled order: ${firstFilled.toJson.compactPrint}
+                   |orders:
+                   |${orders.toList.toJson.prettyPrint}""".stripMargin)
             if (firstFilled.side == "buy"
                     && (System.currentTimeMillis - lastCreatedAt.sell > 15000)
                     && noConfirmedSell
