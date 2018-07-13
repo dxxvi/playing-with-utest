@@ -4,27 +4,22 @@
         <Console name="ConsoleAppender" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n%throwable"/>
         </Console>
-        <File name="MyFile" fileName="/dev/shm/robinhood.log">
-            <PatternLayout>
-                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n%throwable</Pattern>
-            </PatternLayout>
-        </File>
-        <Async name="Async"><AppenderRef ref="MyFile"/><LinkedTransferQueue/></Async>
-        <File name="MyFileHTZ" fileName="/dev/shm/robinhoodHTZ.log">
-            <PatternLayout>
-                <Pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n%throwable</Pattern>
-            </PatternLayout>
-        </File>
-        <Async name="AsyncHTZ"><AppenderRef ref="MyFileHTZ"/><LinkedTransferQueue/></Async>
+        <Routing name="StockActor">
+            <Routes pattern="$${ctx:symbol}">
+                <Route>
+                    <File name="" fileName="/dev/shm/${ctx:symbol}.log">
+                        <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n%throwable"/>
+                    </File>
+                </Route>
+            </Routes>
+        </Routing>
     </Appenders>
     <Loggers>
         <Logger name="home" level="DEBUG" additivity="false">
             <AppenderRef ref="ConsoleAppender" />
-            <AppenderRef ref="Async" />
         </Logger>
-        <Logger name="home.sparkJava.StockActor.HTZ" level="DEBUG" additivity="false">
-            <AppenderRef ref="ConsoleAppender" />
-            <AppenderRef ref="AsyncHTZ" />
+        <Logger name="home.sparkjava.StockActor" level="DEBUG" additivity="false">
+            <AppenderRef ref="StockActor"/>
         </Logger>
         <Logger name="org.eclipse.jetty" level="INFO" additivity="false">
             <AppenderRef ref="ConsoleAppender" />
