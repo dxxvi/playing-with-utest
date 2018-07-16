@@ -1,18 +1,16 @@
 package home.sparkjava
 
 import scala.concurrent.duration._
-import akka.actor.{Actor, ActorLogging, Props, Timers}
-import com.typesafe.scalalogging.Logger
+import akka.actor.{Actor, Props, Timers}
 import home.sparkjava.model._
+import org.apache.logging.log4j.scala.Logging
 
 object MainActor {
     val NAME = "mainActor"
     def props(): Props = Props(new MainActor)
 }
 
-class MainActor extends Actor with Timers with ActorLogging {
-    val logger: Logger = Logger[MainActor]
-
+class MainActor extends Actor with Timers with Logging {
     timers.startPeriodicTimer(Tick, Tick, 19482.millis)
 
     val symbolsHavingActor: collection.mutable.Set[String] = collection.mutable.Set()

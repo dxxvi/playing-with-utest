@@ -1,13 +1,13 @@
 package home.sparkjava
 
-import akka.actor.{Actor, ActorLogging, Props}
+import akka.actor.{Actor, Props}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes, Uri}
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.util.ByteString
 import com.typesafe.config.Config
-import com.typesafe.scalalogging.Logger
+import org.apache.logging.log4j.scala.Logging
 
 import scala.util.Success
 
@@ -16,12 +16,10 @@ object InstrumentActor {
     def props(config: Config): Props = Props(new InstrumentActor(config))
 }
 
-class InstrumentActor(config: Config) extends Actor with ActorLogging with Util {
+class InstrumentActor(config: Config) extends Actor with Logging with Util {
     import akka.pattern.pipe
     import context.dispatcher
     import spray.json._
-
-    val logger: Logger = Logger[InstrumentActor]
 
     implicit val materializer: ActorMaterializer = ActorMaterializer(ActorMaterializerSettings(context.system))
     val connectionPoolSettings: ConnectionPoolSettings = getConnectionPoolSettings(config, context.system)
@@ -47,7 +45,7 @@ class InstrumentActor(config: Config) extends Actor with ActorLogging with Util 
         case HttpResponse(statusCode, _, entity, _) =>
             logger.debug("got bad response")
             entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
-                log.error(s"Error in getting instrument: $statusCode, body: ${body.utf8String}")
+                logger.error(s"Error in getting instrument: $statusCode, body: ${body.utf8String}")
             }
         case "DEBUG_ON" => debug = true
         case "DEBUG_OFF" => debug = false

@@ -1,7 +1,7 @@
 package home.sparkjava
 
-import com.typesafe.scalalogging.Logger
 import home.sparkjava.model.{Order, OrderExecution}
+import org.apache.logging.log4j.scala.Logger
 import spray.json._
 import utest._
 
@@ -9,7 +9,7 @@ object OrderTests extends TestSuite with home.Util with Util {
     val tests = Tests {
         "test OrderExecution" - {
             import model.OrderExecutionProtocol._
-            val logger: Logger = Logger[OrderExecution]
+            val logger: Logger = Logger(classOf[OrderExecution])
 
             var json =
                 """
@@ -48,7 +48,7 @@ object OrderTests extends TestSuite with home.Util with Util {
         }
 
         "test Order" - {
-            val logger: Logger = Logger[Order]
+            val logger: Logger = Logger(classOf[Order])
             val orders = getOrders(readTextFileFromTestResource("robinhood", "orders.json"))
             assert(orders.length > 2)
         }

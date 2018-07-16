@@ -1,16 +1,16 @@
 package home.sparkjava
 
 import concurrent.duration._
-import akka.actor.{Actor, ActorLogging, Props, Timers}
+import akka.actor.{Actor, Props, Timers}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes, Uri}
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.util.ByteString
 import com.typesafe.config.Config
-import com.typesafe.scalalogging.Logger
 import home.sparkjava.model.HistoricalQuoteProtocol.HistoricalQuoteJsonFormat
 import model.Fundamental
+import org.apache.logging.log4j.scala.Logging
 
 import scala.util.{Failure, Success}
 
@@ -19,7 +19,7 @@ object FundamentalActor {
     def props(config: Config): Props = Props(new FundamentalActor(config))
 }
 
-class FundamentalActor(config: Config) extends Actor with Timers with ActorLogging with Util {
+class FundamentalActor(config: Config) extends Actor with Timers with Logging with Util {
     import akka.pattern.pipe
     import context.dispatcher
     import FundamentalActor._
@@ -28,7 +28,6 @@ class FundamentalActor(config: Config) extends Actor with Timers with ActorLoggi
 
     implicit val materializer: ActorMaterializer = ActorMaterializer(ActorMaterializerSettings(context.system))
 
-    val logger: Logger = Logger[FundamentalActor]
 
     val SERVER: String = config.getString("server")
     val settings: ConnectionPoolSettings = getConnectionPoolSettings(config, context.system)
@@ -54,7 +53,7 @@ class FundamentalActor(config: Config) extends Actor with Timers with ActorLoggi
             }
         case HttpResponse(statusCode, _, entity, _) =>
             entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
-                log.error(s"Error in getting fundamentals: $statusCode, body: ${body.utf8String}")
+                logger.error(s"Error in getting fundamentals: $statusCode, body: ${body.utf8String}")
             }
         case "DEBUG_ON" => debug = true
         case "DEBUG_OFF" => debug = false

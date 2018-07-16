@@ -1,11 +1,11 @@
 package home.sparkjava
 
 import akka.actor.{ActorSelection, ActorSystem}
-import com.typesafe.scalalogging.Logger
+import org.apache.logging.log4j.scala.Logging
 import org.eclipse.jetty.websocket.api.Session
 
 class WebSocketListener(system: ActorSystem, mainActorPath: String)
-        extends org.eclipse.jetty.websocket.api.WebSocketListener {
+        extends org.eclipse.jetty.websocket.api.WebSocketListener with Logging {
     private val BUY: String = "BUY: "
     private val CANCEL: String = "CANCEL: "
     private val DEBUG_OFF: String = "DEBUG_OFF: "
@@ -14,7 +14,6 @@ class WebSocketListener(system: ActorSystem, mainActorPath: String)
     private val FUNDAMENTAL_REVIEW: String = "FUNDAMENTAL_REVIEW: "
     private val WATCHLIST_ADD: String = "WATCHLIST_ADD: "
 
-    private val logger: Logger = Logger[WebSocketListener]
     private var session: Option[Session] = None
 
     def send(message: String): Unit = {

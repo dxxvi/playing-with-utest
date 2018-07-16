@@ -6,8 +6,8 @@ import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes, Uri}
 import akka.http.scaladsl.model.Uri.Query
 import akka.stream.ActorMaterializer
 import akka.util.ByteString
-import com.typesafe.scalalogging.Logger
 import home.sparkjava.model.Quote
+import org.apache.logging.log4j.scala.Logger
 import utest._
 
 import scala.concurrent.{ExecutionContextExecutor, Future}
@@ -15,14 +15,14 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
 object QuoteTests extends TestSuite with home.Util with home.sparkjava.Util {
     val tests = Tests {
         "test Quote" - {
-            val logger = Logger[Quote]
+            val logger = Logger(classOf[Quote])
             val json = readTextFileFromTestResource("robinhood", "quotes.json")
             val quotes = getQuotes(json)
             assert(quotes.length > 2)
         }
 
         "test getting quotes" - {
-            val logger = Logger[Quote]
+            val logger = Logger(classOf[Quote])
             implicit val system: ActorSystem = ActorSystem("R")
             implicit val materializer: ActorMaterializer = ActorMaterializer()
             // needed for the flatMap / onComplete

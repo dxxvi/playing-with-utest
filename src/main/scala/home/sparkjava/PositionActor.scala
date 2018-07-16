@@ -1,7 +1,7 @@
 package home.sparkjava
 
 import scala.concurrent.duration._
-import akka.actor.{Actor, ActorLogging, ActorRef, Props, Timers}
+import akka.actor.{Actor, ActorRef, Props, Timers}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes, Uri}
@@ -9,23 +9,21 @@ import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.util.ByteString
 import com.typesafe.config.Config
-import com.typesafe.scalalogging.Logger
 import home.sparkjava.model.Position
+import org.apache.logging.log4j.scala.Logging
 
 object PositionActor {
     val NAME = "positionActor"
     def props(config: Config): Props = Props(new PositionActor(config))
 }
 
-class PositionActor(config: Config) extends Actor with Timers with ActorLogging with Util {
+class PositionActor(config: Config) extends Actor with Timers with Logging with Util {
     import spray.json._
     import model.PositionProtocol._
     import akka.pattern.pipe
     import context.dispatcher
 
     implicit val materializer: ActorMaterializer = ActorMaterializer(ActorMaterializerSettings(context.system))
-
-    val logger: Logger = Logger[PositionActor]
 
     val SERVER: String = config.getString("server")
     val authorization: String = if (config.hasPath("Authorization")) config.getString("Authorization") else "No token"
@@ -53,7 +51,7 @@ class PositionActor(config: Config) extends Actor with Timers with ActorLogging 
             }
         case HttpResponse(statusCode, _, entity, _) =>
             entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
-                log.error(s"Error in getting positions: $statusCode, body: ${body.utf8String}")
+                logger.error(s"Error in getting positions: $statusCode, body: ${body.utf8String}")
             }
         case "DEBUG_ON" => debug = true
         case "DEBUG_OFF" => debug = false

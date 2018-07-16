@@ -2,10 +2,11 @@ package spark.serialization
 
 import java.io.OutputStream
 
-import com.typesafe.scalalogging.Logger
+import org.apache.logging.log4j.scala.Logger
+
 
 class SerializerChain() {
-    private val logger: Logger = Logger[home.sparkjava.WebSocketListener]
+    private val logger: Logger = Logger(classOf[home.sparkjava.WebSocketListener])
 
     private val defaultSerializer = new DefaultSerializer
 

@@ -1,7 +1,7 @@
 package home.sparkjava
 
-import com.typesafe.scalalogging.Logger
 import model.Position
+import org.apache.logging.log4j.scala.Logger
 import spray.json._
 import utest._
 
@@ -9,8 +9,8 @@ object PositionTests extends TestSuite with home.Util with Util {
     val tests = Tests {
         "test Position" - {
             import model.PositionProtocol._
-            val logger: Logger = Logger[Position]
-            
+            val logger: Logger = Logger(classOf[Position])
+
             var json =
                 """
                   |{

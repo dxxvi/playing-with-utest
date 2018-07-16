@@ -1,15 +1,14 @@
 package home.sparkjava
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import com.typesafe.scalalogging.Logger
+import akka.actor.{Actor, Props}
+import org.apache.logging.log4j.scala.Logging
 
 object WebSocketActor {
     val NAME = "webSocketActor"
     def props(webSocketListener: WebSocketListener): Props = Props(new WebSocketActor(webSocketListener))
 }
 
-class WebSocketActor(webSocketListener: WebSocketListener) extends Actor with ActorLogging {
-    val logger: Logger = Logger[WebSocketActor]
+class WebSocketActor(webSocketListener: WebSocketListener) extends Actor with Logging {
     var debug = false
 
     override def receive: Receive = {

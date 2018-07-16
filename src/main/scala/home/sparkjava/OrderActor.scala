@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 import scala.concurrent.duration._
-import akka.actor.{Actor, ActorLogging, ActorRef, Props, Timers}
+import akka.actor.{Actor, ActorRef, Props, Timers}
 import akka.http.javadsl.model.ContentTypes
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentType, HttpEntity, HttpMethods, HttpRequest, HttpResponse, MediaType, MediaTypes, RequestEntity, StatusCodes, Uri}
@@ -14,8 +14,8 @@ import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.util.ByteString
 import com.typesafe.config.Config
-import com.typesafe.scalalogging.Logger
 import home.sparkjava.model.Order
+import org.apache.logging.log4j.scala.Logging
 
 import scala.util.{Failure, Success}
 
@@ -26,13 +26,11 @@ object OrderActor {
     case class AllOrdersResponse(httpResponse: HttpResponse, symbol: String)
 }
 
-class OrderActor(config: Config) extends Actor with Timers with ActorLogging with Util {
+class OrderActor(config: Config) extends Actor with Timers with Logging with Util {
     import OrderActor._
     import spray.json._
     import akka.pattern.pipe
     import context.dispatcher
-
-    val logger: Logger = Logger[OrderActor]
 
     implicit val materializer: ActorMaterializer = ActorMaterializer(ActorMaterializerSettings(context.system))
 
@@ -91,7 +89,7 @@ class OrderActor(config: Config) extends Actor with Timers with ActorLogging wit
             }
         case HttpResponse(statusCode, _, entity, _) =>
             entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
-                log.error(s"Error in getting orders with updated_at: $statusCode, body: ${body.utf8String}")
+                logger.error(s"Error in getting orders with updated_at: $statusCode, body: ${body.utf8String}")
             }
         case Tick =>  // do nothing
         case CancelOrder(orderId) =>

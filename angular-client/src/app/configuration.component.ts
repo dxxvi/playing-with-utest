@@ -64,6 +64,7 @@ export class ConfigurationComponent implements OnInit, OnDestroy {
               const a = q.beginsAt.split(/[TZ:-]/);
               return [Date.UTC(parseInt(a[0]), parseInt(a[1])-1, parseInt(a[2]), parseInt(a[3]), parseInt(a[4]), parseInt(a[5])), q.openPrice];
             });
+
             this.hc.style.width = this.cdiv.clientWidth - 20 + 'px';
             this.hc.style.height = this.cdiv.clientHeight + 'px';
             this.chart = Highcharts.chart(this.hc, {

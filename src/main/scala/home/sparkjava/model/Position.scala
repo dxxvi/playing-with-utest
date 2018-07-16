@@ -1,7 +1,7 @@
 package home.sparkjava.model
 
-import com.typesafe.scalalogging.Logger
 import home.sparkjava.Util
+import org.apache.logging.log4j.scala.Logger
 import spray.json._
 
 case class Position(
@@ -17,7 +17,7 @@ object PositionProtocol extends DefaultJsonProtocol {
         override def read(json: JsValue): Position = {
             implicit val fields: Map[String, JsValue] = json.asJsObject().fields
             implicit val prettyJson: String = json.prettyPrint
-            implicit val logger: Logger = Logger[Position]
+            implicit val logger: Logger = Logger(classOf[Position])
 
             Position(
                 getFieldValue[String]("updated_at"),

@@ -1,7 +1,7 @@
 package home.sparkjava.model
 
-import com.typesafe.scalalogging.Logger
 import home.sparkjava.Util
+import org.apache.logging.log4j.scala.Logger
 import spray.json._
 
 case class Quote(
@@ -27,7 +27,7 @@ object QuoteProtocol extends DefaultJsonProtocol {
         override def read(json: JsValue): Quote = {
             implicit val fields: Map[String, JsValue] = json.asJsObject.fields
             implicit val prettyJson: String = json.prettyPrint
-            implicit val logger: Logger = Logger[Quote]
+            implicit val logger: Logger = Logger(classOf[Quote])
 
             Quote(
                 getFieldValue[Double]("ask_price"),

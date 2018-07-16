@@ -1,7 +1,7 @@
 package home.sparkjava.model
 
-import com.typesafe.scalalogging.Logger
 import home.sparkjava.Util
+import org.apache.logging.log4j.scala.Logger
 import spray.json._
 
 case class Fundamental(
@@ -33,7 +33,7 @@ object FundamentalProtocol extends DefaultJsonProtocol {
         override def read(json: JsValue): Fundamental = {
             implicit val fields: Map[String, JsValue] = json.asJsObject().fields
             implicit val prettyJson: String = json.prettyPrint
-            implicit val logger: Logger = Logger[Fundamental]
+            implicit val logger: Logger = Logger(classOf[Fundamental])
 
             Fundamental(
                 getFieldValue[Double]("open"),

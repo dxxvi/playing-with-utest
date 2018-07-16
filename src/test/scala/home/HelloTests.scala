@@ -3,17 +3,17 @@ package home
 import java.io.File
 import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 
-import com.typesafe.scalalogging.Logger
 import home.akka.AkkaPlayground
 import home.sparkjava.Main
 import home.sparkjava.model.Order
+import org.apache.logging.log4j.scala.Logger
 import utest._
 
 import scala.collection.concurrent.TrieMap
 import scala.io.Source
 
 object HelloTests extends TestSuite {
-    val logger: Logger = Logger[Util]
+    val logger: Logger = Logger(classOf[Util])
 
     def modify(file: File): Unit = {
         val root = new File("/home/ly/nginx-root")

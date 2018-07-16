@@ -1,7 +1,7 @@
 package home.sparkjava.model
 
-import com.typesafe.scalalogging.Logger
 import home.sparkjava.Util
+import org.apache.logging.log4j.scala.Logger
 import spray.json._
 
 import scala.collection.mutable
@@ -27,7 +27,7 @@ object OrderExecutionProtocol extends DefaultJsonProtocol {
         override def read(json: JsValue): OrderExecution = {
             implicit val fields: Map[String, JsValue] = json.asJsObject("Unable to convert to JsObject").fields
             implicit val prettyJson: String = json.prettyPrint
-            implicit val logger: Logger = Logger[OrderExecution]
+            implicit val logger: Logger = Logger(classOf[OrderExecution])
 
             OrderExecution(
                 getFieldValue[String]("timestamp"),        // "2018-06-04T19:36:43.251000Z"
@@ -77,7 +77,7 @@ object OrderProtocol extends DefaultJsonProtocol {
             import OrderExecutionProtocol._
             implicit val fields: Map[String, JsValue] = json.asJsObject("Unable to convert to JsObject").fields
             implicit val prettyJson: String = json.prettyPrint
-            implicit val logger: Logger = Logger[Order]
+            implicit val logger: Logger = Logger(classOf[Order])
 
             new Order(
                 getFieldValue[String]("updated_at"),

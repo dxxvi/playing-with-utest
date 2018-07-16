@@ -6,13 +6,13 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.ClientTransport
 import akka.http.scaladsl.settings.{ClientConnectionSettings, ConnectionPoolSettings}
 import com.typesafe.config.Config
-import com.typesafe.scalalogging.Logger
 import model._
 import model.OrderProtocol._
 import model.PositionProtocol._
 import model.QuoteProtocol._
 import model.HistoricalQuoteProtocol._
 import model.FundamentalProtocol._
+import org.apache.logging.log4j.scala.Logger
 import spray.json._
 
 import scala.reflect.runtime.universe._
@@ -55,12 +55,12 @@ trait Util {
         }
         case _ => throw new RuntimeException(s"No field results in $json")
     }
-    
-    def getHistoricalQuotes(json: String): Vector[HistoricalQuote] = 
+
+    def getHistoricalQuotes(json: String): Vector[HistoricalQuote] =
         json.parseJson.asJsObject.fields.get("historicals") match {
             case Some(jsValue) => jsValue match {
                 case x: JsArray => x.elements.map(_.convertTo[HistoricalQuote])
-                case _ => throw new RuntimeException(s"Field historicals is not an array in $json")    
+                case _ => throw new RuntimeException(s"Field historicals is not an array in $json")
             }
             case _ => throw new RuntimeException(s"No field historicals in $json")
         }

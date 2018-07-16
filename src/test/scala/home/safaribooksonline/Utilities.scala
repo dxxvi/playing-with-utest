@@ -4,7 +4,7 @@ import java.nio.file.StandardOpenOption.{CREATE, TRUNCATE_EXISTING}
 import java.nio.file.{Files, Paths}
 import java.util.UUID
 
-import com.typesafe.scalalogging.Logger
+import org.apache.logging.log4j.scala.Logger
 import org.jsoup.Jsoup
 import org.jsoup.nodes.{Document, Element}
 import utest._
@@ -13,7 +13,7 @@ import scala.annotation.tailrec
 import scala.io.Source
 
 object Utilities extends TestSuite {
-    val logger: Logger = Logger[SafariBooksOnline]
+    val logger: Logger = Logger(classOf[SafariBooksOnline])
 
     val tests = Tests {
         "beautify html files" - {

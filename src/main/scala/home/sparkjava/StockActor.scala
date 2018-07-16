@@ -3,16 +3,17 @@ package home.sparkjava
 import java.util.UUID
 
 import concurrent.duration._
-import akka.actor.{Actor, ActorLogging, Props, Timers}
-import com.typesafe.scalalogging.Logger
+import akka.actor.{Actor, Props, Timers}
 import home.sparkjava.model.{Fundamental, Order, Position, Quote}
+import org.apache.logging.log4j.ThreadContext
+import org.apache.logging.log4j.scala.Logging
 
 object StockActor {
     def props(symbol: String): Props = Props(new StockActor(symbol))
 }
 class LastCreatedAt(var buy: Long = 0, var sell: Long = 0)
 
-class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
+class StockActor(symbol: String) extends Actor with Timers with Logging {
     import spray.json._
     import model.OrderProtocol._
     import model.QuoteProtocol._
@@ -26,42 +27,41 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
     var justStarted = true
     var debug = false
     val lastCreatedAt = new LastCreatedAt
-    val logger: Logger = Logger(s"${classOf[StockActor].getName}.$symbol")
 
     timers.startPeriodicTimer(Tick, Tick, 4019.millis)
 
-    override def receive: Receive = {
+    val _receive: Receive = {
         case q: Quote =>
             this.qo = Some(q)
             val message = s"${q.symbol}: QUOTE: ${q.toJson.compactPrint}"
             context.actorSelection(s"../../${WebSocketActor.NAME}") ! message
-            if (debug) logger.debug(s"Received a $q, sent $message to browser.")
+//            logger.debug(s"$symbol Received a $q, sent $message to browser.")
         case f: Fundamental =>
             this.fo = Some(f)
             val message = s"${this.symbol}: FUNDAMENTAL: ${f.toJson.compactPrint}"
             context.actorSelection(s"../../${WebSocketActor.NAME}") ! message
-            if (debug) logger.debug(s"Received a $f, sent $message to browser.")
+//            logger.debug(s"$symbol Received a $f, sent $message to browser.")
         case p: Position =>
             this.po = Some(p)
-            if (debug) logger.debug(s"Received a $p")
+//            logger.debug(s"$symbol Received a $p")
         case o: Order => o.state match {
             case "cancelled" => orders -= o
             case x if x == "filled" || x == "confirmed" || x == "unconfirmed" =>
                 orders -= o
                 orders += o
             case "partially_filled" | "queued" =>  // ignore it
-            case x => logger.debug(s"What to do with this order state ${o.state}")
+            case x => logger.debug(s"$symbol What to do with this order state ${o.state}")
         }
         case Tick if justStarted => context.actorSelection(s"../../${OrderActor.NAME}") ! AllOrders.Get(symbol)
         case Tick if orders.nonEmpty =>
-            if (debug) logger.debug("Trimming orders")
+//            logger.debug(s"$symbol Trimming orders")
             trimOrders()
             checkToBuyOrSell()
-            if (debug) logger.debug("Update orders with match id")
+            logger.debug(s"$symbol Update orders with match id")
             updateOrdersWithMatchId()
-            if (debug) logger.debug("Update orders with match id 2")
+            logger.debug(s"$symbol Update orders with match id 2")
             updateOrdersWithMatchId2()
-            if (debug) logger.debug("Sending all orders enriched with matchIds to browser")
+//            logger.debug(s"$symbol Sending all orders enriched with matchIds to browser")
             sendOrdersToBrowser()
         case Tick =>  // do nothing
         case AllOrders.Here(_orders) =>
@@ -70,8 +70,16 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
             orders ++= _orders
         case "DEBUG_ON" => debug = true
         case "DEBUG_OFF" => debug = false
-        case x => logger.info(s"Don't know what to do with $x yet")
+        case x => logger.info(s"$symbol Don't know what to do with $x yet")
     }
+
+    val sideEffect: PartialFunction[Any, Any] = {
+        case x =>
+            ThreadContext.put("symbol", symbol)
+            x
+    }
+
+    override def receive: Receive = sideEffect andThen _receive
 
     private def sendOrdersToBrowser(): Unit = {
         context.actorSelection(s"../../${WebSocketActor.NAME}") ! s"$symbol: ORDERS: ${orders.toList.toJson.compactPrint}"
@@ -152,7 +160,8 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
         val noConfirmedBuy  = !orders.exists(o => o.state == "confirmed" && o.side == "buy")
         val firstFilledOption = orders.find(_.state == "filled")
         firstFilledOption.foreach { firstFilled =>
-            if (debug) logger.debug(s"""noConfirmedSell: $noConfirmedSell, noConfirmedBuy: $noConfirmedBuy,
+            def printDebug(): Unit =
+                logger.debug(s"""$symbol noConfirmedSell: $noConfirmedSell, noConfirmedBuy: $noConfirmedBuy,
                    |first filled order: ${firstFilled.toJson.compactPrint}
                    |orders:
                    |${orders.toList.toJson.prettyPrint}""".stripMargin)
@@ -162,7 +171,8 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
                     && qo.nonEmpty && qo.get.lastTradePrice > 0.99 * firstFilled.averagePrice
                     && fo.nonEmpty && qo.get.lastTradePrice > 1.015 * fo.get.open
             ) {
-                logger.info(s"You should sell ${firstFilled.quantity} $symbol at ${qo.get.lastTradePrice}.")
+                printDebug()
+                logger.info(s"$symbol You should sell ${firstFilled.quantity} $symbol at ${qo.get.lastTradePrice}.")
                 lastCreatedAt.sell = System.currentTimeMillis
             }
             if (firstFilled.side == "sell"
@@ -171,7 +181,8 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
                     && qo.nonEmpty && qo.get.lastTradePrice < 0.99 * firstFilled.averagePrice
                     && fo.nonEmpty && qo.get.lastTradePrice < 1.025 * fo.get.open
             ) {
-                logger.info(s"You should buy ${firstFilled.quantity} $symbol at ${qo.get.lastTradePrice}.")
+                printDebug()
+                logger.info(s"$symbol You should buy ${firstFilled.quantity} $symbol at ${qo.get.lastTradePrice}.")
                 lastCreatedAt.buy = System.currentTimeMillis
             }
         }
@@ -179,7 +190,9 @@ class StockActor(symbol: String) extends Actor with Timers with ActorLogging {
         if (firstFilledOption.isEmpty && fo.nonEmpty
                 && qo.nonEmpty && qo.get.lastTradePrice < 0.97 * fo.get.open
                 && (System.currentTimeMillis - lastCreatedAt.buy > 15000) ) {
-            logger.info(s"You should buy 1 $symbol at ${qo.get.lastTradePrice}")
+            logger.debug(s"""orders:
+                 |${orders.toList.toJson.prettyPrint}""".stripMargin)
+            logger.info(s"$symbol You should buy 1 $symbol at ${qo.get.lastTradePrice}")
             lastCreatedAt.buy = System.currentTimeMillis
         }
     }

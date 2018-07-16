@@ -1,7 +1,7 @@
 package home.sparkjava
 
 import scala.concurrent.duration._
-import akka.actor.{Actor, ActorLogging, ActorRef, Props, Timers}
+import akka.actor.{Actor, Props, Timers}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model._
@@ -9,18 +9,16 @@ import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.util.ByteString
 import com.typesafe.config.Config
-import com.typesafe.scalalogging.Logger
+import org.apache.logging.log4j.scala.Logging
 
 object QuoteActor {
     val NAME = "quoteActor"
     def props(config: Config): Props = Props(new QuoteActor(config))
 }
 
-class QuoteActor(config: Config) extends Actor with Timers with ActorLogging with Util {
+class QuoteActor(config: Config) extends Actor with Timers with Logging with Util {
     import akka.pattern.pipe
     import context.dispatcher
-
-    val logger: Logger = Logger[QuoteActor]
 
     implicit val materializer: ActorMaterializer = ActorMaterializer(ActorMaterializerSettings(context.system))
 
@@ -53,7 +51,7 @@ class QuoteActor(config: Config) extends Actor with Timers with ActorLogging wit
          */
         case HttpResponse(statusCode, _, entity, _) =>
             entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
-                log.error(s"Error in getting quotes: $statusCode, body: ${body.utf8String}")
+                logger.error(s"Error in getting quotes: $statusCode, body: ${body.utf8String}")
             }
         case "DEBUG_ON" => debug = true
         case "DEBUG_OFF" => debug = false
