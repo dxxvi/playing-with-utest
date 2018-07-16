@@ -16,7 +16,7 @@
         <scala.version.major>2.12</scala.version.major>
         <scala.version.minor>6</scala.version.minor>
         <scala.version>${scala.version.major}.${scala.version.minor}</scala.version>
-        <akka.version>2.5.13</akka.version>
+        <akka.version>2.5.14</akka.version>
         <akka.http.version>10.1.3</akka.http.version>
         <upickle.version>0.6.6</upickle.version>
     </properties>
@@ -52,6 +52,11 @@
                     <artifactId>scala-java8-compat_${scala.version.major}</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-slf4j_${scala.version.major}</artifactId>
+            <version>${akka.version}</version>
         </dependency>
         <dependency>
             <groupId>org.scala-lang.modules</groupId>
