@@ -4,16 +4,12 @@
         <Console name="ConsoleAppender" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n%throwable"/>
         </Console>
-        <File name="MyFile" fileName="/dev/shm/robinhood.log">
-            <PatternLayout>
-                <Pattern>%d{MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n%throwable</Pattern>
-            </PatternLayout>
-        </File>
-        <Async name="Async"><AppenderRef ref="MyFile"/><LinkedTransferQueue/></Async>
-        <Routing>
-            <Routes>
+        <Routing name="StockActor">
+            <Routes pattern="$${ctx:symbol}">
                 <Route>
-
+                    <File name="" fileName="/dev/shm/${ctx:symbol}.log">
+                        <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n%throwable"/>
+                    </File>
                 </Route>
             </Routes>
         </Routing>
@@ -21,14 +17,7 @@
     <Loggers>
         <Logger name="home" level="DEBUG" additivity="false">
             <AppenderRef ref="ConsoleAppender" />
-            <AppenderRef ref="Async" />
         </Logger>
-<!--
-        <Logger name="home.sparkJava.StockActor" level="DEBUG" additivity="false">
-            <AppenderRef ref="ConsoleAppender" />
-            <AppenderRef ref="Async" />
-        </Logger>
--->
         <Logger name="org.eclipse.jetty" level="INFO" additivity="false">
             <AppenderRef ref="ConsoleAppender" />
         </Logger>
