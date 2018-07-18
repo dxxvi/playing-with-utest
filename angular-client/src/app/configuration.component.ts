@@ -1,8 +1,7 @@
 import {Component, ElementRef, OnDestroy, OnInit} from '@angular/core';
 import {WebsocketService} from './websocket.service';
 import {Subscription} from 'rxjs';
-import * as Highcharts from 'highcharts';
-import {Gradient} from "highcharts";
+import * as Highcharts from 'highcharts/highstock';
 
 @Component({
   selector: 'div.configuration',
@@ -39,7 +38,6 @@ export class ConfigurationComponent implements OnInit, OnDestroy {
   private subscription: Subscription;
   private hc: any;
   private cdiv: any;
-  private chart: any = null;
 
   constructor(private el: ElementRef, private websocketService: WebsocketService) { }
 
@@ -56,46 +54,63 @@ export class ConfigurationComponent implements OnInit, OnDestroy {
         this.compound = JSON.parse(message.text.substr(i + 2));
         this.compound.symbol = message.text.substring(0, i);
         this.hc.innerHTML = '';
+        this.hc.removeAttribute('style');
         if (this.compound != null && this.compound.quotes != null) {
           this.cdiv.style.width = document.body.clientWidth / 2 - 50 + 'px';
           setTimeout(() => {
-            const colorIndex = 0;
-            const highchartsData = this.compound.quotes.map(q => {
-              const a = q.beginsAt.split(/[TZ:-]/);
-              return [Date.UTC(parseInt(a[0]), parseInt(a[1])-1, parseInt(a[2]), parseInt(a[3]), parseInt(a[4]), parseInt(a[5])), q.openPrice];
-            });
-
             this.hc.style.width = this.cdiv.clientWidth - 20 + 'px';
             this.hc.style.height = this.cdiv.clientHeight + 'px';
-            this.chart = Highcharts.chart(this.hc, {
-              chart: { zoomType: 'x' },
-              credits: { enabled: false },
-              plotOptions: {
-                area: {
-                  fillColor: {
-                    linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1},
-                    stops: [
-                      [0, Highcharts.getOptions().colors[colorIndex]],
-                      [1, this.hexToRGBA(Highcharts.getOptions().colors[colorIndex], 0)]
-                    ]
-                  },
-                  lineWidth: 1,
-                  states: { hover: { lineWidth: 1 }},
-                  threshold: null
-                }
-              },
-              title: { text: null },
-              xAxis: { type: 'datetime' },
-              yAxis: { title: { text: null } },
-              legend: { enabled: false },
-              series: [{
-                type: 'area',
-                name: 'seriesX',
-                color: Highcharts.getOptions().colors[0],
-                data: []
-              }]
+
+            const colorIndex = 0;
+            const highchartsData: Array<Array<number>> = this.compound.quotes.map(q => {
+              const a = q.beginsAt.split(/[TZ:-]/);
+              const m = Date.UTC(parseInt(a[0]), parseInt(a[1])-1, parseInt(a[2]), parseInt(a[3]), parseInt(a[4]));
+              return [m, q.openPrice];
             });
-            this.chart.series[0].setData(highchartsData);
+
+            if (highchartsData.length === 0) {
+              return;
+            }
+
+            const firstDate: Date = new Date(0);
+            firstDate.setUTCMilliseconds(highchartsData[0][0]);
+            const delta = 5 - firstDate.getUTCDay();
+            const breaks: Array<{from: number, to: number, repeat: number}> = [{
+              from: Date.UTC(firstDate.getUTCFullYear(), firstDate.getUTCMonth(), firstDate.getUTCDate(), 20),
+              to: Date.UTC(firstDate.getUTCFullYear(), firstDate.getUTCMonth(), firstDate.getUTCDate() + 1, 13, 30),
+              repeat: 24 * 36e5
+            }, {
+              from: Date.UTC(firstDate.getUTCFullYear(), firstDate.getUTCMonth(), firstDate.getUTCDate() + delta, 20),
+              to: Date.UTC(firstDate.getUTCFullYear(), firstDate.getUTCMonth(), firstDate.getUTCDate() + delta + 2, 13, 30),
+              repeat: 7 * 24 * 36e5
+            }];
+            console.dir(breaks);
+
+            const chartOptions: any = {
+              credits: { enabled: false },
+              rangeSelector: { enabled: false },
+              scrollbar: { enabled: false },
+              title: {},
+              xAxis: {
+                breaks: breaks
+              },
+              series: [{
+                name: null,
+                type: 'area',
+                gapSize: 3,
+                lineWidth: 1,
+                threshold: null,
+                fillColor: {
+                  linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
+                  stops: [
+                    [0, Highcharts.getOptions().colors[colorIndex]],
+                    [1, Highcharts.Color(Highcharts.getOptions().colors[colorIndex]).setOpacity(0).get('rgba')]
+                  ]
+                },
+                data:highchartsData
+              }]
+            };
+            Highcharts.stockChart(this.hc, chartOptions);
           }, 1904);  // wait a bit for the cdiv having clientWidth and clientHeight
         }
       }
@@ -132,6 +147,7 @@ export class ConfigurationComponent implements OnInit, OnDestroy {
     this.compound = null;
     this.cdiv.style.width = 'auto';
     this.hc.innerHTML = '';
+    this.hc.removeAttribute('style');
   }
 
   sendMessageToBrowser() {
@@ -160,14 +176,5 @@ export class ConfigurationComponent implements OnInit, OnDestroy {
         this.symbol = null;
       }, 3456);
     }
-  }
-
-  private hexToRGBA(hex: string|Gradient, opacity: number): string {
-    if (typeof hex === 'string') {
-      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-      return 'rgba(' + parseInt(result[1], 16) + ', ' + parseInt(result[2], 16) + ', ' + parseInt(result[3], 16) +
-        ', ' + opacity + ')';
-    }
-    return 'rgba(255, 255, 255, 0)';
   }
 }

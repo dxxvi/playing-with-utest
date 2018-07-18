@@ -38,6 +38,7 @@ import {
   MatStepperModule, MatTableModule, MatTabsModule, MatToolbarModule, MatTooltipModule, MatTreeModule
 } from '@angular/material';
 import {PipeModule} from './pipe.module';
+import { HighchartsChartModule } from 'highcharts-angular';
 
 @NgModule({
   exports: [
@@ -88,7 +89,7 @@ export class MaterialModule {}
     ConfigurationComponent
   ],
   imports: [
-    BrowserModule, FormsModule, MaterialModule, BrowserAnimationsModule, PipeModule.forRoot()
+    BrowserModule, FormsModule, MaterialModule, BrowserAnimationsModule, PipeModule.forRoot(), HighchartsChartModule
   ],
   providers: [],
   bootstrap: [AppComponent]
