@@ -4,6 +4,10 @@
         <Console name="ConsoleAppender" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n%throwable"/>
         </Console>
+        <Console name="ConsoleAppenderStockActor" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n%throwable"/>
+            <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+        </Console>
         <Routing name="StockActor">
             <Routes pattern="${ctx:symbol}">
                 <Route>
@@ -27,12 +31,10 @@
         </Logger>
         <Logger name="home.akka.Log4jActor" level="DEBUG" additivity="false">
             <AppenderRef ref="StockActor"/>
+            <AppenderRef ref="ConsoleAppenderStockActor"/>
         </Logger>
         <Logger name="home.sparkjava.StockActor" level="DEBUG" additivity="false">
             <AppenderRef ref="StockActor"/>
-        </Logger>
-        <Logger name="org.eclipse.jetty" level="INFO" additivity="false">
-            <AppenderRef ref="ConsoleAppender" />
         </Logger>
         <Root level="DEBUG">
             <AppenderRef ref="ConsoleAppender"/>

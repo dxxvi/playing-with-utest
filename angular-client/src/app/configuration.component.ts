@@ -76,11 +76,11 @@ export class ConfigurationComponent implements OnInit, OnDestroy {
             firstDate.setUTCMilliseconds(highchartsData[0][0]);
             const delta = 5 - firstDate.getUTCDay();
             const breaks: Array<{from: number, to: number, repeat: number}> = [{
-              from: Date.UTC(firstDate.getUTCFullYear(), firstDate.getUTCMonth(), firstDate.getUTCDate(), 20),
+              from: Date.UTC(firstDate.getUTCFullYear(), firstDate.getUTCMonth(), firstDate.getUTCDate(), 19, 55),
               to: Date.UTC(firstDate.getUTCFullYear(), firstDate.getUTCMonth(), firstDate.getUTCDate() + 1, 13, 30),
               repeat: 24 * 36e5
             }, {
-              from: Date.UTC(firstDate.getUTCFullYear(), firstDate.getUTCMonth(), firstDate.getUTCDate() + delta, 20),
+              from: Date.UTC(firstDate.getUTCFullYear(), firstDate.getUTCMonth(), firstDate.getUTCDate() + delta, 19, 55),
               to: Date.UTC(firstDate.getUTCFullYear(), firstDate.getUTCMonth(), firstDate.getUTCDate() + delta + 2, 13, 30),
               repeat: 7 * 24 * 36e5
             }];

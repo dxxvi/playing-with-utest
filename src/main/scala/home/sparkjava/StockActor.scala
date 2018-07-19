@@ -56,11 +56,10 @@ class StockActor(symbol: String) extends Actor with Timers with Logging {
         case Tick if orders.nonEmpty =>
 //            logger.debug(s"$symbol Trimming orders")
             trimOrders()
-            checkToBuyOrSell()
-            logger.debug(s"$symbol Update orders with match id")
             updateOrdersWithMatchId()
-            logger.debug(s"$symbol Update orders with match id 2")
             updateOrdersWithMatchId2()
+            checkToBuyOrSell(orders.filter(o => o.matchId == ""))
+            checkToBuyOrSell(orders)
 //            logger.debug(s"$symbol Sending all orders enriched with matchIds to browser")
             sendOrdersToBrowser()
         case Tick =>  // do nothing
@@ -155,20 +154,20 @@ class StockActor(symbol: String) extends Actor with Timers with Logging {
         }
     }
 
-    private def checkToBuyOrSell() {
-        val noConfirmedSell = !orders.exists(o => o.state == "confirmed" && o.side == "sell")
-        val noConfirmedBuy  = !orders.exists(o => o.state == "confirmed" && o.side == "buy")
-        val firstFilledOption = orders.find(_.state == "filled")
+    private def checkToBuyOrSell(_orders: collection.mutable.SortedSet[Order]) {
+        val noConfirmedSell = !_orders.exists(o => o.state == "confirmed" && o.side == "sell")
+        val noConfirmedBuy  = !_orders.exists(o => o.state == "confirmed" && o.side == "buy")
+        val firstFilledOption = _orders.find(_.state == "filled")
         firstFilledOption.foreach { firstFilled =>
             def printDebug(): Unit =
                 logger.debug(s"""$symbol noConfirmedSell: $noConfirmedSell, noConfirmedBuy: $noConfirmedBuy,
                    |first filled order: ${firstFilled.toJson.compactPrint}
                    |orders:
-                   |${orders.toList.toJson.prettyPrint}""".stripMargin)
+                   |${_orders.toList.toJson.prettyPrint}""".stripMargin)
             if (firstFilled.side == "buy"
                     && (System.currentTimeMillis - lastCreatedAt.sell > 15000)
                     && noConfirmedSell
-                    && qo.nonEmpty && qo.get.lastTradePrice > 0.99 * firstFilled.averagePrice
+                    && qo.nonEmpty && qo.get.lastTradePrice > 1.02 * firstFilled.averagePrice
                     && fo.nonEmpty && qo.get.lastTradePrice > 1.015 * fo.get.open
             ) {
                 printDebug()
@@ -178,7 +177,7 @@ class StockActor(symbol: String) extends Actor with Timers with Logging {
             if (firstFilled.side == "sell"
                     && (System.currentTimeMillis - lastCreatedAt.buy > 15000)
                     && noConfirmedBuy
-                    && qo.nonEmpty && qo.get.lastTradePrice < 0.99 * firstFilled.averagePrice
+                    && qo.nonEmpty && qo.get.lastTradePrice < 0.98 * firstFilled.averagePrice
                     && fo.nonEmpty && qo.get.lastTradePrice < 1.025 * fo.get.open
             ) {
                 printDebug()
@@ -191,7 +190,7 @@ class StockActor(symbol: String) extends Actor with Timers with Logging {
                 && qo.nonEmpty && qo.get.lastTradePrice < 0.97 * fo.get.open
                 && (System.currentTimeMillis - lastCreatedAt.buy > 15000) ) {
             logger.debug(s"""orders:
-                 |${orders.toList.toJson.prettyPrint}""".stripMargin)
+                 |${_orders.toList.toJson.prettyPrint}""".stripMargin)
             logger.info(s"$symbol You should buy 1 $symbol at ${qo.get.lastTradePrice}")
             lastCreatedAt.buy = System.currentTimeMillis
         }
