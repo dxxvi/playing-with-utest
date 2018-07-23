@@ -1,43 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="WARN">
     <Appenders>
-        <Console name="ConsoleAppender" target="SYSTEM_OUT">
+        <Console name="CA1" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n%throwable"/>
         </Console>
-        <Console name="ConsoleAppenderStockActor" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n%throwable"/>
+        <Console name="CA2" target="SYSTEM_OUT">
             <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+            <PatternLayout pattern="%d{MM-dd HH:mm:ss.SSS} %-5level %logger{36} [%t] - %msg%n%throwable"/>
         </Console>
-        <Routing name="StockActor">
+        <File name="Everything" fileName="/dev/shm/robinhood.log">
+            <PatternLayout pattern="%d{MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n%throwable"/>
+        </File>
+        <Routing name="Robinhood">
             <Routes pattern="${ctx:symbol}">
                 <Route>
                     <File name="${ctx:symbol}File" fileName="/dev/shm/${ctx:symbol}.log">
-                        <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n%throwable"/>
+                        <PatternLayout pattern="%d{MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n%throwable"/>
                     </File>
                 </Route>
-                <Route key="${ctx:symbol}" ref="ConsoleAppender"/>
+                <Route key="${ctx:symbol}" ref="Everything"/>
             </Routes>
         </Routing>
-<!--
-        <File name="StockActor" fileName="/dev/shm/robinhood.log">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n%throwable"/>
-        </File>
--->
-        <Async name="AsyncStockActor"><AppenderRef ref="StockActor"/></Async>
     </Appenders>
     <Loggers>
-        <Logger name="home" level="DEBUG" additivity="false">
-            <AppenderRef ref="ConsoleAppender" />
+        <Logger name="org.eclipse.jetty" level="INFO" additivity="false">
+            <AppenderRef ref="CA1" />
         </Logger>
-        <Logger name="home.akka.Log4jActor" level="DEBUG" additivity="false">
-            <AppenderRef ref="StockActor"/>
-            <AppenderRef ref="ConsoleAppenderStockActor"/>
-        </Logger>
-        <Logger name="home.sparkjava.StockActor" level="DEBUG" additivity="false">
-            <AppenderRef ref="StockActor"/>
+        <Logger name="spark" level="INFO" additivity="false">
+            <AppenderRef ref="CA1" />
         </Logger>
         <Root level="DEBUG">
-            <AppenderRef ref="ConsoleAppender"/>
+            <AppenderRef ref="CA2"/>
+            <AppenderRef ref="Robinhood"/>
         </Root>
     </Loggers>
 </Configuration>

@@ -7,9 +7,8 @@ import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.util.ByteString
 import com.typesafe.config.Config
+import org.apache.logging.log4j.ThreadContext
 import org.apache.logging.log4j.scala.Logging
-
-import scala.util.Success
 
 object InstrumentActor {
     val NAME = "instrumentActor"
@@ -27,7 +26,7 @@ class InstrumentActor(config: Config) extends Actor with Logging with Util {
 
     var debug = false
 
-    override def receive: Receive = {
+    val _receive: Receive = {
         case instrument: String =>
             http.singleRequest(HttpRequest(uri = Uri(instrument)), settings = connectionPoolSettings).pipeTo(self)
         case HttpResponse(StatusCodes.OK, _, entity, _) =>
@@ -51,4 +50,12 @@ class InstrumentActor(config: Config) extends Actor with Logging with Util {
         case "DEBUG_OFF" => debug = false
         case x => logger.debug(s"Don't know what to do with $x yet")
     }
+
+    val sideEffect: PartialFunction[Any, Any] = {
+        case x =>
+            ThreadContext.clearMap()
+            x
+    }
+
+    override def receive: Receive = sideEffect andThen _receive
 }

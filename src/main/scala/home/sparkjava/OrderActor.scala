@@ -15,6 +15,7 @@ import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.util.ByteString
 import com.typesafe.config.Config
 import home.sparkjava.model.Order
+import org.apache.logging.log4j.ThreadContext
 import org.apache.logging.log4j.scala.Logging
 
 import scala.util.{Failure, Success}
@@ -42,36 +43,44 @@ class OrderActor(config: Config) extends Actor with Timers with Logging with Uti
     val connectionPoolSettings: ConnectionPoolSettings = getConnectionPoolSettings(config, context.system)
 
     val symbols: collection.mutable.Set[String] = collection.mutable.Set[String]()
+    val waitingAllOrderResponseSymbols: collection.mutable.Set[String] = collection.mutable.Set[String]()
     val http = Http(context.system)
 
     val today: String = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
     var debug = false
     timers.startPeriodicTimer(Tick, Tick, 4019.millis)
 
-    override def receive: Receive = {
+    val _receive: Receive = {
         case x: AddSymbol => symbols += x.symbol.toUpperCase
         case x: RemoveSymbol => symbols -= x.symbol.toUpperCase
         case AllOrders.Get(symbol) =>
-            Main.instrument2Symbol.collectFirst {
-                case (instrument, _symbol) if _symbol == symbol => instrument
-            } foreach { instrument =>
-                val uri = Uri(SERVER + "orders/") withQuery Query(("instrument", instrument))
-                val httpRequest = HttpRequest(uri = uri) withHeaders RawHeader("Authorization", authorization)
-                http.singleRequest(httpRequest, settings = connectionPoolSettings)
-                        .map { AllOrdersResponse(_, symbol) }
-                        .pipeTo(self)
+            if (waitingAllOrderResponseSymbols.size < 9) {
+                waitingAllOrderResponseSymbols += symbol
+                Main.instrument2Symbol.collectFirst {
+                    case (instrument, _symbol) if _symbol == symbol => instrument
+                } foreach { instrument =>
+                    val uri = Uri(SERVER + "orders/") withQuery Query(("instrument", instrument))
+                    val httpRequest = HttpRequest(uri = uri) withHeaders RawHeader("Authorization", authorization)
+                    http.singleRequest(httpRequest, settings = connectionPoolSettings)
+                            .map {
+                                AllOrdersResponse(_, symbol)
+                            }
+                            .pipeTo(self)
+                }
             }
-        case AllOrdersResponse(httpResonse, symbol) => httpResonse match {
-            case HttpResponse(StatusCodes.OK, _, entity, _) =>
-                entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
-                    context.actorSelection(s"../${MainActor.NAME}/symbol-$symbol") !
-                      AllOrders.Here(getOrders(body.utf8String).filter(o => o.state == "filled" || o.state == "confirmed"))
-                }
-            case HttpResponse(statusCode, _, entity, _) =>
-                entity.dataBytes.runFold(ByteString(""))(_ ++ _) foreach { body =>
-                    logger.error(s"Error in getting orders for $symbol: $statusCode, body: ${body.utf8String}")
-                }
-        }
+        case AllOrdersResponse(httpResonse, symbol) =>
+            waitingAllOrderResponseSymbols -= symbol
+            httpResonse match {
+                case HttpResponse(StatusCodes.OK, _, entity, _) =>
+                    entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
+                        context.actorSelection(s"../${MainActor.NAME}/symbol-$symbol") !
+                          AllOrders.Here(getOrders(body.utf8String).filter(o => o.state == "filled" || o.state == "confirmed"))
+                    }
+                case HttpResponse(statusCode, _, entity, _) =>
+                    entity.dataBytes.runFold(ByteString(""))(_ ++ _) foreach { body =>
+                        logger.error(s"Error in getting orders for $symbol: $statusCode, body: ${body.utf8String}")
+                    }
+            }
         case Tick if symbols.nonEmpty =>
             val httpRequest = HttpRequest(uri = Uri(SERVER + "orders/")) withHeaders RawHeader("Authorization", authorization)
             http.singleRequest(httpRequest, settings = connectionPoolSettings) pipeTo self
@@ -105,6 +114,14 @@ class OrderActor(config: Config) extends Actor with Timers with Logging with Uti
         case "DEBUG_OFF" => debug = false
         case x => logger.debug(s"Don't know what to do with $x yet")
     }
+
+    val sideEffect: PartialFunction[Any, Any] = {
+        case x =>
+            ThreadContext.clearMap()
+            x
+    }
+
+    override def receive: Receive = sideEffect andThen _receive
 
     private def sendBuySellRequest(action: String, symbol: String, quantity: Int, price: Double) {
         def createJsonString(action: String, instrument: String, symbol: String, quantity: Int, price: Double): String = {

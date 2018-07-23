@@ -7,6 +7,7 @@ import akka.stream.scaladsl.{Sink, Source}
 import home.Util
 import org.apache.logging.log4j.ThreadContext
 import org.apache.logging.log4j.scala.{Logger, Logging}
+import org.slf4j.LoggerFactory
 import utest._
 
 import _root_.scala.concurrent.duration._
@@ -35,10 +36,10 @@ object AkkaTests extends TestSuite {
             implicit val materializer: ActorMaterializer = ActorMaterializer()
 
             val random = new Random
-            Seq("AMD", "HTZ", "ON", "CY", "TSLA", "RRD").foreach { symbol =>
+            Seq("AMD", "HTZ", "CY", "TSLA").foreach { symbol =>
                 actorSystem.actorOf(Log4jActor.props(symbol, (2345 + random.nextInt(6)*678).millis), symbol)
             }
-            Thread.sleep(41982)
+            Thread.sleep(19482)
             actorSystem.terminate()
         }
 
@@ -63,9 +64,14 @@ object Log4jActor {
 class Log4jActor(symbol: String, interval: FiniteDuration) extends Actor with Timers with Logging {
     timers.startPeriodicTimer(symbol, symbol, interval)
 
+
     override def receive: Receive = {
         case _ =>
-            ThreadContext.put("symbol", symbol)
+            if (symbol == "AMD" || symbol == "HTZ") ThreadContext.put("symbol", symbol)
+            else ThreadContext.clearMap()
+
             logger.debug(s"Hi $symbol! ${System.currentTimeMillis() % 9999}")
+            logger.info(s"$symbol! ${System.currentTimeMillis() % 9999}")
+            logger.warn(s"$symbol! ${System.currentTimeMillis() % 9999}")
     }
 }
