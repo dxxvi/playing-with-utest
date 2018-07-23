@@ -14,7 +14,7 @@ export class MoneyFormatterPipe implements PipeTransform {
     const stringA: string = (a < 10 ? '   ' : (a < 100 ? '  ' : (a < 1000 ? ' ' : ''))) + a;
     const stringB: string = (b < 10 ? '0' : '') + b;
     const result = stringA + '.' + stringB;
-    console.log(`result: -${result}-`)
+    console.log(`result: -${result}-`);
     return result;
   }
 }

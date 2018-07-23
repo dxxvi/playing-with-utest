@@ -9,6 +9,7 @@ import {Subscription} from 'rxjs';
 })
 export class AppComponent implements OnInit, OnDestroy {
   symbols: Array<string> = [];
+  notices: Array<{uuid: string, message: string, level: string}> = [];
   private symbolFoundSubscription: Subscription;
 
   constructor(private websocketService: WebsocketService) {
@@ -39,6 +40,12 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
+  newNotice() {
+    const message = Date.now() + ' ';
+    const level = 'debug';
+    this.notices.push({uuid: this.generateUUID(), message: message, level: level});
+  }
+
   removeSymbol(symbol: string) {
     const i = this.symbols.findIndex(e => e === symbol);
     if (i >= 0) this.symbols.splice(i, 1);
@@ -46,5 +53,18 @@ export class AppComponent implements OnInit, OnDestroy {
 
   trackByFunction(i: number, symbol: string): string {
     return symbol;
+  }
+
+  trackByNoticeFunction(i: number, n: {uuid: string, message: string, level: string}): string {
+    return n.message;
+  }
+
+  private generateUUID(): string {
+    const s4 = function(): string {
+      return Math.floor((1 + Math.random()) * 0x10000)
+      .toString(16)
+      .substring(1);
+    };
+    return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
   }
 }

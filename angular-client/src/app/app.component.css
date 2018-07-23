@@ -8,3 +8,10 @@ ol > li.stock-panel {
   border: 1px solid #ccc; border-radius: .3em; padding: .5em 1em; margin: 1em; box-shadow: .2em .2em .5em #aaa;
   background-color: #fff;
 }
+
+div.notice-container { z-index: 99; position: fixed; top: .2em; right: 1em; text-align: right; }
+div.notice {
+  margin-top: .8em; border-radius: .25em; border: 1px solid #b8daff;
+  background: linear-gradient(#cce5ff, #e2f0ff, #cce5ff);
+  color: #004085; padding: .4em; box-shadow: -.4em .3em .4em #ccc;
+}

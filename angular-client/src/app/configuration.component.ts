@@ -129,8 +129,16 @@ export class ConfigurationComponent implements OnInit, OnDestroy {
   }
 
   clickConfiguration() {
+    if (this.open) {
+      this.removeFundamentalReviewSymbol();
+    }
     this.open = !this.open;
     this.el.nativeElement.style.position = this.open ? 'static' : 'fixed';
+    if (this.open) {
+      setTimeout(() => {
+        this.el.nativeElement.scrollIntoView({ behavior: 'smooth' });
+      }, 419);
+    }
   }
 
   getFundamental() {

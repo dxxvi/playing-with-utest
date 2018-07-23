@@ -39,9 +39,17 @@ import {
 } from '@angular/material';
 import {PipeModule} from './pipe.module';
 import { HighchartsChartModule } from 'highcharts-angular';
+import { NoticeComponent } from './notice/notice.component';
 
 @NgModule({
-  exports: [
+  declarations: [
+    AppComponent,
+    StockComponent,
+    NoticeComponent,
+    ConfigurationComponent
+  ],
+  imports: [
+    BrowserModule, FormsModule,
     MatAutocompleteModule,
     MatBadgeModule,
     MatBottomSheetModule,
@@ -77,19 +85,7 @@ import { HighchartsChartModule } from 'highcharts-angular';
     MatToolbarModule,
     MatTooltipModule,
     MatTreeModule,
-  ],
-  declarations: []
-})
-export class MaterialModule {}
-
-@NgModule({
-  declarations: [
-    AppComponent,
-    StockComponent,
-    ConfigurationComponent
-  ],
-  imports: [
-    BrowserModule, FormsModule, MaterialModule, BrowserAnimationsModule, PipeModule.forRoot(), HighchartsChartModule
+    BrowserAnimationsModule, PipeModule.forRoot(), HighchartsChartModule
   ],
   providers: [],
   bootstrap: [AppComponent]
