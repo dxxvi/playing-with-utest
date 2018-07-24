@@ -9,6 +9,8 @@
   <div class="notice" *ngFor="let n of notices; trackBy: trackByNoticeFunction"
        [uuid]="n.uuid"></div>
 -->
-  <div class="notice" *ngFor="let n of notices; trackBy: trackByNoticeFunction"
+  <div class="notice"
+       *ngFor="let n of notices; trackBy: trackByNoticeFunction"
+       [ngClass]="calculateNoticeClass(n.level)"
        [uuid]="n.uuid" [message]="n.message" [level]="n.level"></div>
 </div>

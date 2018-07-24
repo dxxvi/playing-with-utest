@@ -42,6 +42,10 @@ export class WebsocketService {
       this.sendMessageThroughSubject('FUNDAMENTAL_REVIEW', message.replace('FUNDAMENTAL_REVIEW: ', ''));
       // the sent message looks like this: AMD: {...}
     }
+    else if (message.includes('NOTICE: ')) {
+      // the message looks like NOTICE: PRIMARY/DANGER: You should ...
+      this.sendMessageThroughSubject('NOTICE_ADD', message.replace('NOTICE: ', ''));
+    }
     else {
       const symbol = message.substring(0, i);
       const rest   = message.substr(i + 2);
