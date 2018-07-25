@@ -1,4 +1,5 @@
 import {Component, Input, OnInit} from '@angular/core';
+import {WebsocketService} from "../websocket.service";
 
 @Component({
   selector: 'div.notice',
@@ -10,9 +11,11 @@ export class NoticeComponent implements OnInit {
   @Input() message: string;
   @Input() level: string;
 
-  constructor() { }
+  constructor(private websocketService: WebsocketService) { }
 
   ngOnInit() {
+    setTimeout(() => {
+      this.websocketService.sendMessageThroughSubject('NOTICE_DELETE', this.uuid);
+    }, 3456);
   }
-
 }

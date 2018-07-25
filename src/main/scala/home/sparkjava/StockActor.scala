@@ -167,23 +167,35 @@ class StockActor(symbol: String) extends Actor with Timers with Logging {
             if (firstFilled.side == "buy"
                     && (System.currentTimeMillis - lastCreatedAt.sell > 15000)
                     && noConfirmedSell
-                    && qo.nonEmpty && qo.get.lastTradePrice > 1.02 * firstFilled.averagePrice
+                    && qo.nonEmpty && qo.get.lastTradePrice > 1.01 * firstFilled.averagePrice
                     && fo.nonEmpty && qo.get.lastTradePrice > 1.015 * fo.get.open
             ) {
                 printDebug()
-                val message = s"$symbol You should sell ${firstFilled.quantity} $symbol at ${qo.get.lastTradePrice}."
+                val message = s"You should sell ${firstFilled.quantity} $symbol at ${qo.get.lastTradePrice}."
                 logger.info(message)
                 context.actorSelection(s"../../${WebSocketActor.NAME}") ! s"NOTICE: PRIMARY: $message"
                 lastCreatedAt.sell = System.currentTimeMillis
             }
+            if (firstFilled.side == "buy" && firstFilled.matchId == ""
+                    && (System.currentTimeMillis - lastCreatedAt.buy > 15000)
+                    && noConfirmedBuy
+                    && qo.nonEmpty && qo.get.lastTradePrice < 0.97 * firstFilled.averagePrice
+                    && fo.nonEmpty && qo.get.lastTradePrice < 0.98 * fo.get.open
+            ) {
+                printDebug()
+                val message = s"You should buy ${firstFilled.quantity + 1 + (20/qo.get.lastTradePrice).toInt} $symbol at ${qo.get.lastTradePrice}."
+                logger.info(message)
+                context.actorSelection(s"../../${WebSocketActor.NAME}") ! s"NOTICE: DANGER: $message"
+                lastCreatedAt.buy = System.currentTimeMillis
+            }
             if (firstFilled.side == "sell"
                     && (System.currentTimeMillis - lastCreatedAt.buy > 15000)
                     && noConfirmedBuy
-                    && qo.nonEmpty && qo.get.lastTradePrice < 0.98 * firstFilled.averagePrice
-                    && fo.nonEmpty && qo.get.lastTradePrice < 1.025 * fo.get.open
+                    && qo.nonEmpty && qo.get.lastTradePrice < 0.97 * firstFilled.averagePrice
+                    && fo.nonEmpty && qo.get.lastTradePrice < 0.98 * fo.get.open
             ) {
                 printDebug()
-                val message = s"$symbol You should buy ${firstFilled.quantity} $symbol at ${qo.get.lastTradePrice}."
+                val message = s"You should buy ${firstFilled.quantity} $symbol at ${qo.get.lastTradePrice}."
                 logger.info(message)
                 context.actorSelection(s"../../${WebSocketActor.NAME}") ! s"NOTICE: DANGER: $message"
                 lastCreatedAt.buy = System.currentTimeMillis

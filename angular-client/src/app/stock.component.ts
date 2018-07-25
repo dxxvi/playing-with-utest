@@ -79,7 +79,7 @@ export class StockComponent implements OnInit, OnDestroy {
   calculateClasses(order: Order): string {
     let result = 'row';
     result = result + ' ' + order.side;
-    if (order.state === 'confirmed') {
+    if (order.state === 'confirmed' || order.state === 'unconfirmed') {
       result = result + ' confirmed';
     }
     if (order.matchId && order.matchId != "") {

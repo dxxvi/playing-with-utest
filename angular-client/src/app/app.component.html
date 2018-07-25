@@ -1,5 +1,4 @@
 <div class="configuration" style="display: table;"></div>
-<button (click)="newNotice()">Click</button>
 <ol>
   <li class="stock-panel" *ngFor="let symbol of symbols; trackBy: trackByFunction" [_symbol]="symbol"></li>
 </ol>

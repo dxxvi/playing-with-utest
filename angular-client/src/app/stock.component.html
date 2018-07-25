@@ -31,7 +31,7 @@
     <div class="cell" [title]="order.createdAt" style="text-align: right;">{{ order.quantity }}</div>
     <div class="cell" [title]="order.id" style="font-size: small;">&#8903;</div>
     <div class="cell">{{ order.averagePrice ? order.averagePrice : order.price }}</div>
-    <div class="cell"><span class="button" *ngIf="order.state == 'confirmed'" (click)="cancelOrder(order.id)">&#10008;</span></div>
+    <div class="cell"><span class="button" *ngIf="order.state != 'filled'" (click)="cancelOrder(order.id)">&#10008;</span></div>
   </div>
 </div>
 

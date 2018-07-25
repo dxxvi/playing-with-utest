@@ -34,6 +34,8 @@ export class AppComponent implements OnInit, OnDestroy {
       const i = value.text.indexOf(': ');
       if (i > 0) {
         const level = value.text.substring(0, i).toLowerCase();
+        const message = value.text.substr(i + 2);
+        this.notices.push({uuid: this.generateUUID(), message: message, level: level});
       }
       else {
         console.error(`Unknown notice format: ${value.text}`)
@@ -41,7 +43,7 @@ export class AppComponent implements OnInit, OnDestroy {
     });
 
     this.noticeDeleteSubscription = this.websocketService.getSubject('NOTICE_DELETE').asObservable().subscribe(value => {
-
+      this.removeNotice(value.text);
     });
   }
 
@@ -68,12 +70,6 @@ export class AppComponent implements OnInit, OnDestroy {
     else {
       return ['light'];
     }
-  }
-
-  newNotice() {
-    const message = Date.now() + ' ';
-    const level = 'debug';
-    this.notices.push({uuid: this.generateUUID(), message: message, level: level});
   }
 
   removeNotice(uuid: string) {
