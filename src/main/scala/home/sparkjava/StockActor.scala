@@ -171,7 +171,7 @@ class StockActor(symbol: String) extends Actor with Timers with Logging {
                     && fo.nonEmpty && qo.get.lastTradePrice > 1.015 * fo.get.open
             ) {
                 printDebug()
-                val message = s"You should sell ${firstFilled.quantity} $symbol at ${qo.get.lastTradePrice}."
+                val message = s"You should sell ${firstFilled.quantity.toInt} $symbol at ${qo.get.lastTradePrice}."
                 logger.info(message)
                 context.actorSelection(s"../../${WebSocketActor.NAME}") ! s"NOTICE: PRIMARY: $message"
                 lastCreatedAt.sell = System.currentTimeMillis
@@ -183,7 +183,7 @@ class StockActor(symbol: String) extends Actor with Timers with Logging {
                     && fo.nonEmpty && qo.get.lastTradePrice < 0.98 * fo.get.open
             ) {
                 printDebug()
-                val message = s"You should buy ${firstFilled.quantity + 1 + (20/qo.get.lastTradePrice).toInt} $symbol at ${qo.get.lastTradePrice}."
+                val message = s"You should buy ${firstFilled.quantity.toInt + 1 + (20/qo.get.lastTradePrice).toInt} $symbol at ${qo.get.lastTradePrice}."
                 logger.info(message)
                 context.actorSelection(s"../../${WebSocketActor.NAME}") ! s"NOTICE: DANGER: $message"
                 lastCreatedAt.buy = System.currentTimeMillis
@@ -195,7 +195,7 @@ class StockActor(symbol: String) extends Actor with Timers with Logging {
                     && fo.nonEmpty && qo.get.lastTradePrice < 0.98 * fo.get.open
             ) {
                 printDebug()
-                val message = s"You should buy ${firstFilled.quantity} $symbol at ${qo.get.lastTradePrice}."
+                val message = s"You should buy ${firstFilled.quantity.toInt} $symbol at ${qo.get.lastTradePrice}."
                 logger.info(message)
                 context.actorSelection(s"../../${WebSocketActor.NAME}") ! s"NOTICE: DANGER: $message"
                 lastCreatedAt.buy = System.currentTimeMillis

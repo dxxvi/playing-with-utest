@@ -7,17 +7,15 @@
   </div>
 </div>
 <form class="buy-sell">
-  <mat-form-field style="width: 3em;">
-    <input matInput name="quantity" type="number" [(ngModel)]="buysell.quantity">
-  </mat-form-field>
+  <input name="quantity" type="number" [(ngModel)]="buysell.quantity" style="width: 3em;"
+         class="form-control">
   &nbsp;
-  <mat-form-field style="width: 4em;">
-    <input matInput placeholder="Price" name="price" type="number" step="0.01" [(ngModel)]="buysell.price">
-  </mat-form-field>
+  <input placeholder="Price" name="price" type="number" step="0.01" [(ngModel)]="buysell.price" style="width: 4em;"
+         class="form-control">
   &nbsp;
-  <button mat-button (click)="buySell()"
+  <button (click)="buySell()" class="btn btn-primary"
           [disabled]="buysell.quantity == null || buysell.price == null || buysell.quantity < 0 || buysell.price < 0">
-    Buy / Sell
+    Bu / Se
   </button>
   &nbsp;
   <span class="button" (click)="toggleShowMatchedTransactions()">

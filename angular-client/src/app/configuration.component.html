@@ -1,23 +1,19 @@
 <div style="display: table-row;">
   <div class="c" [ngStyle]="{'display': open ? 'table-cell' : 'none'}">
           <form>
-            <mat-form-field style="width: 15em;">
-              <input matInput placeholder="Message" name="message" [(ngModel)]="message">
-            </mat-form-field>
+            <input style="width: 27em;" class="form-control" placeholder="Message" name="message" [(ngModel)]="message">
             &nbsp;
-            <button mat-button (click)="sendMessageToBrowser()">Send to Browser</button>
+            <button class="btn btn-primary" (click)="sendMessageToBrowser()">Send to Browser</button>
             &nbsp;
-            <button mat-button (click)="sendMessageToServer()">Send to Server</button>
-            <br/>
-            <mat-form-field style="width: 4em;">
-              <input matInput placeholder="Symbol" name="symbol" [(ngModel)]="symbol">
-            </mat-form-field>
+            <button class="btn btn-primary" (click)="sendMessageToServer()">Send to Server</button>
+            <br/><br/>
+            <input style="width: 5em;" class="form-control" placeholder="Symbol" name="symbol" [(ngModel)]="symbol">
             &nbsp;
-            <button mat-button (click)="setDebug(true)">DEBUG_ON</button>
+            <button class="btn btn-primary" (click)="setDebug(true)">DEBUG_ON</button>
             &nbsp;
-            <button mat-button (click)="setDebug(false)">DEBUG_OFF</button>
+            <button class="btn btn-primary" (click)="setDebug(false)">DEBUG_OFF</button>
             &nbsp;
-            <button mat-button (click)="getFundamental()">Fundamental</button>
+            <button class="btn btn-primary" (click)="getFundamental()">Fundamental</button>
           </form>
           <table *ngIf="compound != null">
             <tr>
