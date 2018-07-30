@@ -8,6 +8,8 @@ import home.sparkjava.model.{Fundamental, Order, Position, Quote}
 import org.apache.logging.log4j.ThreadContext
 import org.apache.logging.log4j.scala.Logging
 
+import scala.util.Random
+
 object StockActor {
     def props(symbol: String): Props = Props(new StockActor(symbol))
 }
@@ -35,24 +37,30 @@ class StockActor(symbol: String) extends Actor with Timers with Logging {
             this.qo = Some(q)
             val message = s"${q.symbol}: QUOTE: ${q.toJson.compactPrint}"
             context.actorSelection(s"../../${WebSocketActor.NAME}") ! message
-//            logger.debug(s"$symbol Received a $q, sent $message to browser.")
+            if (debug) logger.debug(s"Received a $q, sent $message to browser.")
         case f: Fundamental =>
             this.fo = Some(f)
             val message = s"${this.symbol}: FUNDAMENTAL: ${f.toJson.compactPrint}"
             context.actorSelection(s"../../${WebSocketActor.NAME}") ! message
-//            logger.debug(s"$symbol Received a $f, sent $message to browser.")
+            if (debug) logger.debug(s"Received a $f, sent $message to browser.")
         case p: Position =>
             this.po = Some(p)
-//            logger.debug(s"$symbol Received a $p")
+            if (debug) logger.debug(s"Received a $p")
         case o: Order => o.state match {
-            case "cancelled" => orders -= o
+            case "cancelled" =>
+                orders -= o
+                if (debug) logger.debug(s"Remove this $o")
             case x if x == "filled" || x == "confirmed" || x == "unconfirmed" =>
                 orders -= o
                 orders += o
+                if (debug) logger.debug(s"Update this $o")
             case "partially_filled" | "queued" =>  // ignore it
-            case x => logger.debug(s"$symbol What to do with this order state ${o.state}")
+            case _ => logger.debug(s"What to do with this order state $o")
         }
-        case Tick if justStarted => context.actorSelection(s"../../${OrderActor.NAME}") ! AllOrders.Get(symbol)
+        case Tick if justStarted =>
+            Thread.sleep(Random.nextInt(41) * 1001)
+            context.actorSelection(s"../../${QuoteActor.NAME}") ! AllQuotes.Get(symbol)
+            context.actorSelection(s"../../${OrderActor.NAME}") ! AllOrders.Get(symbol)
         case Tick if orders.nonEmpty =>
 //            logger.debug(s"$symbol Trimming orders")
             trimOrders()
@@ -81,7 +89,9 @@ class StockActor(symbol: String) extends Actor with Timers with Logging {
     override def receive: Receive = sideEffect andThen _receive
 
     private def sendOrdersToBrowser(): Unit = {
-        context.actorSelection(s"../../${WebSocketActor.NAME}") ! s"$symbol: ORDERS: ${orders.toList.toJson.compactPrint}"
+        val message = s"$symbol: ORDERS: ${orders.toList.toJson.compactPrint}"
+        if (debug) logger.debug(s"Send to browser: $message")
+        context.actorSelection(s"../../${WebSocketActor.NAME}") ! message
     }
 
     // gives transactions, that are next to each other, have different sides, same quantity and make profit, match ids
@@ -155,8 +165,8 @@ class StockActor(symbol: String) extends Actor with Timers with Logging {
     }
 
     private def checkToBuyOrSell(_orders: collection.mutable.SortedSet[Order]) {
-        val noConfirmedSell = !_orders.exists(o => o.state == "confirmed" && o.side == "sell")
-        val noConfirmedBuy  = !_orders.exists(o => o.state == "confirmed" && o.side == "buy")
+        val noConfirmedSell = !_orders.exists(o => (o.state == "confirmed" || o.state == "unconfirmed") && o.side == "sell")
+        val noConfirmedBuy  = !_orders.exists(o => (o.state == "confirmed" || o.state == "unconfirmed") && o.side == "buy")
         val firstFilledOption = _orders.find(_.state == "filled")
         firstFilledOption.foreach { firstFilled =>
             def printDebug(): Unit =

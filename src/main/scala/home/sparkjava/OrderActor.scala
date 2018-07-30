@@ -43,7 +43,6 @@ class OrderActor(config: Config) extends Actor with Timers with Logging with Uti
     val connectionPoolSettings: ConnectionPoolSettings = getConnectionPoolSettings(config, context.system)
 
     val symbols: collection.mutable.Set[String] = collection.mutable.Set[String]()
-    val waitingAllOrderResponseSymbols: collection.mutable.Set[String] = collection.mutable.Set[String]()
     val http = Http(context.system)
 
     val today: String = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
@@ -54,27 +53,24 @@ class OrderActor(config: Config) extends Actor with Timers with Logging with Uti
         case x: AddSymbol => symbols += x.symbol.toUpperCase
         case x: RemoveSymbol => symbols -= x.symbol.toUpperCase
         case AllOrders.Get(symbol) =>
-            if (waitingAllOrderResponseSymbols.size < 9) {
-                waitingAllOrderResponseSymbols += symbol
-                Main.instrument2Symbol.collectFirst {
-                    case (instrument, _symbol) if _symbol == symbol => instrument
-                } foreach { instrument =>
-                    val uri = Uri(SERVER + "orders/") withQuery Query(("instrument", instrument))
-                    val httpRequest = HttpRequest(uri = uri) withHeaders RawHeader("Authorization", authorization)
-                    http.singleRequest(httpRequest, settings = connectionPoolSettings)
-                            .map {
-                                AllOrdersResponse(_, symbol)
-                            }
-                            .pipeTo(self)
-                }
+            Main.instrument2Symbol.collectFirst {
+                case (instrument, _symbol) if _symbol == symbol => instrument
+            } foreach { instrument =>
+                val uri = Uri(SERVER + "orders/") withQuery Query(("instrument", instrument))
+                val httpRequest = HttpRequest(uri = uri) withHeaders RawHeader("Authorization", authorization)
+                http.singleRequest(httpRequest, settings = connectionPoolSettings)
+                        .map {
+                            AllOrdersResponse(_, symbol)
+                        }
+                        .pipeTo(self)
             }
         case AllOrdersResponse(httpResonse, symbol) =>
-            waitingAllOrderResponseSymbols -= symbol
+            val orderFilter: Order => Boolean = o => o.state == "filled" || o.state == "confirmed" || o.state == "unconfirmed"
             httpResonse match {
                 case HttpResponse(StatusCodes.OK, _, entity, _) =>
                     entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
                         context.actorSelection(s"../${MainActor.NAME}/symbol-$symbol") !
-                          AllOrders.Here(getOrders(body.utf8String).filter(o => o.state == "filled" || o.state == "confirmed"))
+                          AllOrders.Here(getOrders(body.utf8String).filter(orderFilter))
                     }
                 case HttpResponse(statusCode, _, entity, _) =>
                     entity.dataBytes.runFold(ByteString(""))(_ ++ _) foreach { body =>

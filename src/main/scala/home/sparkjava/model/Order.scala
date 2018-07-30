@@ -69,7 +69,12 @@ class Order(
         val averagePrice: Double,
         val quantity: Double,
         var matchId: String
-)
+) {
+  override def toString: String = s"Order(updatedAt='$updatedAt', fees=$fees, id='$id', " +
+    s"cummulativeQuantity=$cummulativeQuantity, instrument='$instrument', state='$state', " +
+    s"lastTransactionAt='$lastTransactionAt', price=$price, createdAt='$createdAt', side='$side', position='$position', " +
+    s"averagePrice=$averagePrice, quantity=$quantity, matchId='$matchId')"
+}
 
 object OrderProtocol extends DefaultJsonProtocol {
     implicit object OrderJsonFormat extends RootJsonFormat[Order] with Util {
