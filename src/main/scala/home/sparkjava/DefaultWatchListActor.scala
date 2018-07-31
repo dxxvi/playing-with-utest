@@ -32,14 +32,17 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with Loggi
     val http = Http(context.system)
     var debug = false
 
+    timers.startSingleTimer(Tick, Tick, 419.millis)
     timers.startPeriodicTimer(Tick, Tick, 19482.millis)
 
     override def receive: Receive = {
         case Tick =>
+            logger.debug("Getting default watch list")
             val httpRequest = HttpRequest(uri = Uri(SERVER + "watchlists/Default/"))
                     .withHeaders(RawHeader("Authorization", authorization))
             http.singleRequest(httpRequest, settings = connectionPoolSettings) pipeTo self
         case HttpResponse(StatusCodes.OK, _, entity, _) =>
+            logger.debug("Got default watch list")
             entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
                 body.utf8String.parseJson.asJsObject.fields.get("results") match {
                     case Some(jsValue) => jsValue match {

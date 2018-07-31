@@ -22,7 +22,8 @@ object Utilities extends TestSuite {
             ).foreach(fileName => {
                 val bufferedSource = Source.fromFile(fileName)
 
-                // make <pre at the beginning of a line and </pre> at the end of a line
+                // make <pre at the begin
+                // ning of a line and </pre> at the end of a line
                 var s = """<pre""".r.replaceAllIn(bufferedSource.mkString, "\n<pre")
                 s = """</pre>""".r.replaceAllIn(s, "</pre>\n")
 
@@ -61,7 +62,7 @@ object Utilities extends TestSuite {
                 val outputSettings = new Document.OutputSettings().indentAmount(2).prettyPrint(true).charset("UTF-8")
                 // beautify
                 val document = Jsoup.parse(s).outputSettings(outputSettings)
-//                forPackt(document)
+                forPackt(document)
 
                 val regex = """^([ ]+)<div class="pre" id="([a-z\d]{8}-[a-z\d]{4}-[a-z\d]{4}-[a-z\d]{4}-[a-z\d]{12})"></div>[ ]*$""".r
                 // put the <pre's back

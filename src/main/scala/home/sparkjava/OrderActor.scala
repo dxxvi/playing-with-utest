@@ -47,6 +47,7 @@ class OrderActor(config: Config) extends Actor with Timers with Logging with Uti
 
     val today: String = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
     var debug = false
+    var allOrdersRequestCount = 0
     timers.startPeriodicTimer(Tick, Tick, 4019.millis)
 
     val _receive: Receive = {
@@ -56,15 +57,22 @@ class OrderActor(config: Config) extends Actor with Timers with Logging with Uti
             Main.instrument2Symbol.collectFirst {
                 case (instrument, _symbol) if _symbol == symbol => instrument
             } foreach { instrument =>
-                val uri = Uri(SERVER + "orders/") withQuery Query(("instrument", instrument))
-                val httpRequest = HttpRequest(uri = uri) withHeaders RawHeader("Authorization", authorization)
-                http.singleRequest(httpRequest, settings = connectionPoolSettings)
-                        .map {
-                            AllOrdersResponse(_, symbol)
-                        }
-                        .pipeTo(self)
+                if (allOrdersRequestCount < 9) {
+                    val uri = Uri(SERVER + "orders/") withQuery Query(("instrument", instrument))
+                    val httpRequest = HttpRequest(uri = uri) withHeaders RawHeader("Authorization", authorization)
+                    http.singleRequest(httpRequest, settings = connectionPoolSettings)
+                            .map {
+                                AllOrdersResponse(_, symbol)
+                            }
+                            .pipeTo(self)
+                    allOrdersRequestCount += 1
+                }
+                else {
+                    self ! AllOrders.Get(symbol)
+                }
             }
         case AllOrdersResponse(httpResonse, symbol) =>
+            allOrdersRequestCount -= 1
             val orderFilter: Order => Boolean = o => o.state == "filled" || o.state == "confirmed" || o.state == "unconfirmed"
             httpResonse match {
                 case HttpResponse(StatusCodes.OK, _, entity, _) =>
@@ -89,7 +97,7 @@ class OrderActor(config: Config) extends Actor with Timers with Logging with Uti
                     }
                 }
                 if (orders.nonEmpty && orders.last.createdAt.startsWith(today)) {
-                    logger.debug("Need to follow the next url")
+                    logger.info("Need to follow the next url")
                 }
             }
         case HttpResponse(statusCode, _, entity, _) =>

@@ -27,8 +27,9 @@ class InstrumentActor(config: Config) extends Actor with Logging with Util {
     var debug = false
 
     val _receive: Receive = {
-        case instrument: String =>
+        case instrument: String if !Main.instrument2Symbol.contains(instrument) =>
             http.singleRequest(HttpRequest(uri = Uri(instrument)), settings = connectionPoolSettings).pipeTo(self)
+        case _: String => // ignored because Main.instrument2Symbol contains instrument
         case HttpResponse(StatusCodes.OK, _, entity, _) =>
             entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
                 val fields = body.utf8String.parseJson.asJsObject.fields

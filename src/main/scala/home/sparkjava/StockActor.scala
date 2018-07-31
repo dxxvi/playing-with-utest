@@ -26,7 +26,8 @@ class StockActor(symbol: String) extends Actor with Timers with Logging {
     var po: Option[Position] = None
     val orders: collection.mutable.SortedSet[Order] =
         collection.mutable.SortedSet[Order]()(Ordering.by[Order, String](_.createdAt)(Main.timestampOrdering.reverse))
-    var justStarted = true
+    var gotHistoricalQuotes = false
+    var gotAllOrders = false
     var debug = false
     val lastCreatedAt = new LastCreatedAt
 
@@ -57,24 +58,25 @@ class StockActor(symbol: String) extends Actor with Timers with Logging {
             case "partially_filled" | "queued" =>  // ignore it
             case _ => logger.debug(s"What to do with this order state $o")
         }
-        case Tick if justStarted =>
-            Thread.sleep(Random.nextInt(41) * 1001)
-            context.actorSelection(s"../../${QuoteActor.NAME}") ! AllQuotes.Get(symbol)
-            context.actorSelection(s"../../${OrderActor.NAME}") ! AllOrders.Get(symbol)
-        case Tick if orders.nonEmpty =>
-//            logger.debug(s"$symbol Trimming orders")
-            trimOrders()
-            updateOrdersWithMatchId()
-            updateOrdersWithMatchId2()
-            checkToBuyOrSell(orders.filter(o => o.matchId == ""))
-            checkToBuyOrSell(orders)
-//            logger.debug(s"$symbol Sending all orders enriched with matchIds to browser")
-            sendOrdersToBrowser()
-        case Tick =>  // do nothing
+        case Tick =>
+            mightAskForHistoricalQuotes()
+            mightAskForAllOrders()
+
+            if (orders.nonEmpty) {
+                trimOrders()
+                updateOrdersWithMatchId()
+                updateOrdersWithMatchId2()
+                checkToBuyOrSell(orders.filter(o => o.matchId == ""))
+                checkToBuyOrSell(orders)
+                sendOrdersToBrowser()
+            }
         case AllOrders.Here(_orders) =>
-            justStarted = false
+            gotAllOrders = true
             orders.clear()
             orders ++= _orders
+        case AllQuotes.Here(historicalQuotes) =>
+            gotHistoricalQuotes = true
+            logger.debug("Got historical quotes")
         case "DEBUG_ON" => debug = true
         case "DEBUG_OFF" => debug = false
         case x => logger.info(s"$symbol Don't know what to do with $x yet")
@@ -87,6 +89,14 @@ class StockActor(symbol: String) extends Actor with Timers with Logging {
     }
 
     override def receive: Receive = sideEffect andThen _receive
+
+    private def mightAskForHistoricalQuotes(): Unit = {
+        if (!gotHistoricalQuotes) context.actorSelection(s"../../${QuoteActor.NAME}") ! AllQuotes.Get(symbol)
+    }
+
+    private def mightAskForAllOrders(): Unit = {
+        if (!gotAllOrders) context.actorSelection(s"../../${OrderActor.NAME}") ! AllOrders.Get(symbol)
+    }
 
     private def sendOrdersToBrowser(): Unit = {
         val message = s"$symbol: ORDERS: ${orders.toList.toJson.compactPrint}"
