@@ -10,6 +10,7 @@ import akka.util.ByteString
 import com.typesafe.config.Config
 import home.sparkjava.model.HistoricalQuoteProtocol.HistoricalQuoteJsonFormat
 import model.Fundamental
+import org.apache.logging.log4j.ThreadContext
 import org.apache.logging.log4j.scala.Logging
 
 import scala.util.{Failure, Success}
@@ -36,11 +37,11 @@ class FundamentalActor(config: Config) extends Actor with Timers with Logging wi
     timers.startPeriodicTimer(Tick, Tick, 19824.millis)
     var debug = false
 
-    override def receive: Receive = {
+    val _receive: Receive = {
         case Tick if Main.instrument2Symbol.nonEmpty =>
             Main.instrument2Symbol.values.grouped(10).foreach { symbols =>
                 val uri = Uri(SERVER + s"fundamentals/?symbols=${symbols.mkString(",")}")
-                http.singleRequest(HttpRequest(uri = uri), settings = settings).pipeTo(self)
+                http.singleRequest(HttpRequest(uri = uri), settings = settings) pipeTo self
             }
         case Tick =>  // do nothing
         case HttpResponse(StatusCodes.OK, _, entity, _) =>
@@ -58,6 +59,7 @@ class FundamentalActor(config: Config) extends Actor with Timers with Logging wi
         case "DEBUG_ON" => debug = true
         case "DEBUG_OFF" => debug = false
         case symbol: String =>
+            logger.debug(s"Receive '$symbol', check if you see me a lot.")
             val fundamentalResponseFuture =
                 http.singleRequest(HttpRequest(uri = Uri(SERVER + s"fundamentals/$symbol/")), settings = settings)
             val httpRequest = HttpRequest(uri = Uri(SERVER + s"quotes/historicals/$symbol/?interval=5minute&span=week"))
@@ -91,8 +93,16 @@ class FundamentalActor(config: Config) extends Actor with Timers with Logging wi
                         }
                     }
                 case Failure(exception) =>
-                    logger.error(s"Unable to get fundamental or weekly quotes for $symbol")
+                    logger.error(s"Unable to get fundamental or weekly quotes for $symbol: $exception")
             }
         case x => logger.debug(s"Don't know what to do with $x yet")
     }
+
+    val sideEffect: PartialFunction[Any, Any] = {
+        case x =>
+            ThreadContext.clearMap()
+            x
+    }
+
+    override def receive: Receive = sideEffect andThen _receive
 }

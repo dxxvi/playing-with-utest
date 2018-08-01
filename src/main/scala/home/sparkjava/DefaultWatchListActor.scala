@@ -9,6 +9,7 @@ import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.util.ByteString
 import com.typesafe.config.Config
+import org.apache.logging.log4j.ThreadContext
 import org.apache.logging.log4j.scala.Logging
 
 import scala.util.{Failure, Success}
@@ -35,7 +36,7 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with Loggi
     timers.startSingleTimer(Tick, Tick, 419.millis)
     timers.startPeriodicTimer(Tick, Tick, 19482.millis)
 
-    override def receive: Receive = {
+    val _receive: Receive = {
         case Tick =>
             logger.debug("Getting default watch list")
             val httpRequest = HttpRequest(uri = Uri(SERVER + "watchlists/Default/"))
@@ -78,7 +79,7 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with Loggi
             http.singleRequest(httpRequest, settings = connectionPoolSettings).onComplete {
                 case Success(HttpResponse(statusCode, _, ent, _)) =>
                     ent.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
-                        if (debug) logger.debug(s"Add $symbol to the Default watch list: $statusCode - ${body.utf8String}")
+                        logger.debug(s"Just tried to add $symbol to the Default watch list: $statusCode - ${body.utf8String}")
                     }
                 case Failure(exception) =>
                     logger.error(s"Unable to add $symbol to the Default watch list: ${exception.getMessage}")
@@ -87,4 +88,12 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with Loggi
         case "DEBUG_OFF" => debug = false
         case x => logger.debug(s"Don't know what to do with $x yet")
     }
+
+    val sideEffect: PartialFunction[Any, Any] = {
+        case x =>
+            ThreadContext.clearMap()
+            x
+    }
+
+    override def receive: Receive = sideEffect andThen _receive
 }

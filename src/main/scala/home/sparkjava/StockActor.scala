@@ -172,6 +172,9 @@ class StockActor(symbol: String) extends Actor with Timers with Logging {
             orders.clear()
             orders ++= trimmedOrders
         }
+        else {
+            logger.debug(s"Unable to trim the orders for $symbol because we don't have the position.")
+        }
     }
 
     private def checkToBuyOrSell(_orders: collection.mutable.SortedSet[Order]) {

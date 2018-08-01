@@ -47,7 +47,6 @@ class OrderActor(config: Config) extends Actor with Timers with Logging with Uti
 
     val today: String = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE)
     var debug = false
-    var allOrdersRequestCount = 0
     timers.startPeriodicTimer(Tick, Tick, 4019.millis)
 
     val _receive: Receive = {
@@ -57,7 +56,7 @@ class OrderActor(config: Config) extends Actor with Timers with Logging with Uti
             Main.instrument2Symbol.collectFirst {
                 case (instrument, _symbol) if _symbol == symbol => instrument
             } foreach { instrument =>
-                if (allOrdersRequestCount < 9) {
+                if (Main.requestCount.get < 19) {
                     val uri = Uri(SERVER + "orders/") withQuery Query(("instrument", instrument))
                     val httpRequest = HttpRequest(uri = uri) withHeaders RawHeader("Authorization", authorization)
                     http.singleRequest(httpRequest, settings = connectionPoolSettings)
@@ -65,27 +64,28 @@ class OrderActor(config: Config) extends Actor with Timers with Logging with Uti
                                 AllOrdersResponse(_, symbol)
                             }
                             .pipeTo(self)
-                    allOrdersRequestCount += 1
-                }
-                else {
-                    self ! AllOrders.Get(symbol)
+                    Main.requestCount.incrementAndGet()
+                    logger.debug(s"Getting orders for $symbol because StockActor requests ${Main.requestCount.get}")
                 }
             }
         case AllOrdersResponse(httpResonse, symbol) =>
-            allOrdersRequestCount -= 1
+            Main.requestCount.decrementAndGet()
             val orderFilter: Order => Boolean = o => o.state == "filled" || o.state == "confirmed" || o.state == "unconfirmed"
             httpResonse match {
                 case HttpResponse(StatusCodes.OK, _, entity, _) =>
                     entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
                         context.actorSelection(s"../${MainActor.NAME}/symbol-$symbol") !
                           AllOrders.Here(getOrders(body.utf8String).filter(orderFilter))
+                        logger.debug(s"Reply StockActor $symbol with orders")
                     }
                 case HttpResponse(statusCode, _, entity, _) =>
                     entity.dataBytes.runFold(ByteString(""))(_ ++ _) foreach { body =>
-                        logger.error(s"Error in getting orders for $symbol: $statusCode, body: ${body.utf8String}")
+                        logger.error(s"Error in getting orders for $symbol: $statusCode, body: ${body.utf8String}, " +
+                          s"requestCount: ${Main.requestCount.get}")
                     }
             }
         case Tick if symbols.nonEmpty =>
+            logger.debug(s"Getting order because of tick")
             val httpRequest = HttpRequest(uri = Uri(SERVER + "orders/")) withHeaders RawHeader("Authorization", authorization)
             http.singleRequest(httpRequest, settings = connectionPoolSettings) pipeTo self
         case HttpResponse(StatusCodes.OK, _, entity, _) =>
@@ -150,7 +150,7 @@ class OrderActor(config: Config) extends Actor with Timers with Logging with Uti
             http.singleRequest(httpRequest, settings = connectionPoolSettings).onComplete {
                 case Success(httpResponse) =>
                     httpResponse.entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
-                        if (debug) logger.debug(s"Response of ${action}ing $quantity shares of $symbol at " +
+                        logger.debug(s"Response of ${action}ing $quantity shares of $symbol at " +
                           s"$$$price/share ${body.utf8String}")
                     }
                 case Failure(exception) => logger.error(s"$exception")

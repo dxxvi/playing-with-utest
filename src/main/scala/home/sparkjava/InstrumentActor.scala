@@ -28,9 +28,14 @@ class InstrumentActor(config: Config) extends Actor with Logging with Util {
 
     val _receive: Receive = {
         case instrument: String if !Main.instrument2Symbol.contains(instrument) =>
-            http.singleRequest(HttpRequest(uri = Uri(instrument)), settings = connectionPoolSettings).pipeTo(self)
+            if (Main.requestCount.get < 19) {
+                Main.requestCount.incrementAndGet()
+                http.singleRequest(HttpRequest(uri = Uri(instrument)), settings = connectionPoolSettings) pipeTo self
+            }
+            else self ! instrument
         case _: String => // ignored because Main.instrument2Symbol contains instrument
         case HttpResponse(StatusCodes.OK, _, entity, _) =>
+            Main.requestCount.decrementAndGet()
             entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
                 val fields = body.utf8String.parseJson.asJsObject.fields
                 val ot: Option[(String, String)] = for {
@@ -44,6 +49,7 @@ class InstrumentActor(config: Config) extends Actor with Logging with Util {
             }
         case HttpResponse(statusCode, _, entity, _) =>
             logger.debug("got bad response")
+            Main.requestCount.decrementAndGet()
             entity.dataBytes.runFold(ByteString(""))(_ ++ _).foreach { body =>
                 logger.error(s"Error in getting instrument: $statusCode, body: ${body.utf8String}")
             }

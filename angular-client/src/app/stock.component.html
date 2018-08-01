@@ -23,7 +23,7 @@
     <span *ngIf="showMatchedTransactions">&#8611;</span>
   </span>
 </form>
-<div class="table" style="font-family: monospace; font-size: larger;">
+<div class="table" style="font-family: monospace;">
   <div *ngFor="let order of orders; trackBy: trackByFunction" [class]="calculateClasses(order)">
     <div class="cell" [title]="order.matchId">{{ minifyTimestamp(order.createdAt) }}</div>
     <div class="cell" [title]="order.createdAt" style="text-align: right;">{{ order.quantity }}</div>

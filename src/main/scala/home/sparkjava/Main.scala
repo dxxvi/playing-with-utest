@@ -1,5 +1,7 @@
 package home.sparkjava
 
+import java.util.concurrent.atomic.AtomicInteger
+
 import akka.actor.{ActorRef, ActorSystem}
 import com.typesafe.config.ConfigFactory
 import spark.Spark
@@ -9,6 +11,7 @@ import scala.io.StdIn
 
 object Main {
     val instrument2Symbol: TrieMap[String, String] = TrieMap()
+    val requestCount: AtomicInteger = new AtomicInteger()
 
     // compare 2 timestamps of the format yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'. The '.SSSSSS' is optional.
     val timestampOrdering: Ordering[String] = Ordering.comparatorToOrdering[String]((a: String, b: String) => {
