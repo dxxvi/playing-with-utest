@@ -26,7 +26,7 @@ class WebSocketListener(system: ActorSystem, mainActorPath: String)
     }
 
     override def onWebSocketConnect(session: Session): Unit = {
-        logger.debug("WebSocket connected. There's a session.")
+        logger.debug("WebSocket connected.")
         this.session = Some(session)
     }
 
@@ -41,22 +41,22 @@ class WebSocketListener(system: ActorSystem, mainActorPath: String)
     override def onWebSocketText(s: String): Unit = {
         val orderActor: ActorSelection = system.actorSelection(s"$mainActorPath/../${OrderActor.NAME}")
         if (s startsWith CANCEL)
-            orderActor ! CancelOrder(s.replace(CANCEL, ""))
-        else if (s.startsWith(BUY) && s.count(_ == ' ') == 3) {  // s looks like this BUY: AMD: 19 11.07
+            orderActor ! OrderActor.Cancel(s.replace(CANCEL, ""))
+        else if (s.startsWith(BUY) && s.count(_ == ' ') == 3) {   // s looks like this BUY: AMD: 19 11.07
             val array = s.split(" ")
-            orderActor ! Buy(array(1).replace(":", ""), array(2).toInt, array(3).toDouble)
+            orderActor ! OrderActor.Buy(array(1).replace(":", ""), array(2).toInt, array(3).toDouble)
         }
         else if (s.startsWith(SELL) && s.count(_ == ' ') == 3) {  // s looks like this SELL: HTZ: 82 19.04
             val array = s.split(" ")
-            orderActor ! Sell(array(1).replace(":", ""), array(2).toInt, array(3).toDouble)
+            orderActor ! OrderActor.Sell(array(1).replace(":", ""), array(2).toInt, array(3).toDouble)
         }
         else if (s startsWith DEBUG_OFF) {
-            val symbol = s.replace(DEBUG_OFF, "")          // this is a symbol or actor name
+            val symbol = s.replace(DEBUG_OFF, "")                 // this is a symbol or actor name
             system.actorSelection(s"$mainActorPath/symbol-$symbol") ! "DEBUG_OFF"
             system.actorSelection(s"$mainActorPath/../$symbol") ! "DEBUG_OFF"
         }
         else if (s startsWith DEBUG_ON) {
-            val symbol = s.replace(DEBUG_ON, "")           // this is a symbol or actor name
+            val symbol = s.replace(DEBUG_ON, "")                  // this is a symbol or actor name
             system.actorSelection(s"$mainActorPath/symbol-$symbol") ! "DEBUG_ON"
             system.actorSelection(s"$mainActorPath/../$symbol") ! "DEBUG_ON"
         }
@@ -66,7 +66,7 @@ class WebSocketListener(system: ActorSystem, mainActorPath: String)
         }
         else if (s startsWith WATCHLIST_ADD) {
             val symbol = s.replace(WATCHLIST_ADD, "")
-            system.actorSelection(s"$mainActorPath/../${DefaultWatchListActor.NAME}") ! AddSymbol(symbol)
+            system.actorSelection(s"$mainActorPath/../${DefaultWatchListActor.NAME}") ! DefaultWatchListActor.AddSymbol(symbol)
         }
     }
 }

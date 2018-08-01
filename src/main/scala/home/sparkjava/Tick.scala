@@ -1,5 +1,3 @@
 package home.sparkjava
 
-object Tick {
-
-}
+case object Tick

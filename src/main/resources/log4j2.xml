@@ -29,6 +29,9 @@
         <Logger name="spark" level="INFO" additivity="false">
             <AppenderRef ref="CA1" />
         </Logger>
+        <Logger name="home.sparkjava.WebSocketListener" level="DEBUG" additivity="false">
+            <AppenderRef ref="CA1" />
+        </Logger>
         <Root level="DEBUG">
             <AppenderRef ref="CA2"/>
             <AppenderRef ref="Robinhood"/>
