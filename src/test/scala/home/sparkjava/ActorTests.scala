@@ -12,10 +12,11 @@ object ActorTests extends TestSuite with Util {
             val config = ConfigFactory.load()
             val actorSystem = ActorSystem("R")
 
-            val dwlActor = actorSystem.actorOf(DefaultWatchListActor.props(config))
+            actorSystem.actorOf(InstrumentActor.props(config), InstrumentActor.NAME)
+            val dwlActor = actorSystem.actorOf(DefaultWatchListActor.props(config), DefaultWatchListActor.NAME)
             dwlActor ! Tick
 
-            Thread.sleep(4019)
+            Thread.sleep(9019)
             actorSystem.terminate()
         }
     }
