@@ -1,6 +1,7 @@
 package home.sparkjava
 
 import akka.actor.{Actor, Props}
+import akka.pattern.pipe
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.softwaremill.sttp._
@@ -13,7 +14,13 @@ import scala.concurrent.Future
 object InstrumentActor {
     val NAME = "instrumentActor"
 
-    case class StringResponse(r: Response[String])
+    case class Instrument(
+             country: Option[String],
+             state: Option[String],
+             symbol: Option[String],
+             tradeable: Option[Boolean]
+     )
+    case class InstrumentResponse(i: Response[Instrument], instrument: String)
 
     def props(config: Config): Props = Props(new InstrumentActor(config))
 }
@@ -27,7 +34,21 @@ class InstrumentActor(config: Config) extends Actor with Util {
     implicit val httpBackend: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(config)
 
     val _receive: Receive = {
-        case instrument: String => logger.debug(s"Gonna access $instrument")
+        case instrument: String => sttp
+                .get(uri"$instrument")
+                .response(asJson[Instrument])
+                .send()
+                .map(r => InstrumentResponse(r, instrument)) pipeTo self
+        case InstrumentResponse(Response(rawErrorBody, code, statusText, _, _), instrument) =>
+            rawErrorBody.fold(
+                a => logger.error(s"Error in accessing $instrument: $code $statusText ${a.mkString}"),
+                i => {
+                    if (i.symbol.nonEmpty && i.tradeable.contains(true) && i.state.contains("active"))
+                        Main.instrument2Symbol += ((instrument, i.symbol.get))
+                    else
+                        logger.warn(s"$instrument returns $i")
+                }
+            )
     }
 
     override def receive: Receive = Main.sideEffect andThen _receive

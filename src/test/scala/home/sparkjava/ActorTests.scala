@@ -4,6 +4,7 @@ import scala.concurrent.duration._
 
 import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
+import message.AddSymbol
 import utest._
 
 object ActorTests extends TestSuite with Util {
@@ -17,7 +18,11 @@ object ActorTests extends TestSuite with Util {
             dwlActor ! Tick
 
             Thread.sleep(9019)
+
+            println(s"Main.instrument2Symbol: ${Main.instrument2Symbol}")
+
             actorSystem.terminate()
         }
+
     }
 }

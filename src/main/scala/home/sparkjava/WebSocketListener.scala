@@ -1,6 +1,7 @@
 package home.sparkjava
 
 import akka.actor.{ActorSelection, ActorSystem}
+import home.sparkjava.message.AddSymbol
 import org.apache.logging.log4j.scala.Logging
 import org.eclipse.jetty.websocket.api.Session
 
@@ -66,7 +67,7 @@ class WebSocketListener(system: ActorSystem, mainActorPath: String)
         }
         else if (s startsWith WATCHLIST_ADD) {
             val symbol = s.replace(WATCHLIST_ADD, "")
-            system.actorSelection(s"$mainActorPath/../${DefaultWatchListActor.NAME}") ! DefaultWatchListActor.AddSymbol(symbol)
+            system.actorSelection(s"$mainActorPath/../${DefaultWatchListActor.NAME}") ! AddSymbol(symbol)
         }
     }
 }

@@ -12,7 +12,6 @@ import scala.concurrent.Future
 object DefaultWatchListActor {
     val NAME = "defaultWatchListActor"
 
-    case class AddSymbol(symbol: String)
     case class InstrumentResponse(r: Response[List[String]])
 
     def props(config: Config): Props = Props(new DefaultWatchListActor(config))
@@ -39,7 +38,7 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with Util 
                     context.actorSelection(s"../${InstrumentActor.NAME}") ! instrument
                 }
             )
-        case x => println(s"Don't know what to do with $x")
+        case x => logger.error(s"Don't know what to do with $x")
     }
 
     override def receive: Receive = Main.sideEffect andThen _receive
@@ -55,9 +54,7 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with Util 
             List[String]()
         }) {
             case results: List[Map[String, _]] =>
-                results.map(m => m.get("instrument")).collect {
-                    case Some(x) => x.asInstanceOf[String]
-                }
+                results.map(m => m.get("instrument")).collect { case Some(x) => x.asInstanceOf[String] }
             case x =>
                 logger.error(s"Unexpected field 'results' type $x")
                 List[String]()
