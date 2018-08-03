@@ -1,7 +1,6 @@
-package home.sparkjava
+package home.sparkjava.model
 
 import org.json4s._
-import org.json4s.JsonDSL._
 import org.json4s.native.JsonMethods._
 import org.json4s.native.Serialization
 

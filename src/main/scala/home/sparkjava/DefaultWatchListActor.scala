@@ -9,6 +9,7 @@ import com.softwaremill.sttp._
 import home.sparkjava.message.Tick
 
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 object DefaultWatchListActor {
     val NAME = "defaultWatchListActor"
@@ -25,6 +26,8 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with Util 
     val SERVER: String = config.getString("server")
     val authorization: String = if (config.hasPath("Authorization")) config.getString("Authorization") else "No token"
     implicit val httpBackend: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(config)
+
+    timers.startPeriodicTimer(Tick, Tick, 30.seconds)
 
     val _receive: Receive = {
         case Tick => sttp.header("Authorization", authorization)

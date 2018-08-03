@@ -2,7 +2,6 @@ package home.sparkjava
 
 import akka.actor.{Actor, Props, Timers}
 import com.typesafe.config.Config
-import org.apache.logging.log4j.scala.Logging
 
 object FundamentalActor {
     val NAME = "fundamentalActor"
@@ -10,5 +9,9 @@ object FundamentalActor {
 }
 
 class FundamentalActor(config: Config) extends Actor with Timers with Util {
-    override def receive: Receive = ???
+    val _receive: Receive = ???
+
+    override def receive: Receive = Main.clearThreadContextMap andThen _receive
+
+
 }

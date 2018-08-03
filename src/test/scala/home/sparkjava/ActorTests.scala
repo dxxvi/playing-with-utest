@@ -5,6 +5,7 @@ import akka.actor.ActorSystem
 import com.typesafe.config.{Config, ConfigFactory}
 import home.TestUtil
 import message.{AddSymbol, Tick}
+import model.Fundamental
 import utest._
 
 object ActorTests extends TestSuite with Util with TestUtil {
