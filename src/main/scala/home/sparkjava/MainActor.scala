@@ -22,20 +22,17 @@ class MainActor extends Actor with Util {
     import MainActor._
     import context.dispatcher
 
-
-
     val _receive: Receive = {
-        case AddSymbol(symbol) =>
-            val identity = context.actorSelection(s"../$NAME/symbol-$symbol") ? Identify("hi")
-            Await.result(identity, 2904.millis) match {
-                case Success(ActorIdentity(_, None)) => context.actorOf(StockActor.props(symbol), s"symbol-$symbol")
-                case Failure(exception) =>
-                    logger.error(s"Got this error while checking if there's a StockActor for $symbol: $exception")
-                case _ => // ignored
-            }
-        case AddSymbol("TESTING") =>
-        case ActorIdentity(_, aro) =>
+        case AddSymbol(symbol) if symbol != "TESTING" =>
+            context.actorSelection(s"../$NAME/symbol-$symbol") ! Identify(symbol)
+        case ActorIdentity(id, None) =>
+            val actorRef = context.actorOf(StockActor.props(id.asInstanceOf[String]), s"symbol-$id")
+            logger.debug(s"Just created StockActor $actorRef")
+        case ActorIdentity(id, Some(actorRef)) => // This StockActor already exists.
+        case x => logger.warn(s"$x")
     }
 
-    override def receive: Receive = Main.sideEffect andThen _receive
+    override def receive: Receive = sideEffect andThen _receive
+
+    private def sideEffect: PartialFunction[Any, Any] = { case x => ThreadContext.put("symbol", NAME); x }
 }

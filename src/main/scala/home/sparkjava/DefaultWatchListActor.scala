@@ -6,6 +6,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.typesafe.config.Config
 import com.softwaremill.sttp._
+import home.sparkjava.message.Tick
 
 import scala.concurrent.Future
 
@@ -32,6 +33,7 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with Util 
                 .send()
                 .map(InstrumentResponse) pipeTo self
         case InstrumentResponse(Response(rawErrorBody, code, statusText, _, _)) =>
+            logger.debug(s"Got InstrumentResponse: $code $statusText")
             rawErrorBody.fold(
                 a => logger.error(s"Error in getting default watch list: $code $statusText ${a.mkString}"),
                 a => a.foreach { instrument =>
@@ -41,7 +43,7 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with Util 
         case x => logger.error(s"Don't know what to do with $x")
     }
 
-    override def receive: Receive = Main.sideEffect andThen _receive
+    override def receive: Receive = Main.clearThreadContextMap andThen _receive
 
     /**
       * @param s looks like default-watch-list.json

@@ -7,6 +7,7 @@ import akka.util.ByteString
 import com.softwaremill.sttp._
 import com.softwaremill.sttp.json4s._
 import com.typesafe.config.Config
+import home.sparkjava.message.AddSymbol
 import org.apache.logging.log4j.ThreadContext
 
 import scala.concurrent.Future
@@ -40,16 +41,19 @@ class InstrumentActor(config: Config) extends Actor with Util {
                 .send()
                 .map(r => InstrumentResponse(r, instrument)) pipeTo self
         case InstrumentResponse(Response(rawErrorBody, code, statusText, _, _), instrument) =>
+            logger.debug(s"Got InstrumentResponse $code $statusText")
             rawErrorBody.fold(
                 a => logger.error(s"Error in accessing $instrument: $code $statusText ${a.mkString}"),
                 i => {
-                    if (i.symbol.nonEmpty && i.tradeable.contains(true) && i.state.contains("active"))
+                    if (i.symbol.nonEmpty && i.tradeable.contains(true) && i.state.contains("active")) {
                         Main.instrument2Symbol += ((instrument, i.symbol.get))
+                        context.actorSelection(s"../${MainActor.NAME}") ! AddSymbol(i.symbol.get)
+                    }
                     else
                         logger.warn(s"$instrument returns $i")
                 }
             )
     }
 
-    override def receive: Receive = Main.sideEffect andThen _receive
+    override def receive: Receive = Main.clearThreadContextMap andThen _receive
 }
