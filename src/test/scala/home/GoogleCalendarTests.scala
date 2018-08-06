@@ -8,6 +8,7 @@ import utest._
 
 object GoogleCalendarTests extends TestSuite {
     val tests = Tests {
+/*
         "test 1" - {
             import com.google.api.client.json.JsonFactory
             import com.google.api.client.auth.oauth2.Credential
@@ -59,5 +60,6 @@ object GoogleCalendarTests extends TestSuite {
                     })
             1
         }
+*/
     }
 }

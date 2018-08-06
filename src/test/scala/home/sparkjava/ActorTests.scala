@@ -65,9 +65,17 @@ object ActorTests extends TestSuite with Util with TestUtil {
             trieMap ++= config.getConfig("dow").entrySet().asScala.map(e => (e.getKey, e.getValue.unwrapped().asInstanceOf[String]))
             println(trieMap)
 
-            parse(readTextFileFromTestResource("robinhood", "dow-stocks-mapping.json")) \ "results" match {
+            parse(readTextFileFromTestResource("robinhood", "stocks-soi.json")) \ "results" match {
                 case JArray(jValues) => jValues foreach { jValue => {
-                    println(s"""${jValue \ "symbol"} = "${jValue \ "instrument"}"""")
+                    val symbol = jValue \ "symbol" match {
+                        case JString(x) => x
+                        case _ => ""
+                    }
+                    val instrument = jValue \ "instrument" match {
+                        case JString(x) => x
+                        case _ => ""
+                    }
+                    if (symbol != "" && instrument != "") println(s"""$symbol = "$instrument"""")
                 }}
                 case _ => println("hm ...")
             }

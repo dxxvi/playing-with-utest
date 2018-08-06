@@ -2,6 +2,7 @@ import {Component, ElementRef, Input, OnDestroy, OnInit} from '@angular/core';
 import {WebsocketService} from './websocket.service';
 import {Subscription} from 'rxjs';
 import {Order} from './order';
+import {Fundamental, Position} from './model';
 
 @Component({
   selector: 'li.stock-panel',
@@ -10,6 +11,8 @@ import {Order} from './order';
 })
 export class StockComponent implements OnInit, OnDestroy {
   symbol: string;
+  fu: Fundamental = new Fundamental();
+  po: Position = new Position();
   private subscription: Subscription;
 
   @Input('_symbol') set _symbol(value: string) {

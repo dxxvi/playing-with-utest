@@ -6,7 +6,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.softwaremill.sttp._
 import com.softwaremill.sttp.json4s._
-import com.typesafe.config.Config
+import com.typesafe.config.{Config, ConfigValue}
 import home.sparkjava.message.AddSymbol
 import org.apache.logging.log4j.ThreadContext
 
@@ -30,13 +30,20 @@ class InstrumentActor(config: Config) extends Actor with Util {
     import InstrumentActor._
     import context.dispatcher
 
+    val instrument2Symbol: collection.mutable.Map[String, String] = collection.mutable.Map[String, String]()
+    readInstrument2Symbol()
     val SERVER: String = config.getString("server")
     val authorization: String = if (config.hasPath("Authorization")) config.getString("Authorization") else "No token"
     implicit val httpBackend: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(config)
 
     val _receive: Receive = {
         case instrument: String =>
-            if (Main.requestCount.get < 19) {
+            val symbolO = instrument2Symbol.get(instrument)
+            if (symbolO.isDefined) {
+                Main.instrument2Symbol += ((instrument, symbolO.get))
+                context.actorSelection(s"../${MainActor.NAME}") ! AddSymbol(symbolO.get)
+            }
+            else if (Main.requestCount.get < 19) {
                 sttp
                         .get(uri"$instrument")
                         .response(asJson[Instrument])
@@ -62,4 +69,12 @@ class InstrumentActor(config: Config) extends Actor with Util {
     }
 
     override def receive: Receive = Main.clearThreadContextMap andThen _receive
+
+    private def readInstrument2Symbol() {
+        import collection.JavaConverters._
+        val f: java.util.Map.Entry[String, ConfigValue] => (String, String) =
+            e => (e.getValue.unwrapped().asInstanceOf[String], e.getKey)
+        instrument2Symbol ++= config.getConfig("dow").entrySet().asScala.map(f)
+        instrument2Symbol ++= config.getConfig("soi").entrySet().asScala.map(f)
+    }
 }

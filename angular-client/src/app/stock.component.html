@@ -1,1 +1,19 @@
-{{ symbol }}
+<table style="width: 100%">
+  <tr>
+    <td></td>
+    <td class="small">Today</td>
+    <td class="small">Est.</td>
+    <td><span style="font-size: larger;">{{ symbol }}</span>&nbsp;<span>{{ po.quantity }}</span></td>
+  </tr>
+  <tr>
+    <td class="small">High</td>
+    <td class="small mono">{{ fu.high }}</td>
+    <td class="small mono">TBD</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td class="small">Low</td>
+    <td class="small mono">{{ fu.low }}</td>
+    <td class="small mono" colspan="2" style="text-align: right;">TBD</td>
+  </tr>
+</table>
