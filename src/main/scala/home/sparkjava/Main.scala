@@ -30,6 +30,7 @@ object Main {
         val actorSystem = ActorSystem("R")
         val mainActor = actorSystem.actorOf(MainActor.props(config), MainActor.NAME)
         val webSocketListener = initializeSpark(actorSystem, mainActor.path.toString)
+        actorSystem.actorOf(WebSocketActor.props(webSocketListener), WebSocketActor.NAME)
         actorSystem.actorOf(DefaultWatchListActor.props(config), DefaultWatchListActor.NAME)
         actorSystem.actorOf(InstrumentActor.props(config), InstrumentActor.NAME)
 

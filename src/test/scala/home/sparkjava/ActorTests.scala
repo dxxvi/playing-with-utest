@@ -2,11 +2,16 @@ package home.sparkjava
 
 import scala.concurrent.duration._
 import akka.actor.ActorSystem
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
 import com.typesafe.config.{Config, ConfigFactory}
 import home.TestUtil
 import message.{AddSymbol, Tick}
-import model.Fundamental
+import model.{Fundamental, Quote}
 import utest._
+
+import scala.collection.concurrent.TrieMap
+import scala.concurrent.Future
 
 object ActorTests extends TestSuite with Util with TestUtil {
     val tests = Tests {
@@ -43,11 +48,29 @@ object ActorTests extends TestSuite with Util with TestUtil {
         }
 
         "Test json4s" - {
-            val fundamental =
-                Fundamental.deserialize(readTextFileFromTestResource("robinhood", "fundamental.json"))
-            println(fundamental)
+            import org.json4s._
+            import org.json4s.native.JsonMethods._
 
-            println(Fundamental.serialize(fundamental))
+            val results = Quote.deserialize(readTextFileFromTestResource("robinhood", "quotes.json"))
+            println(results)
+        }
+
+        "Test TypeSafe Config" - {
+            import collection.JavaConverters._
+            import org.json4s._
+            import org.json4s.native.JsonMethods._
+
+            val config = ConfigFactory.load()
+            val trieMap = TrieMap[String, String]()
+            trieMap ++= config.getConfig("dow").entrySet().asScala.map(e => (e.getKey, e.getValue.unwrapped().asInstanceOf[String]))
+            println(trieMap)
+
+            parse(readTextFileFromTestResource("robinhood", "dow-stocks-mapping.json")) \ "results" match {
+                case JArray(jValues) => jValues foreach { jValue => {
+                    println(s"""${jValue \ "symbol"} = "${jValue \ "instrument"}"""")
+                }}
+                case _ => println("hm ...")
+            }
         }
     }
 }

@@ -1,7 +1,7 @@
 package home.sparkjava
 
 import akka.actor.{ActorSelection, ActorSystem}
-import home.sparkjava.message.AddSymbol
+import message.{AddSymbol, Tick}
 import org.apache.logging.log4j.scala.Logging
 import org.eclipse.jetty.websocket.api.Session
 
@@ -29,6 +29,7 @@ class WebSocketListener(system: ActorSystem, mainActorPath: String)
     override def onWebSocketConnect(session: Session): Unit = {
         logger.debug("WebSocket connected.")
         this.session = Some(session)
+        system.actorSelection(s"$mainActorPath/*") ! Tick
     }
 
     override def onWebSocketError(throwable: Throwable): Unit = {

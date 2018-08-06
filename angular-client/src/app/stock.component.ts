@@ -10,15 +10,6 @@ import {Order} from './order';
 })
 export class StockComponent implements OnInit, OnDestroy {
   symbol: string;
-  lastTradePrice: number = 0;
-  updatedAt: string;
-  open: number = 0;
-  low: number = 0;
-  high: number = 0;
-  quantity: number = 0;
-  orders: Array<Order> = [];
-  buysell: { quantity: number, price: number} = { quantity: null, price: null };
-  showMatchedTransactions: boolean = false;
   private subscription: Subscription;
 
   @Input('_symbol') set _symbol(value: string) {
@@ -30,62 +21,12 @@ export class StockComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.subscription = this.websocketService.getSubject(this.symbol).asObservable().subscribe(message => {
-      // console.log(`Component ${this.symbol} got a message ${message.text}`);
-      const i = message.text.indexOf(': ');
-      if (i === -1) {
-        console.error(`Unknown message ${message.text}`);
-      }
-      else {
-        const type = message.text.substring(0, i);
-        const x = JSON.parse(message.text.substr(i + 2));
-        if (type === 'QUOTE') {
-          this.lastTradePrice = x.lastTradePrice;
-          this.updatedAt = x.updatedAt;
-          this.setThisComponentBackgroundColor();
-        }
-        else if (type === 'POSITION') {
-          this.quantity = x.quantity;
-        }
-        else if (type === 'FUNDAMENTAL') {
-          this.open = x.open;
-          this.low = x.low;
-          this.high = x.high;
-          this.setThisComponentBackgroundColor();
-        }
-        else if (type == 'ORDERS') {
-          this.orders = x;
-        }
-      }
+      console.log(`Component ${this.symbol} got a message ${message}`);
     });
   }
 
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
-  }
-
-  buySell() {
-    const action = this.buysell.price < this.lastTradePrice ? 'BUY' : 'SELL';
-    this.websocketService.sendMessageThroughWebsocket(`${action}: ${this.symbol}: ${this.buysell.quantity} ${this.buysell.price}`)
-    setTimeout(() => {
-      this.buysell.quantity = null;
-      this.buysell.price = null;
-    }, 3456);
-  }
-
-  cancelOrder(orderId: string) {
-    this.websocketService.sendMessageThroughWebsocket(`CANCEL: ${orderId}`);
-  }
-
-  calculateClasses(order: Order): string {
-    let result = 'row';
-    result = result + ' ' + order.side;
-    if (order.state === 'confirmed' || order.state === 'unconfirmed') {
-      result = result + ' confirmed';
-    }
-    if (order.matchId && order.matchId != "") {
-      result = result + ' matched' + (this.showMatchedTransactions ? '' : ' hide');
-    }
-    return result;
   }
 
   formatMoney(value: number): string {
@@ -99,7 +40,7 @@ export class StockComponent implements OnInit, OnDestroy {
     return stringA + '.' + stringB;
   }
 
-  // ts can be in these formats 2018-04-19T19:04:41.123456Z
+  // ts is in this format 2018-04-19T19:04:41.123456Z
   minifyTimestamp(ts: string): string {
     return ts.replace(/^2018-/, '')
       .replace('T', ' ')
@@ -107,6 +48,7 @@ export class StockComponent implements OnInit, OnDestroy {
       .replace(/Z$/, '');
   }
 
+/*
   setThisComponentBackgroundColor() {
     if (this.open === 0 || this.lastTradePrice === 0) {
       return;
@@ -125,17 +67,10 @@ export class StockComponent implements OnInit, OnDestroy {
     sl.s = sv.s * sv.v / (sl.l < 50 ? sl.l * 2 : 200 - sl.l * 2);
     this.el.nativeElement.style.backgroundColor = `hsl(${h}, ${sl.s}%, ${sl.l}%)`;
   }
-
-  toggleShowMatchedTransactions() {
-    this.showMatchedTransactions = !this.showMatchedTransactions;
-  }
+*/
 
   trackByFunction(i: number, order: Order): string {
     return order.createdAt;
   }
 
-  test() {
-    this.el.nativeElement.style.color = '#f77';
-    this.websocketService.sendMessageThroughWebsocket(`Hi, I'm ${this.symbol}.`);
-  }
 }

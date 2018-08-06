@@ -49,13 +49,13 @@ export class WebsocketService {
     else {
       const symbol = message.substring(0, i);
       const rest   = message.substr(i + 2);
+      // rest is like FUNDAMENTAL: {...} or POSITION: {...}
       this.sendMessageThroughSubject('SYMBOL_FOUND', { symbol: symbol, rest: rest });
-      this.sendMessageThroughSubject(symbol, rest);
     }
   }
 
   sendMessageThroughSubject(name: string, message: any) {
-    this.getSubject(name).next({ text: message });
+    this.getSubject(name).next(message);
   }
 
   sendMessageThroughWebsocket(message: string) {

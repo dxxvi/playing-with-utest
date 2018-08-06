@@ -20,30 +20,42 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.symbolFoundSubscription = this.websocketService.getSubject('SYMBOL_FOUND').asObservable().subscribe(
       value => {
-        const symbol = value.text.symbol;
-        if (value.text.rest.startsWith('POSITION: ')) {
-          const position = JSON.parse(value.text.rest.replace('POSITION: ', ''));
-          if (position.quantity > 0) this.addSymbolIfNotExist(symbol);
-          // if quantity = 0, this stock might not be in the default watch list. It appears here because we had it before.
+        let isNewSymbol = false;
+        const symbol = value.symbol;
+        if (value.rest.startsWith('POSITION: ')) {
+          const position = JSON.parse(value.rest.replace('POSITION: ', ''));
+          isNewSymbol = this.addSymbolIfNotExist(symbol);
         }
-        else this.addSymbolIfNotExist(symbol);
+        else if (value.rest.startsWith('FUNDAMENTAL: ')) {
+          const fundamental = JSON.parse(value.rest.replace('FUNDAMENTAL: ', ''));
+          isNewSymbol = this.addSymbolIfNotExist(symbol);
+        }
+        else if (value.rest.startsWith('QUOTE: ')) {
+          
+        }
+        else if (value.rest.startsWith('ORDERS: ')) {
+
+        }
+        else {
+          console.log(`Unknown message for ${symbol}: ${value.rest}`)
+        }
       }
     );
 
     this.noticeAddSubscription = this.websocketService.getSubject('NOTICE_ADD').asObservable().subscribe(value => {
-      const i = value.text.indexOf(': ');
+      const i = value.indexOf(': ');
       if (i > 0) {
-        const level = value.text.substring(0, i).toLowerCase();
-        const message = value.text.substr(i + 2);
+        const level = value.substring(0, i).toLowerCase();
+        const message = value.substr(i + 2);
         this.notices.push({uuid: this.generateUUID(), message: message, level: level});
       }
       else {
-        console.error(`Unknown notice format: ${value.text}`)
+        console.error(`Unknown notice format: ${value}`)
       }
     });
 
     this.noticeDeleteSubscription = this.websocketService.getSubject('NOTICE_DELETE').asObservable().subscribe(value => {
-      this.removeNotice(value.text);
+      this.removeNotice(value);
     });
   }
 
@@ -53,11 +65,16 @@ export class AppComponent implements OnInit, OnDestroy {
     this.noticeDeleteSubscription.unsubscribe();
   }
 
-  addSymbolIfNotExist(symbol: string) {
+  /**
+   * @return true if this is a new symbol
+   */
+  addSymbolIfNotExist(symbol: string): boolean {
     if (!this.symbols.includes(symbol)) {
       this.symbols.push(symbol);
       this.symbols.sort();
+      return true;
     }
+    return false;
   }
 
   calculateNoticeClass(level: string) {

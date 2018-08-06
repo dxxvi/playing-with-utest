@@ -35,13 +35,19 @@ class InstrumentActor(config: Config) extends Actor with Util {
     implicit val httpBackend: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(config)
 
     val _receive: Receive = {
-        case instrument: String => sttp
-                .get(uri"$instrument")
-                .response(asJson[Instrument])
-                .send()
-                .map(r => InstrumentResponse(r, instrument)) pipeTo self
+        case instrument: String =>
+            if (Main.requestCount.get < 19) {
+                sttp
+                        .get(uri"$instrument")
+                        .response(asJson[Instrument])
+                        .send()
+                        .map(r => InstrumentResponse(r, instrument)) pipeTo self
+                Main.requestCount.incrementAndGet()
+            }
+            else logger.debug(s"Not gonna find the symbol for an instrument now, the request count too high ${Main.requestCount.get}")
         case InstrumentResponse(Response(rawErrorBody, code, statusText, _, _), instrument) =>
-            logger.debug(s"Got InstrumentResponse $code $statusText")
+            Main.requestCount.decrementAndGet()
+            logger.debug(s"Got InstrumentResponse $code $statusText; Request count: ${Main.requestCount.get}")
             rawErrorBody.fold(
                 a => logger.error(s"Error in accessing $instrument: $code $statusText ${a.mkString}"),
                 i => {

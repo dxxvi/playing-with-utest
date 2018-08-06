@@ -22,6 +22,7 @@
         <upickle.version>0.6.6</upickle.version>
         <jetty.version>9.4.8.v20180619</jetty.version>
         <sttp.version>1.3.0-RC4</sttp.version>
+        <google.calendar.version>1.23.0</google.calendar.version>
     </properties>
 
     <dependencies>
@@ -194,6 +195,26 @@
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-reflect</artifactId>
             <version>${scala.version}</version>
+        </dependency>
+
+        <!-- Google Calendar API -->
+        <dependency>
+            <groupId>com.google.api-client</groupId>
+            <artifactId>google-api-client</artifactId>
+            <version>${google.calendar.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.oauth-client</groupId>
+            <artifactId>google-oauth-client-jetty</artifactId>
+            <version>${google.calendar.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.apis</groupId>
+            <artifactId>google-api-services-calendar</artifactId>
+            <version>v3-rev305-${google.calendar.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
