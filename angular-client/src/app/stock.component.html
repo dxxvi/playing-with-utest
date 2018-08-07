@@ -1,19 +1,22 @@
-<table style="width: 100%">
-  <tr>
-    <td></td>
-    <td class="small">Today</td>
-    <td class="small">Est.</td>
-    <td><span style="font-size: larger;">{{ symbol }}</span>&nbsp;<span>{{ po.quantity }}</span></td>
-  </tr>
-  <tr>
-    <td class="small">High</td>
-    <td class="small mono">{{ fu.high }}</td>
-    <td class="small mono">TBD</td>
-    <td></td>
-  </tr>
-  <tr>
-    <td class="small">Low</td>
-    <td class="small mono">{{ fu.low }}</td>
-    <td class="small mono" colspan="2" style="text-align: right;">TBD</td>
-  </tr>
-</table>
+<div [ngStyle]="{'background-color': backgroundColor()}" style="padding: .25em .75em;">
+  <table style="width: 100%">
+    <tr>
+      <td></td>
+      <td class="small">Today</td>
+      <td class="small">Est.</td>
+      <td><span [ngClass]="symbolClass()">{{ symbol }}</span>&nbsp;<span [ngStyle]="{'visibility': po.quantity >= 0 ? 'visible' : 'hidden'}">{{ po.quantity }}</span></td>
+    </tr>
+    <tr>
+      <td class="smaller">High</td>
+      <td class="small mono" [ngClass]="">{{ fu.high }}</td>
+      <td class="small mono">TBD</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td class="smaller">Low</td>
+      <td class="small mono">{{ fu.low }}</td>
+      <td class="small mono">TBD</td>
+      <td style="text-align: right;" [ngStyle]="{'visibility': last_trade_price > 0 ? 'visible' : 'hidden'}">{{ last_trade_price.toFixed(2) }}</td>
+    </tr>
+  </table>
+</div>

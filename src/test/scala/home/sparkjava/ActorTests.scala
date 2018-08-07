@@ -81,7 +81,17 @@ object ActorTests extends TestSuite with Util with TestUtil {
             val actor = actorSystem.actorOf(Props(new AllTradeableStocks))
             actor ! "https://api.robinhood.com/instruments/"
 
-            Thread.sleep(820419)
+            Thread.sleep(82419)
+            actorSystem.terminate()
+        }
+
+        "Test PositionActor" - {
+            val actorSystem = ActorSystem("R")
+            val config = ConfigFactory.load()
+            val positionActor = actorSystem.actorOf(PositionActor.props(config), PositionActor.NAME)
+            positionActor ! Tick
+
+            Thread.sleep(82419)
             actorSystem.terminate()
         }
     }
@@ -153,9 +163,6 @@ class AllTradeableStocks extends Actor with Util {
         }) && (x \ "state" match {
             case JString(state) => state == "active"
             case _ => false
-        }) && (x \ "type" match {
-            case JString(typ) => typ == "stock"
-            case _ => false
-        })  && (x \ "symbol").isInstanceOf[JString] && (x \ "url").isInstanceOf[JString]
+        }) && (x \ "symbol").isInstanceOf[JString] && (x \ "url").isInstanceOf[JString]
     }
 }

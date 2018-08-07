@@ -5,7 +5,7 @@ div.configuration {
 ol:after { display: block; content: ' '; clear: both; }
 ol { display: flex; flex-wrap: wrap; list-style: none; }
 ol > li.stock-panel {
-  border: 1px solid #ccc; border-radius: .3em; padding: .5em 1em; margin: 1em; box-shadow: .2em .2em .5em #aaa;
+  border: 1px solid #ccc; border-radius: .3em; margin: 1em; box-shadow: .2em .2em .5em #aaa;
   background-color: #fff;
 }
 

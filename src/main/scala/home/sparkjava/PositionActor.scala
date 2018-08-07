@@ -31,8 +31,9 @@ class PositionActor(config: Config) extends Actor with Timers with Util {
     timers.startPeriodicTimer(Tick, Tick, 4.seconds)
 
     val _receive: Receive = {
-        case Tick => sttp.header("Authorization", authorization)
-                .get(uri"${SERVER}positions")
+        case Tick =>
+            sttp.header("Authorization", authorization)
+                .get(uri"${SERVER}positions/")
                 .response(asString.map(Position.deserialize))
                 .send()
                 .map(PositionResponse) pipeTo self
@@ -41,12 +42,12 @@ class PositionActor(config: Config) extends Actor with Timers with Util {
             Main.requestCount.decrementAndGet()
             rawErrorBody.fold(
                 a => logger.error(s"Error in getting positions: $code $statusText ${a.mkString}"),
-                a => a foreach { position =>
+                a => a foreach { position => {
                     if (position.quantity.isDefined)
                         Main.instrument2Symbol.get(position.instrument.getOrElse("")).foreach(symbol =>
                             context.actorSelection(s"../${MainActor.NAME}/symbol-$symbol") ! position
                         )
-                }
+                }}
             )
     }
 

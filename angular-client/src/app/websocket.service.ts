@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
-import {AppComponent} from "./app.component";
 
 @Injectable({
   providedIn: 'root'
@@ -50,8 +49,7 @@ export class WebsocketService {
       this.sendMessageThroughSubject('NOTICE_ADD', message.replace('NOTICE: ', ''));
     }
     else if (message.startsWith('DOW_STOCKS: ')) {
-      AppComponent.DOW_STOCKS = JSON.parse(message.replace('DOW_STOCKS: ', ''));
-      console.log(`AppComponent.DOW_STOCKS: ${AppComponent.DOW_STOCKS.length}`);
+      WebsocketService.DOW_STOCKS = JSON.parse(message.replace('DOW_STOCKS: ', ''));
     }
     else {
       const symbol = message.substring(0, i);

@@ -13,6 +13,7 @@ export class StockComponent implements OnInit, OnDestroy {
   symbol: string;
   fu: Fundamental = new Fundamental();
   po: Position = new Position();
+  last_trade_price: number = -.1;
   private subscription: Subscription;
 
   @Input('_symbol') set _symbol(value: string) {
@@ -24,7 +25,19 @@ export class StockComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.subscription = this.websocketService.getSubject(this.symbol).asObservable().subscribe(message => {
-      console.log(`Component ${this.symbol} got a message ${message}`);
+      if (message.POSITION) {
+        const p = message.POSITION;
+        this.po.quantity = p.quantity;
+      }
+      else if (message.FUNDAMENTAL) {
+        const f = message.FUNDAMENTAL;
+        if (f.low && f.low > 0) this.fu.low = f.low;
+        if (f.high && f.high > 0) this.fu.high = f.high;
+        if (f.open && f.open > 0) this.fu.open = f.open;
+      }
+      else if (message.QUOTE) {
+        this.last_trade_price = message.QUOTE.last_trade_price;
+      }
     });
   }
 
@@ -51,26 +64,28 @@ export class StockComponent implements OnInit, OnDestroy {
       .replace(/Z$/, '');
   }
 
-/*
-  setThisComponentBackgroundColor() {
-    if (this.open === 0 || this.lastTradePrice === 0) {
+  backgroundColor() {
+    if (this.fu.open <= 0 || this.last_trade_price <= 0) {
       return;
     }
 
-    const h = this.lastTradePrice > this.open ? 82 : 0;
+    const h = this.last_trade_price > this.fu.open ? 82 : 0;
     const sv = {
       // s, v are from 0 - 100
-      s: this.lastTradePrice <= this.open ? 0 : Math.min((this.lastTradePrice - this.open)/this.open*600, 100),
-      v: this.lastTradePrice <= this.open ? 100 - Math.min((this.open - this.lastTradePrice)/this.open*500, 100) : 100   // from 0 - 100
+      s: this.last_trade_price <= this.fu.open ? 0 : Math.min((this.last_trade_price - this.fu.open)/this.fu.open*600, 100),
+      v: this.last_trade_price <= this.fu.open ? 100 - Math.min((this.fu.open - this.last_trade_price)/this.fu.open*500, 100) : 100   // from 0 - 100
     };
     const sl = {
       s: -1,
       l: (2 - sv.s / 100) * sv.v / 2
     };
     sl.s = sv.s * sv.v / (sl.l < 50 ? sl.l * 2 : 200 - sl.l * 2);
-    this.el.nativeElement.style.backgroundColor = `hsl(${h}, ${sl.s}%, ${sl.l}%)`;
+    return `hsl(${h}, ${sl.s}%, ${sl.l}%)`;
   }
-*/
+
+  symbolClass(): Array<String> {
+    return WebsocketService.DOW_STOCKS.includes(this.symbol) ? ['dow'] : [];
+  }
 
   trackByFunction(i: number, order: Order): string {
     return order.createdAt;

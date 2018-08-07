@@ -1,6 +1,8 @@
 package home.sparkjava.model
 
 import home.sparkjava.Util
+import org.json4s.DefaultFormats
+import org.json4s.native.Serialization
 
 object Quote extends Util {
     /**
@@ -30,6 +32,8 @@ object Quote extends Util {
             case _ => List[Quote]()
         }
     }
+
+    def serialize(q: Quote): String = Serialization.write[Quote](q)(DefaultFormats)
 }
 
 case class Quote(

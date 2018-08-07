@@ -25,13 +25,23 @@ export class AppComponent implements OnInit, OnDestroy {
         if (value.rest.startsWith('POSITION: ')) {
           const position = JSON.parse(value.rest.replace('POSITION: ', ''));
           isNewSymbol = this.addSymbolIfNotExist(symbol);
+          setTimeout(() => {
+            this.websocketService.sendMessageThroughSubject(symbol, { POSITION: position });
+          }, isNewSymbol ? 200 : 1);
         }
         else if (value.rest.startsWith('FUNDAMENTAL: ')) {
           const fundamental = JSON.parse(value.rest.replace('FUNDAMENTAL: ', ''));
           isNewSymbol = this.addSymbolIfNotExist(symbol);
+          setTimeout(() => {
+            this.websocketService.sendMessageThroughSubject(symbol, { FUNDAMENTAL: fundamental });
+          }, isNewSymbol ? 200 : 1);
         }
         else if (value.rest.startsWith('QUOTE: ')) {
-          
+          const quote = JSON.parse(value.rest.replace('QUOTE: ', ''));
+          isNewSymbol = this.addSymbolIfNotExist(symbol);
+          setTimeout(() => {
+            this.websocketService.sendMessageThroughSubject(symbol, { QUOTE: quote })
+          }, isNewSymbol ? 200 : 1);
         }
         else if (value.rest.startsWith('ORDERS: ')) {
 

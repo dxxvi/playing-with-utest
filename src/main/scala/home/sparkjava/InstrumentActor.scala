@@ -6,7 +6,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.softwaremill.sttp._
 import com.softwaremill.sttp.json4s._
-import com.typesafe.config.{Config, ConfigValue}
+import com.typesafe.config.{Config, ConfigFactory, ConfigValue}
 import home.sparkjava.message.AddSymbol
 import org.apache.logging.log4j.ThreadContext
 
@@ -51,7 +51,7 @@ class InstrumentActor(config: Config) extends Actor with Util {
                         .map(r => InstrumentResponse(r, instrument)) pipeTo self
                 Main.requestCount.incrementAndGet()
             }
-            else logger.debug(s"Not gonna find the symbol for an instrument now, the request count too high ${Main.requestCount.get}")
+            else logger.debug(s"Not gonna find the symbol for $instrument now, the request count too high ${Main.requestCount.get}")
         case InstrumentResponse(Response(rawErrorBody, code, statusText, _, _), instrument) =>
             Main.requestCount.decrementAndGet()
             logger.debug(s"Got InstrumentResponse $code $statusText; Request count: ${Main.requestCount.get}")
@@ -75,6 +75,7 @@ class InstrumentActor(config: Config) extends Actor with Util {
         val f: java.util.Map.Entry[String, ConfigValue] => (String, String) =
             e => (e.getValue.unwrapped().asInstanceOf[String], e.getKey)
         instrument2Symbol ++= config.getConfig("dow").entrySet().asScala.map(f)
-        instrument2Symbol ++= config.getConfig("soi").entrySet().asScala.map(f)
+
+        instrument2Symbol ++= ConfigFactory.load("stock.conf").getConfig("soi").entrySet().asScala.map(f)
     }
 }

@@ -5,6 +5,7 @@ export class Position {
 export class Fundamental {
   low: number = -.1;
   high: number = -.1;
+  open: number = -.1;
 }
 
 

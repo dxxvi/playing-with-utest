@@ -1,2 +1,6 @@
 td.small { font-size: small; }
+td.smaller { font-size: x-small; }
 td.mono { font-family: monospace; }
+td.visible { visibility: visible;}
+td.hidden { visibility: hidden; }
+span.dow { border-bottom: 2px solid #ccc; }

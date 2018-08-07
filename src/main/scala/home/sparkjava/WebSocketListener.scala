@@ -4,6 +4,8 @@ import akka.actor.{ActorSelection, ActorSystem}
 import message.{AddSymbol, Tick}
 import org.apache.logging.log4j.scala.Logging
 import org.eclipse.jetty.websocket.api.Session
+import org.json4s.DefaultFormats
+import org.json4s.native.Serialization
 
 class WebSocketListener(system: ActorSystem, mainActorPath: String)
         extends org.eclipse.jetty.websocket.api.WebSocketListener with Logging {
@@ -29,9 +31,10 @@ class WebSocketListener(system: ActorSystem, mainActorPath: String)
     override def onWebSocketConnect(session: Session): Unit = {
         logger.debug("WebSocket connected.")
         this.session = Some(session)
+
+        send(s"DOW_STOCKS: ${Serialization.write(Main.dowStocks)(DefaultFormats)}")
+
         system.actorSelection(s"$mainActorPath/*") ! Tick
-
-
     }
 
     override def onWebSocketError(throwable: Throwable): Unit = {

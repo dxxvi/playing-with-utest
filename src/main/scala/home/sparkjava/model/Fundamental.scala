@@ -25,7 +25,7 @@ object Fundamental extends Util {
                     fromStringToOption[Double](jValue, "pe_ratio"),
                     fromStringToOption[String](jValue, "instrument").getOrElse("~hm~")
                 )}
-            case x => List[Fundamental]()
+            case _ => List[Fundamental]()
         }
     }
 

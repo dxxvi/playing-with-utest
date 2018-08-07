@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import akka.actor.ActorSystem
 import com.typesafe.config.{Config, ConfigFactory}
+import message.Tick
 import org.apache.logging.log4j.ThreadContext
 import spark.Spark
 
@@ -30,12 +31,22 @@ object Main {
 
     def main(args: Array[String]): Unit = {
         val config: Config = ConfigFactory.load()
+
+        buildDowStocks(config)
+
         val actorSystem = ActorSystem("R")
         val mainActor = actorSystem.actorOf(MainActor.props(config), MainActor.NAME)
         val webSocketListener = initializeSpark(actorSystem, mainActor.path.toString)
         actorSystem.actorOf(WebSocketActor.props(webSocketListener), WebSocketActor.NAME)
-        actorSystem.actorOf(DefaultWatchListActor.props(config), DefaultWatchListActor.NAME)
+        actorSystem.actorOf(PositionActor.props(config), PositionActor.NAME)
+        actorSystem.actorOf(FundamentalActor.props(config), FundamentalActor.NAME)
+        actorSystem.actorOf(QuoteActor.props(config), QuoteActor.NAME)
+
+        val dwlActor = actorSystem.actorOf(DefaultWatchListActor.props(config), DefaultWatchListActor.NAME)
+
         actorSystem.actorOf(InstrumentActor.props(config), InstrumentActor.NAME)
+
+        dwlActor ! Tick
 
         StdIn.readLine()
         Spark.stop()

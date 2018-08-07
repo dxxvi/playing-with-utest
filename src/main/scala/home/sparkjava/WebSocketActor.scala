@@ -13,7 +13,7 @@ class WebSocketActor(wsListener: WebSocketListener) extends Actor with Util {
     import WebSocketActor._
 
     val _receive: Receive = {
-        case x: String => wsListener.send(x); logger.debug(s"`$x` was sent to browser")
+        case x: String => wsListener.send(x)
         case x => logger.debug(s"Don't know what to do with $x yet")
     }
 
