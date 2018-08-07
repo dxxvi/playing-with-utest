@@ -7,6 +7,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.logging.log4j.ThreadContext
 import spark.Spark
 
+import scala.collection.JavaConverters._
 import scala.collection.concurrent.TrieMap
 import scala.io.StdIn
 
@@ -24,6 +25,8 @@ object Main {
                 .find(_ != 0)
                 .getOrElse(0)
     })
+
+    val dowStocks: collection.mutable.Set[String] = collection.mutable.HashSet[String]()
 
     def main(args: Array[String]): Unit = {
         val config: Config = ConfigFactory.load()
@@ -46,6 +49,10 @@ object Main {
 
         Spark.init()                   // Needed if no HTTP route is defined after the WebSocket routes
         webSocketListener
+    }
+
+    private def buildDowStocks(config: Config) {
+        dowStocks ++= config.getConfig("dow").entrySet().asScala.map(_.getKey)
     }
 }
 

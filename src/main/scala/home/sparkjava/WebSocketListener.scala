@@ -30,6 +30,8 @@ class WebSocketListener(system: ActorSystem, mainActorPath: String)
         logger.debug("WebSocket connected.")
         this.session = Some(session)
         system.actorSelection(s"$mainActorPath/*") ! Tick
+
+
     }
 
     override def onWebSocketError(throwable: Throwable): Unit = {

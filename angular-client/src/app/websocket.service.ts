@@ -1,10 +1,13 @@
 import { Injectable } from '@angular/core';
 import { Subject } from 'rxjs';
+import {AppComponent} from "./app.component";
 
 @Injectable({
   providedIn: 'root'
 })
 export class WebsocketService {
+  static DOW_STOCKS: Array<string> = [];
+
   private ws: WebSocket;
   private name2Subject: Map<string, Subject<any>> = new Map<string, Subject<any>>();
 
@@ -45,6 +48,10 @@ export class WebsocketService {
     else if (message.includes('NOTICE: ')) {
       // the message looks like NOTICE: PRIMARY/DANGER: You should ...
       this.sendMessageThroughSubject('NOTICE_ADD', message.replace('NOTICE: ', ''));
+    }
+    else if (message.startsWith('DOW_STOCKS: ')) {
+      AppComponent.DOW_STOCKS = JSON.parse(message.replace('DOW_STOCKS: ', ''));
+      console.log(`AppComponent.DOW_STOCKS: ${AppComponent.DOW_STOCKS.length}`);
     }
     else {
       const symbol = message.substring(0, i);

@@ -14,6 +14,8 @@ import scala.util.Try
 trait Util {
     protected val logger: Logger = Logger(getClass)
 
+    def isDow(symbol: String): Boolean = Main.dowStocks.contains(symbol)
+
     def configureAkkaHttpBackend(config: Config): SttpBackend[Future, Source[ByteString, Any]] = {
         import com.softwaremill.sttp.akkahttp._
 

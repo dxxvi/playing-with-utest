@@ -11,6 +11,7 @@ object StockActor {
 }
 
 class StockActor(symbol: String) extends Actor with Util {
+    val isDow: Boolean = isDow(symbol)
     var fu = new Fundamental(
         Some(-.1), Some(-.1), Some(""), Some(-.1), Some(-.1), Some(-.1), Some(-.1), Some(-.1), Some(-.1), Some(-.1), ""
     )
