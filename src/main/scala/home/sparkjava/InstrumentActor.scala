@@ -43,17 +43,12 @@ class InstrumentActor(config: Config) extends Actor with Util {
                 Main.instrument2Symbol += ((instrument, symbolO.get))
                 context.actorSelection(s"../${MainActor.NAME}") ! AddSymbol(symbolO.get)
             }
-            else if (Main.requestCount.get < 19) {
-                sttp
-                        .get(uri"$instrument")
-                        .response(asJson[Instrument])
-                        .send()
-                        .map(r => InstrumentResponse(r, instrument)) pipeTo self
-                Main.requestCount.incrementAndGet()
-            }
-            else logger.debug(s"Not gonna find the symbol for $instrument now, the request count too high ${Main.requestCount.get}")
+            else sttp
+                    .get(uri"$instrument")
+                    .response(asJson[Instrument])
+                    .send()
+                    .map(r => InstrumentResponse(r, instrument)) pipeTo self
         case InstrumentResponse(Response(rawErrorBody, code, statusText, _, _), instrument) =>
-            Main.requestCount.decrementAndGet()
             rawErrorBody.fold(
                 a => logger.error(s"Error in accessing $instrument: $code $statusText"),
                 i => {

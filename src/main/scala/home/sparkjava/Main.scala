@@ -14,7 +14,6 @@ import scala.io.StdIn
 
 object Main {
     val instrument2Symbol: TrieMap[String, String] = TrieMap()
-    val requestCount = new AtomicInteger()
     val clearThreadContextMap: PartialFunction[Any, Any] = { case x => ThreadContext.clearMap(); x }
 
     // compare 2 timestamps of the format yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'. The '.SSSSSS' is optional.

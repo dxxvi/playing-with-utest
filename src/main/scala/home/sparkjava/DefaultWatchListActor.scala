@@ -35,10 +35,8 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with Util 
                 .response(asString.map(extractInstruments))
                 .send()
                 .map(InstrumentResponse) pipeTo self
-            Main.requestCount.incrementAndGet()
         case InstrumentResponse(Response(rawErrorBody, code, statusText, _, _)) =>
-            Main.requestCount.decrementAndGet()
-            logger.debug(s"Got InstrumentResponse: $code $statusText; Request count: ${Main.requestCount.get}")
+            logger.debug(s"Got InstrumentResponse: $code $statusText")
             rawErrorBody.fold(
                 a => logger.error(s"Error in getting default watch list: $code $statusText"),
                 a => a foreach { instrument =>
@@ -46,7 +44,7 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with Util 
                         context.actorSelection(s"../${InstrumentActor.NAME}") ! instrument
                 }
             )
-        case x => logger.error(s"Don't know what to do with $x")
+        case x => logger.error(s"Don't know what to do with $x: type ${x.getClass.getName}")
     }
 
     override def receive: Receive = Main.clearThreadContextMap andThen _receive

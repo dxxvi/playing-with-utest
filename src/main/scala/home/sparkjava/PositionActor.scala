@@ -37,17 +37,18 @@ class PositionActor(config: Config) extends Actor with Timers with Util {
                 .response(asString.map(Position.deserialize))
                 .send()
                 .map(PositionResponse) pipeTo self
-            Main.requestCount.incrementAndGet()
         case PositionResponse(Response(rawErrorBody, code, statusText, _, _)) =>
-            Main.requestCount.decrementAndGet()
             rawErrorBody.fold(
-                a => logger.error(s"Error in getting positions: $code $statusText"),
-                a => a foreach { position => {
-                    if (position.quantity.isDefined)
-                        Main.instrument2Symbol.get(position.instrument.getOrElse("")).foreach(symbol =>
-                            context.actorSelection(s"../${MainActor.NAME}/symbol-$symbol") ! position
-                        )
-                }}
+                _ => logger.error(s"Error in getting positions: $code $statusText"),
+                a => {
+                    logger.debug(s"Got ${a.size} positions: ${a.count(p => p.quantity.isDefined)} usable")
+                    a foreach { position => {
+                        if (position.quantity.isDefined)
+                            Main.instrument2Symbol.get(position.instrument.getOrElse("")).foreach(symbol =>
+                                context.actorSelection(s"../${MainActor.NAME}/symbol-$symbol") ! position
+                            )
+                    }}
+                }
             )
     }
 

@@ -22,7 +22,9 @@ class StockActor(symbol: String) extends Actor with Util {
         None, None, None, None, None, None, None, None, None, None, None, None, None, None, None
     )
     var instrument = ""
-    var orders: Seq[OrderElement] = Seq[OrderElement]()
+    var lastTimeHistoricalOrdersRequested: Long = 0 // in seconds
+    val orders: collection.mutable.SortedSet[OrderElement] =
+        collection.mutable.SortedSet[OrderElement]()(Ordering.by[OrderElement, String](_.created_at.get)(Main.timestampOrdering.reverse))
 
     val _receive: Receive = {
         case _fu: Fundamental => if ((_fu.low.isDefined && _fu.high.isDefined) || _fu.open.isDefined) {
@@ -39,13 +41,17 @@ class StockActor(symbol: String) extends Actor with Util {
             q = _q
             sendQuote
             instrument = q.instrument.get
-            if (orders.isEmpty)
+            val now = System.currentTimeMillis / 1000
+            if (p.quantity.exists(_ > 0) && orders.isEmpty && (now - lastTimeHistoricalOrdersRequested > 15)) {
+                // we should wait for the OrderActor a bit because we receive quote every 4 seconds
+                lastTimeHistoricalOrdersRequested = now
                 context.actorSelection(s"../../${OrderActor.NAME}") !
-                        HistoricalOrders(symbol, instrument, 2, Seq[OrderElement](), None)
-        case HistoricalOrders(_, _, times, _orders, cursor) =>
-            orders = _orders.filter(oe => oe.state.isDefined && (oe.state.get == "filled" || oe.state.get.contains("confirmed")))
+                        HistoricalOrders(symbol, instrument, 3, Seq[OrderElement](), None)
+            }
+        case HistoricalOrders(_, _, _, _orders, _) =>
+            orders ++= _orders.filter(oe => oe.state.isDefined && (oe.state.get == "filled" || oe.state.get.contains("confirmed")))
             println(s"... check $symbol.log ...")
-            logger.debug(s"Got HistoricalOrders:\n${orders.map(_.toString).mkString("\n")}")
+            logger.debug(s"Got HistoricalOrders:\n${orders.toList.map(_.toString).mkString("\n")}")
         case Tick => // purpose: send the symbol to the browser
             if (p.quantity.get >= 0) sendPosition else sendFundamental
     }

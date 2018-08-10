@@ -38,7 +38,7 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
 
     val _receive: Receive = {
         case Tick =>
-        case ho @ HistoricalOrders(symbol, instrument, times, orders, next) =>
+        case ho @ HistoricalOrders(_, instrument, _, _, next) =>
             if (historicalOrdersCount < 5) {
                 val u = next.getOrElse(s"${SERVER}orders/?instrument=" + encodeUrl(instrument))
                 logger.debug(s"HistoricalOrder uri: $u")
