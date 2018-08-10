@@ -14,6 +14,9 @@ import scala.util.Try
 trait Util {
     protected val logger: Logger = Logger(getClass)
 
+    // we need this because sttp's uri"..." doesn't work correctly
+    def encodeUrl(s: String): String = s.replace(":", "%" + "3A").replace("/", "%" + "2F")
+
     def isDow(symbol: String): Boolean = Main.dowStocks.contains(symbol)
 
     def configureAkkaHttpBackend(config: Config): SttpBackend[Future, Source[ByteString, Any]] = {

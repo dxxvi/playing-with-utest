@@ -54,11 +54,11 @@ class InstrumentActor(config: Config) extends Actor with Util {
             else logger.debug(s"Not gonna find the symbol for $instrument now, the request count too high ${Main.requestCount.get}")
         case InstrumentResponse(Response(rawErrorBody, code, statusText, _, _), instrument) =>
             Main.requestCount.decrementAndGet()
-            logger.debug(s"Got InstrumentResponse $code $statusText; Request count: ${Main.requestCount.get}")
             rawErrorBody.fold(
-                a => logger.error(s"Error in accessing $instrument: $code $statusText ${a.mkString}"),
+                a => logger.error(s"Error in accessing $instrument: $code $statusText"),
                 i => {
                     if (i.symbol.nonEmpty && i.tradeable.contains(true) && i.state.contains("active")) {
+                        logger.debug(s"We might need to add ${i.symbol.get} = $instrument to stock.conf")
                         Main.instrument2Symbol += ((instrument, i.symbol.get))
                         context.actorSelection(s"../${MainActor.NAME}") ! AddSymbol(i.symbol.get)
                     }

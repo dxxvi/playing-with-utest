@@ -44,7 +44,7 @@ class FundamentalActor(config: Config) extends Actor with Timers with Util {
         case FundamentalResponse(Response(rawErrorBody, code, statusText, _, _)) =>
             Main.requestCount.decrementAndGet()
             rawErrorBody fold (
-                a => logger.error(s"Error in getting fundamentals: $code $statusText ${a.mkString}"),
+                a => logger.error(s"Error in getting fundamentals: $code $statusText"),
                 a => a.foreach(fu => Main.instrument2Symbol.get(fu.instrument) match {
                     case Some(symbol) => context.actorSelection(s"../${MainActor.NAME}/symbol-$symbol") ! fu
                     case None => logger.error(s"Got a fundamental w/ a strange instrument: $fu")

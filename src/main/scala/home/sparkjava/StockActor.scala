@@ -1,9 +1,9 @@
 package home.sparkjava
 
 import akka.actor.{Actor, Props}
-import home.sparkjava.message.Tick
+import message.{HistoricalOrders, Tick}
 import org.apache.logging.log4j.ThreadContext
-import model.{Fundamental, Position, Quote}
+import model.{Fundamental, OrderElement, Position, Quote}
 
 object StockActor {
     def props(symbol: String): Props = Props(new StockActor(symbol))
@@ -21,21 +21,32 @@ class StockActor(symbol: String) extends Actor with Util {
     var q = new Quote(
         None, None, None, None, None, None, None, None, None, None, None, None, None, None, None
     )
+    var instrument = ""
+    var orders: Seq[OrderElement] = Seq[OrderElement]()
 
     val _receive: Receive = {
         case _fu: Fundamental => if ((_fu.low.isDefined && _fu.high.isDefined) || _fu.open.isDefined) {
             fu = _fu
             sendFundamental
+            instrument = fu.instrument
         }
         case _p: Position => if (_p.quantity.isDefined) {
             p = _p
             sendPosition
+            if (p.instrument.nonEmpty) instrument = p.instrument.get
         }
-        case _q: Quote => if (_q.last_trade_price.isDefined) {
+        case _q: Quote => // the QuoteActor is sure that symbol, last_trade_price and instrument are there
             q = _q
             sendQuote
-        }
-        case Tick =>
+            instrument = q.instrument.get
+            if (orders.isEmpty)
+                context.actorSelection(s"../../${OrderActor.NAME}") !
+                        HistoricalOrders(symbol, instrument, 2, Seq[OrderElement](), None)
+        case HistoricalOrders(_, _, times, _orders, cursor) =>
+            orders = _orders.filter(oe => oe.state.isDefined && (oe.state.get == "filled" || oe.state.get.contains("confirmed")))
+            println(s"... check $symbol.log ...")
+            logger.debug(s"Got HistoricalOrders:\n${orders.map(_.toString).mkString("\n")}")
+        case Tick => // purpose: send the symbol to the browser
             if (p.quantity.get >= 0) sendPosition else sendFundamental
     }
     override def receive: Receive = sideEffect andThen _receive

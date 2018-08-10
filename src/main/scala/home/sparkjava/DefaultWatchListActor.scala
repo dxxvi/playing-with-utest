@@ -40,7 +40,7 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with Util 
             Main.requestCount.decrementAndGet()
             logger.debug(s"Got InstrumentResponse: $code $statusText; Request count: ${Main.requestCount.get}")
             rawErrorBody.fold(
-                a => logger.error(s"Error in getting default watch list: $code $statusText ${a.mkString}"),
+                a => logger.error(s"Error in getting default watch list: $code $statusText"),
                 a => a foreach { instrument =>
                     if (!Main.instrument2Symbol.contains(instrument))
                         context.actorSelection(s"../${InstrumentActor.NAME}") ! instrument

@@ -41,6 +41,7 @@ object Main {
         actorSystem.actorOf(PositionActor.props(config), PositionActor.NAME)
         actorSystem.actorOf(FundamentalActor.props(config), FundamentalActor.NAME)
         actorSystem.actorOf(QuoteActor.props(config), QuoteActor.NAME)
+        actorSystem.actorOf(OrderActor.props(config), OrderActor.NAME)
 
         val dwlActor = actorSystem.actorOf(DefaultWatchListActor.props(config), DefaultWatchListActor.NAME)
 

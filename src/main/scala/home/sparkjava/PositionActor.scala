@@ -41,7 +41,7 @@ class PositionActor(config: Config) extends Actor with Timers with Util {
         case PositionResponse(Response(rawErrorBody, code, statusText, _, _)) =>
             Main.requestCount.decrementAndGet()
             rawErrorBody.fold(
-                a => logger.error(s"Error in getting positions: $code $statusText ${a.mkString}"),
+                a => logger.error(s"Error in getting positions: $code $statusText"),
                 a => a foreach { position => {
                     if (position.quantity.isDefined)
                         Main.instrument2Symbol.get(position.instrument.getOrElse("")).foreach(symbol =>

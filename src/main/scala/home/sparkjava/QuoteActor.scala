@@ -39,8 +39,8 @@ class QuoteActor(config: Config) extends Actor with Timers with Util {
                     .send()
                     .map(QuoteResponse) pipeTo self
         case QuoteResponse(Response(rawErrorBody, code, statusText, _, _)) => rawErrorBody fold (
-                a => logger.error(s"Error in getting quotes: $code $statusText ${a.mkString}"),
-                a => a foreach (q => if (q.symbol.isDefined && q.last_trade_price.isDefined)
+                a => logger.error(s"Error in getting quotes: $code $statusText"),
+                a => a foreach (q => if (q.symbol.isDefined && q.last_trade_price.isDefined && q.instrument.isDefined)
                     context.actorSelection(s"../${MainActor.NAME}/symbol-${q.symbol.get}") ! q
                 )
         )

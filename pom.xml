@@ -21,7 +21,7 @@
         <akka.http.version>10.1.3</akka.http.version>
         <upickle.version>0.6.6</upickle.version>
         <jetty.version>9.4.8.v20180619</jetty.version>
-        <sttp.version>1.3.0-RC4</sttp.version>
+        <sttp.version>1.3.0-RC5</sttp.version>
         <google.calendar.version>1.23.0</google.calendar.version>
     </properties>
 

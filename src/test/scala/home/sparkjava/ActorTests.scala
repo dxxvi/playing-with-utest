@@ -94,6 +94,18 @@ object ActorTests extends TestSuite with Util with TestUtil {
             Thread.sleep(82419)
             actorSystem.terminate()
         }
+
+        "Test sttp" - {
+            import com.softwaremill.sttp._
+            val i = "a b"
+            var uri = uri"http://a.b.c/?i=$i"
+            println(uri.toString)         // http://a.b.c/?i=a+b
+            val j = "http://d.e.f/g"
+            uri = uri"http://a.b.c/?i=$j"
+            println(uri.toString)         // http://a.b.c/?i=http://d.e.f/g
+
+            println("http://a.b/c/".replace(":", "%" + "3A").replace("/", "%" + "2F"))
+        }
     }
 }
 
@@ -116,7 +128,7 @@ class AllTradeableStocks extends Actor with Util {
                 .send()
                 .map(ResponseWrapper) pipeTo self
         case ResponseWrapper(Response(rawErrorBody, code, statusText, _, _)) => rawErrorBody.fold(
-            a => println(s"Error: $code $statusText ${a.mkString}"),
+            a => println(s"Error: $code $statusText"),
             a => {
                 Files.write(
                     Paths.get("/dev", "shm", "test.txt"),
