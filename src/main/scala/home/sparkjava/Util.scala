@@ -10,12 +10,12 @@ import org.json4s._
 import scala.concurrent.Future
 import scala.reflect.runtime.universe._
 import scala.util.Try
+import scala.util.matching.Regex
 
 trait Util {
     protected val logger: Logger = Logger(getClass)
 
-    // we need this because sttp's uri"..." doesn't work correctly
-    def encodeUrl(s: String): String = s.replace(":", "%" + "3A").replace("/", "%" + "2F")
+    private val decimalPart: Regex = """\.\d+$""".r
 
     def isDow(symbol: String): Boolean = Main.dowStocks.contains(symbol)
 
@@ -33,11 +33,11 @@ trait Util {
     def fromStringToOption[T: TypeTag](jValue: JValue, field: String): Option[T] = jValue \ field match {
         case JString(x) => typeOf[T] match {
             case t if t =:= typeOf[Double] => Try(x.toDouble).toOption.asInstanceOf[Option[T]]
-            case t if t =:= typeOf[Int] => Try(x.toInt).toOption.asInstanceOf[Option[T]]
+            case t if t =:= typeOf[Int] => Try(decimalPart.replaceAllIn(x, "").toInt).toOption.asInstanceOf[Option[T]]
             case t if t =:= typeOf[String] => Some(x).asInstanceOf[Option[T]]
             case t if t =:= typeOf[Boolean] => Try(x.toBoolean).asInstanceOf[Option[T]]
         }
-        case x => None
+        case _ => None
     }
 
     // T is String, Int, Long or Boolean only.

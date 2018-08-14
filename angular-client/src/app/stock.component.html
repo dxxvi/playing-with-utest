@@ -8,15 +8,24 @@
     </tr>
     <tr>
       <td class="smaller">High</td>
-      <td class="small mono" [ngClass]="">{{ fu.high }}</td>
+      <td class="small mono" [ngClass]="">{{ fu.high.toFixed(2) }}</td>
       <td class="small mono">TBD</td>
       <td></td>
     </tr>
     <tr>
       <td class="smaller">Low</td>
-      <td class="small mono">{{ fu.low }}</td>
+      <td class="small mono">{{ fu.low.toFixed(2) }}</td>
       <td class="small mono">TBD</td>
       <td style="text-align: right;" [ngStyle]="{'visibility': last_trade_price > 0 ? 'visible' : 'hidden'}">{{ last_trade_price.toFixed(2) }}</td>
+    </tr>
+  </table>
+  <table style="font: .9em monospace; width: 100%">
+    <tr *ngFor="let order of orders; trackBy: trackByFunction" [ngClass]="order.side">
+      <td>{{ minifyTimestamp(order.created_at) }}</td>
+      <td>{{ order.cumulative_quantity }}</td>
+      <td class="x-small">&#8903;</td>
+      <td>{{ order.average_price ? order.average_price : order.price }}</td>
+      <td *ngIf="order.state != 'filled'">&#10008;</td>
     </tr>
   </table>
 </div>

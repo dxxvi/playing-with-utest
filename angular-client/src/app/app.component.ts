@@ -26,14 +26,14 @@ export class AppComponent implements OnInit, OnDestroy {
           const position = JSON.parse(value.rest.replace('POSITION: ', ''));
           isNewSymbol = this.addSymbolIfNotExist(symbol);
           setTimeout(() => {
-            this.websocketService.sendMessageThroughSubject(symbol, { POSITION: position });
+            this.websocketService.sendMessageThroughSubject(symbol, { POSITION: position })
           }, isNewSymbol ? 200 : 1);
         }
         else if (value.rest.startsWith('FUNDAMENTAL: ')) {
           const fundamental = JSON.parse(value.rest.replace('FUNDAMENTAL: ', ''));
           isNewSymbol = this.addSymbolIfNotExist(symbol);
           setTimeout(() => {
-            this.websocketService.sendMessageThroughSubject(symbol, { FUNDAMENTAL: fundamental });
+            this.websocketService.sendMessageThroughSubject(symbol, { FUNDAMENTAL: fundamental })
           }, isNewSymbol ? 200 : 1);
         }
         else if (value.rest.startsWith('QUOTE: ')) {
@@ -44,7 +44,11 @@ export class AppComponent implements OnInit, OnDestroy {
           }, isNewSymbol ? 200 : 1);
         }
         else if (value.rest.startsWith('ORDERS: ')) {
-
+          const orders = JSON.parse(value.rest.replace('ORDERS: ', ''));
+          isNewSymbol = this.addSymbolIfNotExist(symbol);
+          setTimeout(() => {
+            this.websocketService.sendMessageThroughSubject(symbol, { ORDERS: orders})
+          }, isNewSymbol ? 200 : 1);
         }
         else {
           console.log(`Unknown message for ${symbol}: ${value.rest}`)

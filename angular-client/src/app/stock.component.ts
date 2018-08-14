@@ -1,8 +1,7 @@
 import {Component, ElementRef, Input, OnDestroy, OnInit} from '@angular/core';
 import {WebsocketService} from './websocket.service';
 import {Subscription} from 'rxjs';
-import {Order} from './order';
-import {Fundamental, Position} from './model';
+import {Fundamental, Order, Position} from './model';
 
 @Component({
   selector: 'li.stock-panel',
@@ -14,6 +13,7 @@ export class StockComponent implements OnInit, OnDestroy {
   fu: Fundamental = new Fundamental();
   po: Position = new Position();
   last_trade_price: number = -.1;
+  orders: Array<Order> = [];
   private subscription: Subscription;
 
   @Input('_symbol') set _symbol(value: string) {
@@ -25,18 +25,27 @@ export class StockComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.subscription = this.websocketService.getSubject(this.symbol).asObservable().subscribe(message => {
-      if (message.POSITION) {
-        const p = message.POSITION;
-        this.po.quantity = p.quantity;
-      }
+      if (message.POSITION) this.po.quantity = message.POSITION.quantity;
       else if (message.FUNDAMENTAL) {
         const f = message.FUNDAMENTAL;
         if (f.low && f.low > 0) this.fu.low = f.low;
         if (f.high && f.high > 0) this.fu.high = f.high;
         if (f.open && f.open > 0) this.fu.open = f.open;
       }
-      else if (message.QUOTE) {
-        this.last_trade_price = message.QUOTE.last_trade_price;
+      else if (message.QUOTE) this.last_trade_price = message.QUOTE.last_trade_price;
+      else if (message.ORDERS) {
+        this.orders = (message.ORDERS as Array<any>).map(v => {
+          return {
+            created_at: v.created_at,
+            id: v.id,
+            cumulative_quantity: v.cumulative_quantity,
+            state: v.state,
+            price: v.price,
+            average_price: v.average_price,
+            side: v.side,
+            matchId: v.matchId
+          };
+        })
       }
     });
   }
@@ -88,7 +97,7 @@ export class StockComponent implements OnInit, OnDestroy {
   }
 
   trackByFunction(i: number, order: Order): string {
-    return order.createdAt;
+    return order.created_at;
   }
 
 }

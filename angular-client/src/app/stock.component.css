@@ -1,6 +1,15 @@
-td.small { font-size: small; }
-td.smaller { font-size: x-small; }
+td.small { font-size: .9em; }
+td.smaller { font-size: .8em; }
+td.x-small { font-size: .7em; }
 td.mono { font-family: monospace; }
 td.visible { visibility: visible;}
 td.hidden { visibility: hidden; }
 span.dow { border-bottom: 2px solid #ccc; }
+
+tr.buy { color: hsl(0, 50%, 40%); }
+tr.sell { color: hsl(240, 50%, 40%); }
+tr.buy.confirmed { font-style: italic; color: hsl(0, 50%, 60%); }
+tr.sell.confirmed { font-style: italic; color: hsl(240, 50%, 60%); }
+tr.buy.matched { color: hsl(0, 50%, 82%); }
+tr.sell.matched { color: hsl(240, 50%, 82%); }
+tr.matched.hide { display: none; }

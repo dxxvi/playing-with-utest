@@ -4,11 +4,11 @@ import akka.actor.{Actor, Props, Timers}
 import akka.pattern.pipe
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import com.softwaremill.sttp.Uri.{QueryFragment, QueryFragmentEncoding}
 import com.softwaremill.sttp._
 import com.typesafe.config.Config
-
 import home.sparkjava.message.{HistoricalOrders, Tick}
-import model.{Orders, OrderElement}
+import model.{OrderElement, Orders}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -40,10 +40,8 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
         case Tick =>
         case ho @ HistoricalOrders(_, instrument, _, _, next) =>
             if (historicalOrdersCount < 5) {
-                val u = next.getOrElse(s"${SERVER}orders/?instrument=" + encodeUrl(instrument))
-                logger.debug(s"HistoricalOrder uri: $u")
                 sttp.header("Authorization", authorization)
-                        .get(uri"$u")
+                        .get(uri"${SERVER}orders/".queryFragment(QueryFragment.KeyValue("instrument", instrument, valueEncoding = QueryFragmentEncoding.All)))
                         .response(asString.map(Orders.deserialize))
                         .send()
                         .map(r => HistoricalOrdersResponse(r, ho)) pipeTo self
@@ -54,16 +52,20 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
             rawErrorBody.fold(
                 a => logger.error(s"Error in getting historical orders $symbol ($code, $statusText $historicalOrdersCount) next $next"),
                 a => {
-                    val orders = _orders ++ a.results.getOrElse(List[OrderElement]())
-                    val _times = times - 1
-                    if (_times == 0 || a.next.isEmpty) {
-                        context.actorSelection(s"../${MainActor.NAME}/symbol-$symbol") !
-                                HistoricalOrders(symbol, instrument, _times, orders, a.next)
-                        logger.debug(s"Send back to StockActor HistoricalOrders($symbol, _, ${_times}, _, ${a.next})")
-                    }
+                    if (a.results.isDefined && a.results.get.exists(_.cumulative_quantity.isEmpty))
+                        logger.error(s"$symbol has some orders with empty cummulative quantity\n${a.results.get.map(_.toString).mkString("\n")}")
                     else {
-                        self ! HistoricalOrders(symbol, instrument, _times, orders, a.next)
-                        logger.debug(s"Send to self HistoricalOrders($symbol, _, ${_times}, _, ${a.next})")
+                        val orders = _orders ++ a.results.getOrElse(List[OrderElement]())
+                        val _times = times - 1
+                        if (_times == 0 || a.next.isEmpty) {
+                            context.actorSelection(s"../${MainActor.NAME}/symbol-$symbol") !
+                                    HistoricalOrders(symbol, instrument, _times, orders, a.next)
+                            logger.debug(s"Send back to StockActor HistoricalOrders($symbol, _, ${_times}, _, ${a.next})")
+                        }
+                        else {
+                            self ! HistoricalOrders(symbol, instrument, _times, orders, a.next)
+                            logger.debug(s"Send to self HistoricalOrders($symbol, _, ${_times}, _, ${a.next})")
+                        }
                     }
                 }
             )

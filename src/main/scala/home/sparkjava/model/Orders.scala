@@ -19,13 +19,13 @@ object Orders extends Util {
                     fromStringToOption[String](jv, "created_at"),
                     fromStringToOption[Double](jv, "fees"),
                     fromStringToOption[String](jv, "id"),
-                    fromStringToOption[Double](jv, "cumulative_quantity"),
+                    fromStringToOption[Int](jv, "cumulative_quantity"),
                     fromStringToOption[String](jv, "reject_reason"),
                     fromStringToOption[String](jv, "state"),
                     fromStringToOption[Double](jv, "price"),
                     fromStringToOption[Double](jv, "average_price"),
                     fromStringToOption[String](jv, "side"),
-                    fromStringToOption[Double](jv, "quantity")
+                    fromStringToOption[Int](jv, "quantity")
                 )}
                 Some(orderElements)
             case _ => None
@@ -43,11 +43,28 @@ case class OrderElement(
     created_at: Option[String],
     fees: Option[Double],
     id: Option[String],
-    cumulative_quantity: Option[Double],
+    cumulative_quantity: Option[Int],
     reject_reason: Option[String],
     state: Option[String],
     price: Option[Double],
     average_price: Option[Double],
     side: Option[String],
-    quantity: Option[Double]
-)
+    quantity: Option[Int],
+    matchId: Option[String] = None
+) {
+    override def toString: String =
+        "(" +
+        s"${if (updated_at.isEmpty) None else updated_at.get}," +
+        s"${if (created_at.isEmpty) None else created_at.get}," +
+        s"${if (fees.isEmpty) None else fees.get}," +
+        s"${if (id.isEmpty) None else id.get}," +
+        s"${if (cumulative_quantity.isEmpty) None else cumulative_quantity.get}," +
+        s"${if (reject_reason.isEmpty) None else reject_reason.get}," +
+        s"${if (state.isEmpty) None else state.get}," +
+        s"${if (price.isEmpty) None else price.get}," +
+        s"${if (average_price.isEmpty) None else average_price.get}," +
+        s"${if (side.isEmpty) None else side.get}," +
+        s"${if (quantity.isEmpty) None else quantity.get}," +
+        s"${if (matchId.isEmpty) None else matchId.get}" +
+        ")"
+}
