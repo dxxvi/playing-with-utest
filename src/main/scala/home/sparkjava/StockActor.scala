@@ -158,7 +158,12 @@ class StockActor(symbol: String) extends Actor with Util {
         @tailrec
         def f(givenSum: Int, currentSum: Int, building: List[OrderElement], remain: List[OrderElement]): List[OrderElement] = {
             if (givenSum == currentSum || remain == Nil) building
-            else f(givenSum, currentSum + remain.head.quantity.get, building :+ remain.head, remain.tail)
+            else f(
+                givenSum,
+                currentSum + (if (remain.head.side.contains("buy")) remain.head.quantity.get else -remain.head.quantity.get),
+                building :+ remain.head,
+                remain.tail
+            )
         }
 
         f(p.quantity.get.toInt, 0, Nil, orders.toList)
