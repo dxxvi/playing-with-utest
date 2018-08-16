@@ -39,6 +39,7 @@ export class StockComponent implements OnInit, OnDestroy {
             created_at: v.created_at,
             id: v.id,
             cumulative_quantity: v.cumulative_quantity,
+            quantity: v.quantity,
             state: v.state,
             price: v.price,
             average_price: v.average_price,

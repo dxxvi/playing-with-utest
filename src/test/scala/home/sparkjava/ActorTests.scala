@@ -94,6 +94,89 @@ object ActorTests extends TestSuite with Util with TestUtil {
             Thread.sleep(82419)
             actorSystem.terminate()
         }
+
+        "Test assign match id" - {
+            import model.OrderElement
+            def combineIds(s1: String, s2: String): String = if (s1 < s2) s"$s1-$s2" else s"$s2-$s1"
+
+            def doBuySellMatch(o1: OrderElement, o2: OrderElement): Option[Boolean] = for {
+                side1 <- o1.side
+                side2 <- o2.side
+                if side1 == "buy" && side2 == "sell"
+                quantity1 <- o1.quantity
+                quantity2 <- o2.quantity
+                if quantity1 == quantity2
+                average_price1 <- o1.average_price
+                average_price2 <- o2.average_price
+                if average_price1 < average_price2
+            } yield true
+
+            def assignMatchId(tbOrders: List[OrderElement]): List[OrderElement] = {
+                @annotation.tailrec
+                def f(withMatchIds: List[OrderElement], working: List[OrderElement]): List[OrderElement] = {
+                    var _withMatchIds = List[OrderElement]()
+                    var _working = List[OrderElement]()
+                    var i = 0
+                    var matchFound = false
+                    while (i < working.length - 1 && !matchFound) {
+                        if (doBuySellMatch(working(i), working(i + 1)).contains(true)) {
+                            matchFound = true
+                            val buySellT: (OrderElement, OrderElement) =
+                                if (i + 2 < working.length && doBuySellMatch(working(i + 2), working(i + 1)).contains(true)) {
+                                    if (working(i).average_price.get < working(i + 2).average_price.get)
+                                        (working(i + 2), working(i + 1))
+                                    else (working(i), working(i+1))
+                                }
+                                else (working(i), working(i + 1))
+
+                            val matchId = combineIds(buySellT._1.id.get, buySellT._2.id.get)
+                            val buy = buySellT._1.copy(matchId = Some(matchId))
+                            val sell = buySellT._2.copy(matchId = Some(matchId))
+                            _withMatchIds = withMatchIds :+ buy :+ sell
+                            _working = working.filter(oe => !oe.id.contains(buy.id.get) && !oe.id.contains(sell.id.get))
+                        }
+                        else if (doBuySellMatch(working(i + 1), working(i)).contains(true)) {
+                            matchFound = true
+                            val buySellT: (OrderElement, OrderElement) =
+                                if (i + 2 < working.length && doBuySellMatch(working(i+1), working(i+2)).contains(true)) {
+                                    if (working(i).average_price.get < working(i+2).average_price.get) {
+                                        (working(i+1), working(i))
+                                    }
+                                    else (working(i+1), working(i + 2))
+                                }
+                                else (working(i + 1), working(i))
+
+                            val matchId = combineIds(buySellT._1.id.get, buySellT._2.id.get)
+                            val buy = buySellT._1.copy(matchId = Some(matchId))
+                            val sell = buySellT._2.copy(matchId = Some(matchId))
+                            _withMatchIds = withMatchIds :+ buy :+ sell
+                            _working = working.filter(oe => !oe.id.contains(buy.id.get) && !oe.id.contains(sell.id.get))
+                        }
+                        i += 1
+                    }
+
+                    if (matchFound) f(_withMatchIds, _working)
+                    else {
+                        val set: collection.mutable.SortedSet[OrderElement] =
+                            collection.mutable.SortedSet[OrderElement]()(Ordering.by[OrderElement, String](_.created_at.get)(Main.timestampOrdering.reverse))
+                        set ++= withMatchIds
+                        set ++= working
+                        set.toList
+                    }
+                }
+                f(List[OrderElement](), tbOrders)
+            }
+
+            val N = None
+            val S = Some("")
+            val orders = assignMatchId(List[OrderElement](
+                OrderElement(S, Some("2018-08-07T19:45:45.751474Z"), N, Some("ID19"), N, N, S, N, Some(3.4), Some("buy"),  Some(2), N),
+                OrderElement(S, Some("2018-08-06T19:45:45.751474Z"), N, Some("ID18"), N, N, S, N, Some(3.7), Some("sell"), Some(2), N),
+                OrderElement(S, Some("2018-08-05T19:45:45.751474Z"), N, Some("ID17"), N, N, S, N, Some(3.5), Some("buy"),  Some(2), N),
+                OrderElement(S, Some("2018-08-04T19:45:45.751474Z"), N, Some("ID16"), N, N, S, N, Some(3.6), Some("sell"), Some(2), N)
+            ))
+            println(s"${orders.map(_.toString).mkString("\n")}")
+        }
     }
 }
 

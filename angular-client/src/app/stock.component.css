@@ -4,6 +4,7 @@ td.x-small { font-size: .7em; }
 td.mono { font-family: monospace; }
 td.visible { visibility: visible;}
 td.hidden { visibility: hidden; }
+td.none { display: none; }
 span.dow { border-bottom: 2px solid #ccc; }
 
 tr.buy { color: hsl(0, 50%, 40%); }

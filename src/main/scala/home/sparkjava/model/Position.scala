@@ -22,7 +22,7 @@ object Position extends Util {
                 fromStringToOption[Double](jValue, "intraday_quantity"),
                 fromStringToOption[Double](jValue, "shares_held_for_sells"),
                 fromStringToOption[Double](jValue, "shares_pending_from_options_events"),
-                fromStringToOption[Double](jValue, "quantity")
+                fromStringToOption[Int](jValue, "quantity")
             )}
             case _ => List[Position]()
         }
@@ -44,5 +44,5 @@ case class Position(
                            intraday_quantity: Option[Double],
                            shares_held_for_sells: Option[Double],
                            shares_pending_from_options_events: Option[Double],
-                           quantity: Option[Double]
+                           quantity: Option[Int]
                    )

@@ -22,6 +22,11 @@
   <table style="font: .9em monospace; width: 100%">
     <tr *ngFor="let order of orders; trackBy: trackByFunction" [ngClass]="order.side">
       <td>{{ minifyTimestamp(order.created_at) }}</td>
+      <td class="none">id: {{ order.id }}</td>
+      <td class="none">quantity: {{ order.quantity }}</td>
+      <td class="none">state: {{ order.state }}</td>
+      <td class="none">side: {{ order.side }}</td>
+      <td class="none">matchId: {{ order.matchId }}</td>
       <td>{{ order.cumulative_quantity }}</td>
       <td class="x-small">&#8903;</td>
       <td>{{ order.average_price ? order.average_price : order.price }}</td>

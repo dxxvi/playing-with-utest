@@ -22,7 +22,7 @@ class StockActor(symbol: String) extends Actor with Util {
     )
     var p = new Position(
         Some(-.1), Some(-.1), Some(-.1), Some(-.1), Some(-.1), None, None, Some(-.1), Some(-.1), None, Some(-.1),
-        Some(-.1), Some(-.1), Some(-.1)
+        Some(-.1), Some(-.1), Some(-1)
     )
     var q = new Quote(
         None, None, None, None, None, None, None, None, None, None, None, None, None, None, None
@@ -44,8 +44,8 @@ class StockActor(symbol: String) extends Actor with Util {
             p = _p
             sendPosition
             if (p.instrument.nonEmpty) instrument = p.instrument.get
-            if (p.quantity.exists(_ > 0) && orders.nonEmpty) {
 
+            if (p.quantity.exists(_ > 0) && orders.nonEmpty) {
                 var totalShares: Int = 0
                 val _lastRoundOrders = assignMatchId(lastRoundOrders())
                 val lastRoundOrdersString = _lastRoundOrders.map(oe => {
@@ -57,7 +57,7 @@ class StockActor(symbol: String) extends Actor with Util {
                 if (s != lastRoundOrdersHash) {
                     lastRoundOrdersHash = s
                     logger.debug(s"Orders sent to browser: position ${p.quantity}\n$lastRoundOrdersString")
-                    println(s"...... check $symbol.log for matched orders ...")
+                    println(s"                               ...... $symbol.log matched orders ...")
                 }
                 sendOrdersToBrowser(_lastRoundOrders)
             }
@@ -75,7 +75,7 @@ class StockActor(symbol: String) extends Actor with Util {
             }
         case HistoricalOrders(_, _, _, _orders, _) =>
             orders ++= _orders.filter(oe => oe.state.isDefined && (oe.state.get == "filled" || oe.state.get.contains("confirmed")))
-            println(s"... check $symbol.log for historicals orders ...")
+            println(s"... $symbol.log historicals orders ...")
             logger.debug(s"Got HistoricalOrders:\n${orders.toList.map(_.toString).mkString("\n")}")
         case Tick => // purpose: send the symbol to the browser
             if (p.quantity.get >= 0) sendPosition else sendFundamental
@@ -127,6 +127,7 @@ class StockActor(symbol: String) extends Actor with Util {
                     _withMatchIds = withMatchIds :+ buy :+ sell
                     _working = working.filter(oe => !oe.id.contains(buy.id.get) && !oe.id.contains(sell.id.get))
                 }
+                i += 1
             }
 
             if (matchFound) f(_withMatchIds, _working)
@@ -139,69 +140,6 @@ class StockActor(symbol: String) extends Actor with Util {
             }
         }
         f(List[OrderElement](), tbOrders)
-/*
-        val result: Array[OrderElement] = tbOrders.clone
-        var i = 0
-        while (i < tbOrders.length - 1) {
-            if (tbOrders(i).quantity == tbOrders(i+1).quantity) {
-                if (tbOrders(i).side.contains("buy") && tbOrders(i+1).side.contains("sell") &&
-                        tbOrders(i).average_price.isDefined && tbOrders(i+1).average_price.isDefined &&
-                        tbOrders(i).average_price.get < tbOrders(i+1).average_price.get) {
-                    if (i+2 < tbOrders.length && tbOrders(i+2).side.contains("buy") &&
-                            tbOrders(i+2).quantity == tbOrders(i).quantity &&
-                            tbOrders(i+2).average_price.isDefined &&
-                            tbOrders(i+2).average_price.get < tbOrders(i+1).average_price.get) {
-                        if (tbOrders(i).average_price.get > tbOrders(i+2).average_price.get) {
-                            val matchId = Some(combineIds(tbOrders(i).id.get, tbOrders(i + 1).id.get))
-                            result(i) = tbOrders(i).copy(matchId = matchId)
-                            result(i + 1) = tbOrders(i + 1).copy(matchId = matchId)
-                            i += 2
-                        }
-                        else {
-                            val matchId = Some(combineIds(tbOrders(i+1).id.get, tbOrders(i + 2).id.get))
-                            result(i + 2) = tbOrders(i + 2).copy(matchId = matchId)
-                            result(i + 1) = tbOrders(i + 1).copy(matchId = matchId)
-                            i += 3
-                        }
-                    }
-                    else {
-                        val matchId = Some(combineIds(tbOrders(i).id.get, tbOrders(i + 1).id.get))
-                        result(i) = tbOrders(i).copy(matchId = matchId)
-                        result(i + 1) = tbOrders(i + 1).copy(matchId = matchId)
-                        i += 2
-                    }
-                }
-                else if (tbOrders(i).side.contains("sell") && tbOrders(i+1).side.contains("buy") &&
-                        tbOrders(i).average_price.isDefined && tbOrders(i + 1).average_price.isDefined &&
-                        tbOrders(i).average_price.get > tbOrders(i + 1).average_price.get) {
-                    if (i+2 < tbOrders.length && tbOrders(i+2).side.contains("sell") &&
-                            tbOrders(i+2).quantity == tbOrders(i).quantity &&
-                            tbOrders(i + 2).average_price.isDefined &&
-                            tbOrders(i+2).average_price.get > tbOrders(i+1).average_price.get) {
-                        if (tbOrders(i).average_price.get < tbOrders(i+2).average_price.get) {
-                            val matchId = Some(combineIds(tbOrders(i).id.get, tbOrders(i+1).id.get))
-                            result(i) = tbOrders(i).copy(matchId = matchId)
-                            result(i + 1) = tbOrders(i + 1).copy(matchId = matchId)
-                            i += 2
-                        }
-                        else {
-                            val matchId = Some(combineIds(tbOrders(i+1).id.get, tbOrders(i+2).id.get))
-                            result(i + 1) = tbOrders(i + 1).copy(matchId = matchId)
-                            result(i + 2) = tbOrders(i + 2).copy(matchId = matchId)
-                            i += 3
-                        }
-                    }
-                    else {
-                        val matchId = Some(combineIds(tbOrders(i).id.get, tbOrders(i+1).id.get))
-                        result(i) = tbOrders(i).copy(matchId = matchId)
-                        result(i + 1) = tbOrders(i + 1).copy(matchId = matchId)
-                        i += 2
-                    }
-                }
-            }
-        }
-        result
-*/
     }
 
     private def doBuySellMatch(o1: OrderElement, o2: OrderElement): Option[Boolean] = for {
@@ -231,7 +169,7 @@ class StockActor(symbol: String) extends Actor with Util {
             )
         }
 
-        f(p.quantity.get.toInt, 0, Nil, orders.toList)
+        f(p.quantity.get, 0, Nil, orders.toList)
     }
 
     private def sendFundamental {

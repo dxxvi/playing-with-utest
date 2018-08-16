@@ -12,6 +12,7 @@ export interface Order {
   created_at: string;
   id: string;
   cumulative_quantity: number;
+  quantity: number;
   state: string;
   price: number;
   average_price: number;
