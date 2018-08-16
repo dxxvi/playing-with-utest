@@ -47,7 +47,7 @@ class StockActor(symbol: String) extends Actor with Util {
             if (p.quantity.exists(_ > 0) && orders.nonEmpty) {
 
                 var totalShares: Int = 0
-                val _lastRoundOrders = lastRoundOrders()
+                val _lastRoundOrders = assignMatchId(lastRoundOrders())
                 val lastRoundOrdersString = _lastRoundOrders.map(oe => {
                     val cq = oe.cumulative_quantity.get
                     totalShares += (if (oe.side.get == "buy") cq else -cq)
@@ -57,9 +57,8 @@ class StockActor(symbol: String) extends Actor with Util {
                 if (s != lastRoundOrdersHash) {
                     lastRoundOrdersHash = s
                     logger.debug(s"Orders sent to browser: position ${p.quantity}\n$lastRoundOrdersString")
+                    println(s"...... check $symbol.log for matched orders ...")
                 }
-
-//                val matchedOrders = assignMatchId(lastRoundOrders)
                 sendOrdersToBrowser(_lastRoundOrders)
             }
         }
@@ -76,7 +75,7 @@ class StockActor(symbol: String) extends Actor with Util {
             }
         case HistoricalOrders(_, _, _, _orders, _) =>
             orders ++= _orders.filter(oe => oe.state.isDefined && (oe.state.get == "filled" || oe.state.get.contains("confirmed")))
-            println(s"... check $symbol.log ...")
+            println(s"... check $symbol.log for historicals orders ...")
             logger.debug(s"Got HistoricalOrders:\n${orders.toList.map(_.toString).mkString("\n")}")
         case Tick => // purpose: send the symbol to the browser
             if (p.quantity.get >= 0) sendPosition else sendFundamental
@@ -87,7 +86,60 @@ class StockActor(symbol: String) extends Actor with Util {
     /**
       * @param tbOrders to-browser orders
       */
-    private def assignMatchId(tbOrders: Array[OrderElement]): Array[OrderElement] = {
+    private def assignMatchId(tbOrders: List[OrderElement]): List[OrderElement] = {
+        @tailrec
+        def f(withMatchIds: List[OrderElement], working: List[OrderElement]): List[OrderElement] = {
+            var _withMatchIds = List[OrderElement]()
+            var _working = List[OrderElement]()
+            var i = 0
+            var matchFound = false
+            while (i < working.length - 1 && !matchFound) {
+                if (doBuySellMatch(working(i), working(i + 1)).contains(true)) {
+                    matchFound = true
+                    val buySellT: (OrderElement, OrderElement) =
+                        if (i + 2 < working.length && doBuySellMatch(working(i + 2), working(i + 1)).contains(true)) {
+                            if (working(i).average_price.get < working(i + 2).average_price.get)
+                                (working(i + 2), working(i + 1))
+                            else (working(i), working(i+1))
+                        }
+                        else (working(i), working(i + 1))
+
+                    val matchId = combineIds(buySellT._1.id.get, buySellT._2.id.get)
+                    val buy = buySellT._1.copy(matchId = Some(matchId))
+                    val sell = buySellT._2.copy(matchId = Some(matchId))
+                    _withMatchIds = withMatchIds :+ buy :+ sell
+                    _working = working.filter(oe => !oe.id.contains(buy.id.get) && !oe.id.contains(sell.id.get))
+                }
+                else if (doBuySellMatch(working(i + 1), working(i)).contains(true)) {
+                    matchFound = true
+                    val buySellT: (OrderElement, OrderElement) =
+                        if (i + 2 < working.length && doBuySellMatch(working(i+1), working(i+2)).contains(true)) {
+                            if (working(i).average_price.get < working(i+2).average_price.get) {
+                                (working(i+1), working(i))
+                            }
+                            else (working(i+1), working(i + 2))
+                        }
+                        else (working(i + 1), working(i))
+
+                    val matchId = combineIds(buySellT._1.id.get, buySellT._2.id.get)
+                    val buy = buySellT._1.copy(matchId = Some(matchId))
+                    val sell = buySellT._2.copy(matchId = Some(matchId))
+                    _withMatchIds = withMatchIds :+ buy :+ sell
+                    _working = working.filter(oe => !oe.id.contains(buy.id.get) && !oe.id.contains(sell.id.get))
+                }
+            }
+
+            if (matchFound) f(_withMatchIds, _working)
+            else {
+                val set: collection.mutable.SortedSet[OrderElement] =
+                    collection.mutable.SortedSet[OrderElement]()(Ordering.by[OrderElement, String](_.created_at.get)(Main.timestampOrdering.reverse))
+                set ++= withMatchIds
+                set ++= working
+                set.toList
+            }
+        }
+        f(List[OrderElement](), tbOrders)
+/*
         val result: Array[OrderElement] = tbOrders.clone
         var i = 0
         while (i < tbOrders.length - 1) {
@@ -149,7 +201,20 @@ class StockActor(symbol: String) extends Actor with Util {
             }
         }
         result
+*/
     }
+
+    private def doBuySellMatch(o1: OrderElement, o2: OrderElement): Option[Boolean] = for {
+        side1 <- o1.side
+        side2 <- o2.side
+        if side1 == "buy" && side2 == "sell"
+        quantity1 <- o1.quantity
+        quantity2 <- o2.quantity
+        if quantity1 == quantity2
+        average_price1 <- o1.average_price
+        average_price2 <- o2.average_price
+        if average_price1 < average_price2
+    } yield true
 
     private def combineIds(s1: String, s2: String): String = if (s1 < s2) s"$s1-$s2" else s"$s2-$s1"
 
@@ -167,20 +232,8 @@ class StockActor(symbol: String) extends Actor with Util {
         }
 
         f(p.quantity.get.toInt, 0, Nil, orders.toList)
-/*
-        var lastOrder: Option[OrderElement] = None
-        var shareCount: Int = 0
-        val x = orders.toArray.takeWhile(oe => {
-            val cumulative_quantity = oe.cumulative_quantity.get
-            shareCount += (if (oe.side.get == "buy") cumulative_quantity else -cumulative_quantity)
-            if (shareCount != p.quantity.get) true else {
-                lastOrder = Some(oe)
-                false
-            }
-        })
-        if (lastOrder.isDefined) x :+ lastOrder.get else x
-*/
     }
+
     private def sendFundamental {
         val message = s"$symbol: FUNDAMENTAL: ${Fundamental.serialize(fu)}"
         context.actorSelection(s"../../${WebSocketActor.NAME}") ! message
