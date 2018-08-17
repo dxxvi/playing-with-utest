@@ -1,7 +1,8 @@
 package home.sparkjava.model
 
 import home.sparkjava.Util
-import org.json4s.DefaultFormats
+import org.json4s._
+import org.json4s.native.JsonMethods._
 import org.json4s.native.Serialization
 
 object Quote extends Util {
@@ -9,8 +10,6 @@ object Quote extends Util {
       * @param s like in quotes.json
       */
     def deserialize(s: String): List[Quote] = {
-        import org.json4s._
-        import org.json4s.native.JsonMethods._
         parse(s) \ "results" match {
             case JArray(jValues) => jValues map { jValue => Quote(
                 fromStringToOption[Double](jValue, "adjusted_previous_close"),
@@ -53,3 +52,40 @@ case class Quote(
                         trading_halted: Option[Boolean],
                         updated_at: Option[String]
                 )
+
+object DailyQuote extends Util {
+    /**
+      * @param s like in quotes-daily.json
+      */
+    def deserialize(s: String): Map[String, List[DailyQuote]] = {
+        parse(s) \ "results" match {
+            case JArray(jValues) =>
+                val x = jValues map { jValue => {
+                    val historicals: List[DailyQuote] = jValue \ "historicals" match {
+                        case JArray(_historicals) => _historicals map {_h => DailyQuote(
+                            fromStringToOption[String](_h, "begins_at"),
+                            fromStringToOption[Double](_h, "open_price"),
+                            fromStringToOption[Double](_h, "close_price"),
+                            fromStringToOption[Double](_h, "high_price"),
+                            fromStringToOption[Double](_h, "low_price")
+                        )}
+                        case _ => List[DailyQuote]()
+                    }
+                    fromToOption[String](jValue, "symbol") match {
+                        case Some(symbol) => (symbol, historicals)
+                        case None => ("", historicals)
+                    }
+                }}
+                x.toMap
+            case _ => Map[String, List[DailyQuote]]()
+        }
+    }
+}
+
+case class DailyQuote(
+    begins_at: Option[String],
+    open_price: Option[Double],
+    close_price: Option[Double],
+    high_price: Option[Double],
+    low_price: Option[Double]
+)

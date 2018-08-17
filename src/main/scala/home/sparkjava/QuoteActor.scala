@@ -53,7 +53,6 @@ class QuoteActor(config: Config) extends Actor with Timers with Util {
     }
 
     override def receive: Receive = sideEffect andThen _receive
-
     private def sideEffect: PartialFunction[Any, Any] = { case x => ThreadContext.put("symbol", QuoteActor.NAME); x }
 
     private def usableQuote(q: Quote): Boolean =

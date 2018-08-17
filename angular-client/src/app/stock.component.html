@@ -1,7 +1,10 @@
 <div [ngStyle]="{'background-color': backgroundColor()}" style="padding: .25em .75em;">
   <table style="width: 100%">
     <tr>
-      <td></td>
+      <td>
+        <span *ngIf="!hideMatches" (click)="hideMatches = !hideMatches" class="button">&#x21D2;</span>
+        <span *ngIf="hideMatches"  (click)="hideMatches = !hideMatches" class="button">&#x21D0;</span>
+      </td>
       <td class="small">Today</td>
       <td class="small">Est.</td>
       <td><span [ngClass]="symbolClass()">{{ symbol }}</span>&nbsp;<span [ngStyle]="{'visibility': po.quantity >= 0 ? 'visible' : 'hidden'}">{{ po.quantity }}</span></td>
@@ -20,17 +23,18 @@
     </tr>
   </table>
   <table style="font: .9em monospace; width: 100%">
-    <tr *ngFor="let order of orders; trackBy: trackByFunction" [ngClass]="order.side">
+    <tr *ngFor="let order of orders; trackBy: trackByFunction" [ngClass]="calculateOrderCssClass(order)">
       <td>{{ minifyTimestamp(order.created_at) }}</td>
       <td class="none">id: {{ order.id }}</td>
       <td class="none">quantity: {{ order.quantity }}</td>
       <td class="none">state: {{ order.state }}</td>
       <td class="none">side: {{ order.side }}</td>
       <td class="none">matchId: {{ order.matchId }}</td>
-      <td>{{ order.cumulative_quantity }}</td>
+      <td style="text-align: right;">&nbsp;{{ order.cumulative_quantity }}</td>
       <td class="x-small">&#8903;</td>
-      <td>{{ order.average_price ? order.average_price : order.price }}</td>
+      <td>{{ order.average_price ? order.average_price.toFixed(2) : order.price.toFixed(2) }}</td>
       <td *ngIf="order.state != 'filled'">&#10008;</td>
+      <td *ngIf="order.mId !== undefined">&nbsp;({{ order.mId }})</td>
     </tr>
   </table>
 </div>

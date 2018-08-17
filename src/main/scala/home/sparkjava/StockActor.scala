@@ -7,7 +7,7 @@ import org.apache.logging.log4j.ThreadContext
 import org.json4s._
 import org.json4s.native.Serialization
 import message.{HistoricalOrders, Tick}
-import model.{Fundamental, OrderElement, Position, Quote}
+import model._
 
 import scala.annotation.tailrec
 
@@ -33,6 +33,7 @@ class StockActor(symbol: String) extends Actor with Util {
     var lastTimeHistoricalOrdersRequested: Long = 0 // in seconds
     val orders: collection.mutable.SortedSet[OrderElement] =
         collection.mutable.SortedSet[OrderElement]()(Ordering.by[OrderElement, String](_.created_at.get)(Main.timestampOrdering.reverse))
+    var dailyQuotes: List[DailyQuote] = Nil
 
     val _receive: Receive = {
         case _fu: Fundamental => if ((_fu.low.isDefined && _fu.high.isDefined) || _fu.open.isDefined) {
@@ -58,8 +59,8 @@ class StockActor(symbol: String) extends Actor with Util {
                     lastRoundOrdersHash = s
                     logger.debug(s"Orders sent to browser: position ${p.quantity}\n$lastRoundOrdersString")
                     println(s"                               ...... $symbol.log matched orders ...")
+                    sendOrdersToBrowser(_lastRoundOrders)
                 }
-                sendOrdersToBrowser(_lastRoundOrders)
             }
         }
         case _q: Quote => // the QuoteActor is sure that symbol, last_trade_price and instrument are there
@@ -79,6 +80,7 @@ class StockActor(symbol: String) extends Actor with Util {
             logger.debug(s"Got HistoricalOrders:\n${orders.toList.map(_.toString).mkString("\n")}")
         case Tick => // purpose: send the symbol to the browser
             if (p.quantity.get >= 0) sendPosition else sendFundamental
+            lastRoundOrdersHash = ""
     }
     override def receive: Receive = sideEffect andThen _receive
     private def sideEffect: PartialFunction[Any, Any] = { case x => ThreadContext.put("symbol", symbol); x }

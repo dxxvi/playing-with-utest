@@ -9,7 +9,7 @@ import com.softwaremill.sttp._
 import com.typesafe.config.{Config, ConfigFactory}
 import home.TestUtil
 import message.{AddSymbol, Tick}
-import model.{Fundamental, Quote}
+import model.{DailyQuote, Fundamental, Quote}
 import org.json4s.{JBool, JString, JValue}
 import utest._
 
@@ -176,6 +176,11 @@ object ActorTests extends TestSuite with Util with TestUtil {
                 OrderElement(S, Some("2018-08-04T19:45:45.751474Z"), N, Some("ID16"), N, N, S, N, Some(3.6), Some("sell"), Some(2), N)
             ))
             println(s"${orders.map(_.toString).mkString("\n")}")
+        }
+
+        "Test DailyQuote.deserialize" - {
+            val map = DailyQuote.deserialize(readTextFileFromTestResource("robinhood", "quotes-daily.json"))
+            println(map)
         }
     }
 }

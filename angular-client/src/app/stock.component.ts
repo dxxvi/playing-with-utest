@@ -13,7 +13,9 @@ export class StockComponent implements OnInit, OnDestroy {
   fu: Fundamental = new Fundamental();
   po: Position = new Position();
   last_trade_price: number = -.1;
+  hideMatches: boolean = false;
   orders: Array<Order> = [];
+  matchId2mId: { [key:string]: string; } = {};
   private subscription: Subscription;
 
   @Input('_symbol') set _symbol(value: string) {
@@ -35,6 +37,14 @@ export class StockComponent implements OnInit, OnDestroy {
       else if (message.QUOTE) this.last_trade_price = message.QUOTE.last_trade_price;
       else if (message.ORDERS) {
         this.orders = (message.ORDERS as Array<any>).map(v => {
+          let mId: string = undefined;
+          if (typeof v.matchId !== 'undefined') {
+            mId = this.matchId2mId[v.matchId];
+            if (typeof mId === 'undefined') {
+              mId = Math.floor(Math.random() * 1296).toString(36);
+              this.matchId2mId[v.matchId] = mId;
+            }
+          }
           return {
             created_at: v.created_at,
             id: v.id,
@@ -44,7 +54,8 @@ export class StockComponent implements OnInit, OnDestroy {
             price: v.price,
             average_price: v.average_price,
             side: v.side,
-            matchId: v.matchId
+            matchId: v.matchId,
+            mId: mId
           };
         })
       }
@@ -53,6 +64,15 @@ export class StockComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
+  }
+
+  calculateOrderCssClass(o: Order): string {
+    return [
+      o.side,
+      (typeof o.matchId) !== 'undefined' ? 'matched' : '',
+      (typeof o.matchId) !== 'undefined' && this.hideMatches ? 'hide' : '',
+      o.state.indexOf('confirmed') >= 0 ? 'confirmed' : ''
+    ].join(' ').trim();
   }
 
   formatMoney(value: number): string {
