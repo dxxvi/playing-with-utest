@@ -6,8 +6,8 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.softwaremill.sttp._
 import com.typesafe.config.Config
-import home.sparkjava.message.Tick
-import home.sparkjava.model.Quote
+import home.sparkjava.message.{DailyQuoteReturn, GetDailyQuote, Tick}
+import home.sparkjava.model.{DailyQuote, Quote}
 import org.apache.logging.log4j.ThreadContext
 
 import scala.concurrent.Future
@@ -17,6 +17,7 @@ object QuoteActor {
     val NAME = "quoteActor"
 
     case class QuoteResponse(r: Response[List[Quote]])
+    case class DailyQuoteResponse(r: Response[Map[String, List[DailyQuote]]])
 
     def props(config: Config): Props = Props(new QuoteActor(config))
 }
@@ -28,6 +29,7 @@ class QuoteActor(config: Config) extends Actor with Timers with Util {
     val SERVER: String = config.getString("server")
     val authorization: String = if (config.hasPath("Authorization")) config.getString("Authorization") else "No token"
     implicit val httpBackend: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(config)
+    var getDailyQuote = GetDailyQuote(Nil, System.currentTimeMillis / 1000)
 
     timers.startPeriodicTimer(Tick, Tick, 4.seconds)
 
@@ -41,6 +43,18 @@ class QuoteActor(config: Config) extends Actor with Timers with Util {
                         .map(QuoteResponse) pipeTo self
 //                logger.debug(s"Sent request to get quotes of ${Main.instrument2Symbol.size} symbols.")
             }
+            val now = System.currentTimeMillis / 1000
+            if (getDailyQuote.symbols.nonEmpty && now - getDailyQuote.ts > 15) {
+                logger.debug(s"Getting daily quotes for ${getDailyQuote.symbols.size} symbols: ${getDailyQuote.symbols.mkString(" ")}")
+                getDailyQuote.symbols.grouped(75) foreach { symbols =>
+                    sttp
+                            .get(uri"${SERVER}quotes/historicals/?interval=day&span=year&symbols=${symbols.mkString(",")}")
+                            .response(asString.map(DailyQuote.deserialize))
+                            .send()
+                            .map(DailyQuoteResponse) pipeTo self
+                }
+                getDailyQuote = GetDailyQuote(Nil, now)
+            }
         case QuoteResponse(Response(rawErrorBody, code, statusText, _, _)) => rawErrorBody fold (
                 _ => logger.error(s"Error in getting quotes: $code $statusText"),
                 a => {
@@ -50,6 +64,16 @@ class QuoteActor(config: Config) extends Actor with Timers with Util {
                     )
                 }
         )
+        case DailyQuoteResponse(Response(rawErrorBody, code, statusText, _, _)) => rawErrorBody fold (
+                _ => logger.error(s"Error in getting daily quotes: $code $statusText"),
+                a => {
+                    a foreach(t => {
+                        context.actorSelection(s"../${MainActor.NAME}/symbol-${t._1}") !
+                                DailyQuoteReturn(t._2.filter(dq => dq.begins_at.isDefined && dq.low_price.isDefined && dq.high_price.isDefined))
+                    })
+                }
+        )
+        case GetDailyQuote(symbols, _) => getDailyQuote = GetDailyQuote(getDailyQuote.symbols ++ symbols, getDailyQuote.ts)
     }
 
     override def receive: Receive = sideEffect andThen _receive

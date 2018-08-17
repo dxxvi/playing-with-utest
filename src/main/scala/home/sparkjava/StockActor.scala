@@ -6,7 +6,7 @@ import akka.actor.{Actor, Props}
 import org.apache.logging.log4j.ThreadContext
 import org.json4s._
 import org.json4s.native.Serialization
-import message.{HistoricalOrders, Tick}
+import message.{DailyQuoteReturn, GetDailyQuote, HistoricalOrders, Tick}
 import model._
 
 import scala.annotation.tailrec
@@ -31,9 +31,11 @@ class StockActor(symbol: String) extends Actor with Util {
     var lastRoundOrdersHash = ""
     var instrument = ""
     var lastTimeHistoricalOrdersRequested: Long = 0 // in seconds
+    var lastTimeHistoricalQuotesRequested: Long = 0
     val orders: collection.mutable.SortedSet[OrderElement] =
         collection.mutable.SortedSet[OrderElement]()(Ordering.by[OrderElement, String](_.created_at.get)(Main.timestampOrdering.reverse))
-    var dailyQuotes: List[DailyQuote] = Nil
+    var changeFromHigh: Double = 0
+    var changeFromLow: Double = 0
 
     val _receive: Receive = {
         case _fu: Fundamental => if ((_fu.low.isDefined && _fu.high.isDefined) || _fu.open.isDefined) {
@@ -74,10 +76,42 @@ class StockActor(symbol: String) extends Actor with Util {
                 context.actorSelection(s"../../${OrderActor.NAME}") !
                         HistoricalOrders(symbol, instrument, 4, Seq[OrderElement](), None)
             }
+            if (changeFromHigh == 0 && changeFromLow == 0 && (now - lastTimeHistoricalQuotesRequested > 15)) {
+                lastTimeHistoricalQuotesRequested = now
+                context.actorSelection(s"../../${QuoteActor.NAME}") ! GetDailyQuote(List(symbol), 0)
+            }
+            if (fu.low.exists(_ > 0) && fu.high.exists(_ > 0) && changeFromHigh > 0 && changeFromLow > 0) {
+                // now we can estimate the low and high prices for today
+                if (q.last_trade_price.get - fu.low.get < fu.high.get - q.last_trade_price.get)  // closer to low
+                    context.actorSelection(s"../../${WebSocketActor.NAME}") !
+                            s"""$symbol: ESTIMATE: {"low":${fu.high.get * changeFromHigh},"high":${fu.high.get}}"""
+                else
+                    context.actorSelection(s"../../${WebSocketActor.NAME}") !
+                            s"""$symbol: ESTIMATE: {"low":${fu.low.get},"high":${fu.low.get * changeFromLow}}"""
+            }
         case HistoricalOrders(_, _, _, _orders, _) =>
             orders ++= _orders.filter(oe => oe.state.isDefined && (oe.state.get == "filled" || oe.state.get.contains("confirmed")))
             println(s"... $symbol.log historicals orders ...")
             logger.debug(s"Got HistoricalOrders:\n${orders.toList.map(_.toString).mkString("\n")}")
+        case DailyQuoteReturn(dQuotes) =>
+            val n = dQuotes.size
+            var dailyQuotes = if (n >= 10) dQuotes.drop(n - 10) else Nil
+            // the day low_price/high_price smallest
+            val d1 = dailyQuotes.foldLeft(("", Double.MaxValue))((b, dq) =>
+                    if (dq.low_price.get / dq.high_price.get < b._2)
+                        (dq.begins_at.get, dq.low_price.get / dq.high_price.get)
+                    else (b._1, b._2)
+            )._1
+            // the day low_price/high_price biggest
+            val d2 = dailyQuotes.foldLeft(("", Double.MinValue))((b, dq) =>
+                    if (dq.low_price.get / dq.high_price.get > b._2)
+                        (dq.begins_at.get, dq.low_price.get / dq.high_price.get)
+                    else (b._1, b._2)
+            )._1
+            // remove the days where low_price/high_price is smallest or biggest
+            dailyQuotes = dailyQuotes.filter(dq => !dq.begins_at.contains(d1) && !dq.begins_at.contains(d2))
+            changeFromHigh = dailyQuotes.map(dq => dq.low_price.get / dq.high_price.get).sum / dailyQuotes.size
+            changeFromLow  = dailyQuotes.map(dq => dq.high_price.get / dq.low_price.get).sum / dailyQuotes.size
         case Tick => // purpose: send the symbol to the browser
             if (p.quantity.get >= 0) sendPosition else sendFundamental
             lastRoundOrdersHash = ""

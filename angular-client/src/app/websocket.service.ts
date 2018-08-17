@@ -54,7 +54,7 @@ export class WebsocketService {
     else {
       const symbol = message.substring(0, i);
       const rest   = message.substr(i + 2);
-      // rest is like FUNDAMENTAL: {...} or POSITION: {...} or ORDERS: [{...}, ...]
+      // rest is like FUNDAMENTAL: {...} or POSITION: {...} or ORDERS: [{...}, ...] or ESTIMATE: {"low":xxx,"high":xxx}
       this.sendMessageThroughSubject('SYMBOL_FOUND', { symbol: symbol, rest: rest });
     }
   }

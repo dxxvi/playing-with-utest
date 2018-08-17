@@ -12,13 +12,13 @@
     <tr>
       <td class="smaller">High</td>
       <td class="small mono" [ngClass]="">{{ fu.high.toFixed(2) }}</td>
-      <td class="small mono">TBD</td>
+      <td class="small mono">{{ estimate_high.toFixed(2) }}</td>
       <td></td>
     </tr>
     <tr>
       <td class="smaller">Low</td>
       <td class="small mono">{{ fu.low.toFixed(2) }}</td>
-      <td class="small mono">TBD</td>
+      <td class="small mono">{{ estimate_low.toFixed(2) }}</td>
       <td style="text-align: right;" [ngStyle]="{'visibility': last_trade_price > 0 ? 'visible' : 'hidden'}">{{ last_trade_price.toFixed(2) }}</td>
     </tr>
   </table>

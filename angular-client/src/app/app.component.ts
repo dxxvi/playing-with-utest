@@ -47,7 +47,14 @@ export class AppComponent implements OnInit, OnDestroy {
           const orders = JSON.parse(value.rest.replace('ORDERS: ', ''));
           isNewSymbol = this.addSymbolIfNotExist(symbol);
           setTimeout(() => {
-            this.websocketService.sendMessageThroughSubject(symbol, { ORDERS: orders})
+            this.websocketService.sendMessageThroughSubject(symbol, { ORDERS: orders })
+          }, isNewSymbol ? 200 : 1);
+        }
+        else if (value.rest.startsWith('ESTIMATE: ')) {
+          const estimate = JSON.parse(value.rest.replace('ESTIMATE: ', ''));
+          isNewSymbol = this.addSymbolIfNotExist(symbol);
+          setTimeout(() => {
+            this.websocketService.sendMessageThroughSubject(symbol, { ESTIMATE: estimate })
           }, isNewSymbol ? 200 : 1);
         }
         else {
