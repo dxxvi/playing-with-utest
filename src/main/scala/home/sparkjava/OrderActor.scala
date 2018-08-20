@@ -45,7 +45,7 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
                     .send()
                     .map(OrdersResponse) pipeTo self
         case OrdersResponse(Response(rawErrorBody, code, statusText, _, _)) => rawErrorBody fold (
-                a => logger.error(s"Error in getting recent orders $code $statusText"),
+                _ => logger.error(s"Error in getting recent orders $code $statusText"),
                 a => a.results foreach { _.foreach(orderElement => {
                     orderElement.instrument.flatMap(Main.instrument2Symbol.get).foreach(symbol => {
                         context.actorSelection(s"../${MainActor.NAME}/symbol-$symbol") ! orderElement

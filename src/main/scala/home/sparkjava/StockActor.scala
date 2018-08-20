@@ -34,6 +34,7 @@ class StockActor(symbol: String) extends Actor with Util {
     var lastPositionHash = ""
     var lastFundamentalHash = ""
     var lastQuoteHash = ""
+    var gotHistoricalOrders = false
 
     var instrument = ""
     var lastTimeHistoricalOrdersRequested: Long = 0 // in seconds
@@ -49,9 +50,11 @@ class StockActor(symbol: String) extends Actor with Util {
             sendFundamental
             instrument = fu.instrument
         }
-        case o: OrderElement =>
-            orders += o
+        case o: OrderElement => if (gotHistoricalOrders) {
+            orders -= o
+            if (o.state.contains("filled") || o.state.exists(_.contains("confirm"))) orders += o
             // orders sent to browser when StockActor receives a Position which is every 4 secs
+        }
         case _p: Position => if (_p.quantity.isDefined) {
             p = _p
             sendPosition
@@ -91,6 +94,7 @@ class StockActor(symbol: String) extends Actor with Util {
             }
             sendEstimate()
         case HistoricalOrders(_, _, _, _orders, _) =>
+            gotHistoricalOrders = true
             orders ++= _orders.filter(oe => oe.state.isDefined && (oe.state.get == "filled" || oe.state.get.contains("confirmed")))
             println(s"... $symbol.log historicals orders ...")
             logger.debug(s"Got HistoricalOrders:\n${orders.toList.map(_.toString).mkString("\n")}")
@@ -113,13 +117,15 @@ class StockActor(symbol: String) extends Actor with Util {
             dailyQuotes = dailyQuotes.filter(dq => !dq.begins_at.contains(d1) && !dq.begins_at.contains(d2))
             changeFromHigh = dailyQuotes.map(dq => dq.low_price.get / dq.high_price.get).sum / dailyQuotes.size
             changeFromLow  = dailyQuotes.map(dq => dq.high_price.get / dq.low_price.get).sum / dailyQuotes.size
-        case Tick => // purpose: send the symbol to the browser
+        case Tick => // Tick means there's a new web socket connection. purpose: send the symbol to the browser
             if (p.quantity.get >= 0) sendPosition else sendFundamental
             lastRoundOrdersHash = ""
             lastEstimateHash = ""
             lastPositionHash = ""
             lastFundamentalHash = ""
             lastQuoteHash = ""
+            gotHistoricalOrders = false
+            orders.clear()
     }
     override def receive: Receive = sideEffect andThen _receive
     private def sideEffect: PartialFunction[Any, Any] = { case x => ThreadContext.put("symbol", symbol); x }
@@ -253,7 +259,7 @@ class StockActor(symbol: String) extends Actor with Util {
 
     private def sendQuote {
         if (q.last_trade_price.isDefined && q.last_trade_price.get > 0) {
-            val message = s"$symbol: QUOTE: ${Quote.serialize(q.copy(updated_at = None))}"
+            val message = s"$symbol: QUOTE: ${Quote.serialize(q.copy(updated_at = None, ask_price = None, ask_size = None, bid_price = None, bid_size = None))}"
             val quoteHash = new String(md5Digest.digest(message.getBytes))
             if (quoteHash != lastQuoteHash) {
                 lastQuoteHash = quoteHash

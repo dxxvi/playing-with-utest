@@ -9,8 +9,8 @@ import com.softwaremill.sttp._
 import com.typesafe.config.{Config, ConfigFactory}
 import home.TestUtil
 import message.{AddSymbol, Tick}
-import model.{DailyQuote, Fundamental, Quote}
-import org.json4s.{JBool, JString, JValue}
+import model.{DailyQuote, Fundamental, OrderElement, Quote}
+import org.json4s._
 import utest._
 
 import scala.collection.concurrent.TrieMap
@@ -184,7 +184,18 @@ object ActorTests extends TestSuite with Util with TestUtil {
         }
 
         "Test Scala's mutable SortedSet" - {
+            val N = None
+            val S = Some("")
+            val orders: collection.mutable.SortedSet[OrderElement] =
+                collection.mutable.SortedSet[OrderElement]()(Ordering.by[OrderElement, String](_.created_at.get)(Main.timestampOrdering.reverse))
+            orders += OrderElement(S, Some("2018-08-07T19:45:45.751474Z"), N, Some("ID19"), N, N, N, S, N, Some(3.4), Some("buy"),  Some(2), N)
+            orders += OrderElement(S, Some("2018-08-06T19:45:45.751474Z"), N, Some("ID18"), N, N, N, S, N, Some(3.7), Some("sell"), Some(2), N)
+            orders += OrderElement(S, Some("2018-08-05T19:45:45.751474Z"), N, Some("ID17"), N, N, N, S, N, Some(3.5), Some("buy"),  Some(2), N)
+            orders += OrderElement(S, Some("2018-08-04T19:45:45.751474Z"), N, Some("ID16"), N, N, N, S, N, Some(3.6), Some("sell"), Some(2), N)
 
+            orders -= OrderElement(S, Some("2018-08-06T19:45:45.751474Z"), N, Some("1818"), N, N, N, S, N, Some(3.7), Some("sell"), Some(2), N)
+            orders += OrderElement(S, Some("2018-08-06T19:45:45.751474Z"), N, Some("1818"), N, N, N, S, N, Some(3.7), Some("sell"), Some(2), N)
+            println(orders)
         }
     }
 }
