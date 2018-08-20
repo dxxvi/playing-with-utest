@@ -21,6 +21,7 @@ object Orders extends Util {
                     fromStringToOption[String](jv, "id"),
                     fromStringToOption[Int](jv, "cumulative_quantity"),
                     fromStringToOption[String](jv, "reject_reason"),
+                    fromStringToOption[String](jv, "instrument"),
                     fromStringToOption[String](jv, "state"),
                     fromStringToOption[Double](jv, "price"),
                     fromStringToOption[Double](jv, "average_price"),
@@ -45,6 +46,7 @@ case class OrderElement(
     id: Option[String],
     cumulative_quantity: Option[Int],
     reject_reason: Option[String],
+    instrument: Option[String],
     state: Option[String],
     price: Option[Double],
     average_price: Option[Double],
@@ -60,6 +62,7 @@ case class OrderElement(
         s"${if (id.isEmpty) None else id.get}," +
         s"${if (cumulative_quantity.isEmpty) None else cumulative_quantity.get}," +
         s"${if (reject_reason.isEmpty) None else reject_reason.get}," +
+        s"${if (instrument.isEmpty) None else instrument.get}," +
         s"${if (state.isEmpty) None else state.get}," +
         s"${if (price.isEmpty) None else price.get}," +
         s"${if (average_price.isEmpty) None else average_price.get}," +

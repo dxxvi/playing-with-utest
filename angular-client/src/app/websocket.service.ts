@@ -35,6 +35,7 @@ export class WebsocketService {
   }
 
   processReceivedString(message: string) {
+    console.log(`${message}`);
     const i = message.indexOf(': ');
     if (i === -1) {
       console.error(`Unknown message ${message}`);

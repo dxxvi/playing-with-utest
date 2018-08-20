@@ -22,6 +22,16 @@
       <td style="text-align: right;" [ngStyle]="{'visibility': last_trade_price > 0 ? 'visible' : 'hidden'}">{{ last_trade_price.toFixed(2) }}</td>
     </tr>
   </table>
+  <table style="width: 100%"><tr class="form-group">
+    <td><input name="quantity" [(ngModel)]="buysell.quantity" placeholder="quantity" type="number" step="1"
+               class="form-control"  style="width: 6em"/></td>
+    <td><input name="price" [(ngModel)]="buysell.price" placeholder="price" type="number" step=".01"
+               class="form-control" style="width: 4.75em"/></td>
+    <td>
+      <button (click)="buySell()" class="btn" [ngClass]="calculateBuSeButtonClass()" type="button"
+              [disabled]="buysell.quantity == null || buysell.price == null || buysell.quantity < 0 || buysell.price < 0">Bu / Se</button>
+    </td>
+  </tr></table>
   <table style="font: .9em monospace; width: 100%">
     <tr *ngFor="let order of orders; trackBy: trackByFunction" [ngClass]="calculateOrderCssClass(order)">
       <td>{{ minifyTimestamp(order.created_at) }}</td>
@@ -30,11 +40,11 @@
       <td class="none">state: {{ order.state }}</td>
       <td class="none">side: {{ order.side }}</td>
       <td class="none">matchId: {{ order.matchId }}</td>
-      <td style="text-align: right;">&nbsp;{{ order.cumulative_quantity }}</td>
+      <td style="text-align: right;">{{ order.cumulative_quantity }}</td>
       <td class="x-small">&#8903;</td>
       <td>{{ order.average_price ? order.average_price.toFixed(2) : order.price.toFixed(2) }}</td>
       <td *ngIf="order.state != 'filled'">&#10008;</td>
-      <td *ngIf="order.mId !== undefined">&nbsp;({{ order.mId }})</td>
+      <td *ngIf="order.mId !== undefined">({{ order.mId }})</td>
     </tr>
   </table>
 </div>

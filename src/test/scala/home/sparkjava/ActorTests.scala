@@ -170,10 +170,10 @@ object ActorTests extends TestSuite with Util with TestUtil {
             val N = None
             val S = Some("")
             val orders = assignMatchId(List[OrderElement](
-                OrderElement(S, Some("2018-08-07T19:45:45.751474Z"), N, Some("ID19"), N, N, S, N, Some(3.4), Some("buy"),  Some(2), N),
-                OrderElement(S, Some("2018-08-06T19:45:45.751474Z"), N, Some("ID18"), N, N, S, N, Some(3.7), Some("sell"), Some(2), N),
-                OrderElement(S, Some("2018-08-05T19:45:45.751474Z"), N, Some("ID17"), N, N, S, N, Some(3.5), Some("buy"),  Some(2), N),
-                OrderElement(S, Some("2018-08-04T19:45:45.751474Z"), N, Some("ID16"), N, N, S, N, Some(3.6), Some("sell"), Some(2), N)
+                OrderElement(S, Some("2018-08-07T19:45:45.751474Z"), N, Some("ID19"), N, N, N, S, N, Some(3.4), Some("buy"),  Some(2), N),
+                OrderElement(S, Some("2018-08-06T19:45:45.751474Z"), N, Some("ID18"), N, N, N, S, N, Some(3.7), Some("sell"), Some(2), N),
+                OrderElement(S, Some("2018-08-05T19:45:45.751474Z"), N, Some("ID17"), N, N, N, S, N, Some(3.5), Some("buy"),  Some(2), N),
+                OrderElement(S, Some("2018-08-04T19:45:45.751474Z"), N, Some("ID16"), N, N, N, S, N, Some(3.6), Some("sell"), Some(2), N)
             ))
             println(s"${orders.map(_.toString).mkString("\n")}")
         }
@@ -181,6 +181,10 @@ object ActorTests extends TestSuite with Util with TestUtil {
         "Test DailyQuote.deserialize" - {
             val map = DailyQuote.deserialize(readTextFileFromTestResource("robinhood", "quotes-daily.json"))
             println(map)
+        }
+
+        "Test Scala's mutable SortedSet" - {
+
         }
     }
 }

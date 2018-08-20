@@ -1,5 +1,6 @@
 /* You can add global styles to this file, and also import other style files */
 .form-control { display: inline-block; }
 input.form-control { border-top: 0; border-left: 0; border-right: 0; padding-left: .5em; padding-right: .3em; }
-.btn-primary, .btn-primary.disabled, .btn-primary:disabled { background: none; border: 0; }
+.btn-primary, .btn-primary.disabled, .btn-primary:disabled,
+.btn-danger, .btn-danger.disabled, .btn-danger:disabled { background: none; border: 0; }
 .btn-primary { color: #888; } .btn-primary.disabled, .btn-primary:disabled { color: #bbb; }

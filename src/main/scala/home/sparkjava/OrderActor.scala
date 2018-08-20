@@ -21,6 +21,7 @@ object OrderActor {
     case class Cancel(orderId: String)
 
     case class HistoricalOrdersResponse(r: Response[Orders], ho: HistoricalOrders)
+    case class OrdersResponse(r: Response[Orders])
 
     def props(config: Config): Props = Props(new OrderActor(config))
 }
@@ -38,6 +39,20 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
 
     val _receive: Receive = {
         case Tick =>
+            sttp.header("Authorization", authorization)
+                    .get(uri"${SERVER}orders/")
+                    .response(asString.map(Orders.deserialize))
+                    .send()
+                    .map(OrdersResponse) pipeTo self
+        case OrdersResponse(Response(rawErrorBody, code, statusText, _, _)) => rawErrorBody fold (
+                a => logger.error(s"Error in getting recent orders $code $statusText"),
+                a => a.results foreach { _.foreach(orderElement => {
+                    orderElement.instrument.flatMap(Main.instrument2Symbol.get).foreach(symbol => {
+                        context.actorSelection(s"../${MainActor.NAME}/symbol-$symbol") ! orderElement
+                    })
+                })}
+        )
+
         case ho @ HistoricalOrders(_, instrument, _, _, next) =>
             if (historicalOrdersCount < 5) {
                 sttp.header("Authorization", authorization)

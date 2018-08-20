@@ -16,6 +16,7 @@ object StockActor {
 }
 
 class StockActor(symbol: String) extends Actor with Util {
+    val md5Digest: MessageDigest = MessageDigest.getInstance("MD5")
     val isDow: Boolean = isDow(symbol)
     var fu = new Fundamental(
         Some(-.1), Some(-.1), Some(""), Some(-.1), Some(-.1), Some(-.1), Some(-.1), Some(-.1), Some(-.1), Some(-.1), ""
@@ -29,6 +30,11 @@ class StockActor(symbol: String) extends Actor with Util {
     )
 
     var lastRoundOrdersHash = ""
+    var lastEstimateHash = ""
+    var lastPositionHash = ""
+    var lastFundamentalHash = ""
+    var lastQuoteHash = ""
+
     var instrument = ""
     var lastTimeHistoricalOrdersRequested: Long = 0 // in seconds
     var lastTimeHistoricalQuotesRequested: Long = 0
@@ -43,6 +49,9 @@ class StockActor(symbol: String) extends Actor with Util {
             sendFundamental
             instrument = fu.instrument
         }
+        case o: OrderElement =>
+            orders += o
+            // orders sent to browser when StockActor receives a Position which is every 4 secs
         case _p: Position => if (_p.quantity.isDefined) {
             p = _p
             sendPosition
@@ -80,15 +89,7 @@ class StockActor(symbol: String) extends Actor with Util {
                 lastTimeHistoricalQuotesRequested = now
                 context.actorSelection(s"../../${QuoteActor.NAME}") ! GetDailyQuote(List(symbol), 0)
             }
-            if (fu.low.exists(_ > 0) && fu.high.exists(_ > 0) && changeFromHigh > 0 && changeFromLow > 0) {
-                // now we can estimate the low and high prices for today
-                if (q.last_trade_price.get - fu.low.get < fu.high.get - q.last_trade_price.get)  // closer to low
-                    context.actorSelection(s"../../${WebSocketActor.NAME}") !
-                            s"""$symbol: ESTIMATE: {"low":${fu.high.get * changeFromHigh},"high":${fu.high.get}}"""
-                else
-                    context.actorSelection(s"../../${WebSocketActor.NAME}") !
-                            s"""$symbol: ESTIMATE: {"low":${fu.low.get},"high":${fu.low.get * changeFromLow}}"""
-            }
+            sendEstimate()
         case HistoricalOrders(_, _, _, _orders, _) =>
             orders ++= _orders.filter(oe => oe.state.isDefined && (oe.state.get == "filled" || oe.state.get.contains("confirmed")))
             println(s"... $symbol.log historicals orders ...")
@@ -115,6 +116,10 @@ class StockActor(symbol: String) extends Actor with Util {
         case Tick => // purpose: send the symbol to the browser
             if (p.quantity.get >= 0) sendPosition else sendFundamental
             lastRoundOrdersHash = ""
+            lastEstimateHash = ""
+            lastPositionHash = ""
+            lastFundamentalHash = ""
+            lastQuoteHash = ""
     }
     override def receive: Receive = sideEffect andThen _receive
     private def sideEffect: PartialFunction[Any, Any] = { case x => ThreadContext.put("symbol", symbol); x }
@@ -208,9 +213,28 @@ class StockActor(symbol: String) extends Actor with Util {
         f(p.quantity.get, 0, Nil, orders.toList)
     }
 
+    private def sendEstimate() {
+        if (fu.low.exists(_ > 0) && fu.high.exists(_ > 0) && changeFromHigh > 0 && changeFromLow > 0) {
+            // now we can estimate the low and high prices for today
+            val message = if (q.last_trade_price.get - fu.low.get < fu.high.get - q.last_trade_price.get)  // closer to low
+                s"""$symbol: ESTIMATE: {"low":${fu.high.get * changeFromHigh},"high":${fu.high.get}}"""
+            else
+                s"""$symbol: ESTIMATE: {"low":${fu.low.get},"high":${fu.low.get * changeFromLow}}"""
+            val estimateHash = new String(md5Digest.digest(message.getBytes))
+            if (estimateHash != lastEstimateHash) {
+                lastEstimateHash = estimateHash
+                context.actorSelection(s"../../${WebSocketActor.NAME}") ! message
+            }
+        }
+    }
+
     private def sendFundamental {
-        val message = s"$symbol: FUNDAMENTAL: ${Fundamental.serialize(fu)}"
-        context.actorSelection(s"../../${WebSocketActor.NAME}") ! message
+        val message = s"$symbol: FUNDAMENTAL: ${Fundamental.serialize(fu.copy(pe_ratio = None))}"
+        val fundamentalHash = new String(md5Digest.digest(message.getBytes))
+        if (fundamentalHash != lastFundamentalHash) {
+            lastFundamentalHash = fundamentalHash
+            context.actorSelection(s"../../${WebSocketActor.NAME}") ! message
+        }
     }
 
     private def sendOrdersToBrowser(os: List[OrderElement]) {
@@ -219,14 +243,22 @@ class StockActor(symbol: String) extends Actor with Util {
     }
 
     private def sendPosition {
-        val message = s"$symbol: POSITION: ${Position.serialize(p)}"
-        context.actorSelection(s"../../${WebSocketActor.NAME}") ! message
+        val message = s"$symbol: POSITION: ${Position.serialize(p.copy(created_at = None, updated_at = None))}"
+        val positionHash = new String(md5Digest.digest(message.getBytes))
+        if (positionHash != lastPositionHash) {
+            lastPositionHash = positionHash
+            context.actorSelection(s"../../${WebSocketActor.NAME}") ! message
+        }
     }
 
     private def sendQuote {
         if (q.last_trade_price.isDefined && q.last_trade_price.get > 0) {
-            val message = s"$symbol: QUOTE: ${Quote.serialize(q)}"
-            context.actorSelection(s"../../${WebSocketActor.NAME}") ! message
+            val message = s"$symbol: QUOTE: ${Quote.serialize(q.copy(updated_at = None))}"
+            val quoteHash = new String(md5Digest.digest(message.getBytes))
+            if (quoteHash != lastQuoteHash) {
+                lastQuoteHash = quoteHash
+                context.actorSelection(s"../../${WebSocketActor.NAME}") ! message
+            }
         }
     }
 }

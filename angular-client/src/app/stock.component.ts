@@ -18,6 +18,7 @@ export class StockComponent implements OnInit, OnDestroy {
   hideMatches: boolean = false;
   orders: Array<Order> = [];
   matchId2mId: { [key:string]: string; } = {};
+  buysell: { quantity: number, price: number } = { quantity: null, price: null};
   private subscription: Subscription;
 
   @Input('_symbol') set _symbol(value: string) {
@@ -70,6 +71,22 @@ export class StockComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
+  }
+
+  buySell() {
+    const action = this.buysell.price < this.last_trade_price ? 'BUY' : 'SELL';
+    this.websocketService.sendMessageThroughWebsocket(`${action}: ${this.symbol}: ${this.buysell.quantity} ${this.buysell.price}`)
+    setTimeout(() => {
+      this.buysell.quantity = null;
+      this.buysell.price = null;
+    }, 3000);
+  }
+
+  calculateBuSeButtonClass(): string {
+    if (this.buysell.quantity != null && this.buysell.price != null) {
+      return this.buysell.price > this.last_trade_price ? 'btn-primary' : 'btn-danger';
+    }
+    else return '';
   }
 
   calculateOrderCssClass(o: Order): string {
