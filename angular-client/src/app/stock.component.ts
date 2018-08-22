@@ -9,6 +9,7 @@ import {Fundamental, Order, Position} from './model';
   styleUrls: ['./stock.component.css']
 })
 export class StockComponent implements OnInit, OnDestroy {
+  instrument: string;
   symbol: string;
   fu: Fundamental = new Fundamental();
   po: Position = new Position();
@@ -37,7 +38,10 @@ export class StockComponent implements OnInit, OnDestroy {
         if (f.high && f.high > 0) this.fu.high = f.high;
         if (f.open && f.open > 0) this.fu.open = f.open;
       }
-      else if (message.QUOTE) this.last_trade_price = message.QUOTE.last_trade_price;
+      else if (message.QUOTE) {
+        this.last_trade_price = message.QUOTE.last_trade_price;
+        this.instrument = message.QUOTE.instrument;
+      }
       else if (message.ORDERS) {
         this.orders = (message.ORDERS as Array<any>).map(v => {
           let mId: string = undefined;
@@ -75,7 +79,9 @@ export class StockComponent implements OnInit, OnDestroy {
 
   buySell() {
     const action = this.buysell.price < this.last_trade_price ? 'BUY' : 'SELL';
-    this.websocketService.sendMessageThroughWebsocket(`${action}: ${this.symbol}: ${this.buysell.quantity} ${this.buysell.price}`)
+    this.websocketService.sendMessageThroughWebsocket(
+      `${action}: ${this.symbol}: ${this.buysell.quantity} ${this.buysell.price} ${this.instrument}`
+    );
     setTimeout(() => {
       this.buysell.quantity = null;
       this.buysell.price = null;
@@ -123,10 +129,11 @@ export class StockComponent implements OnInit, OnDestroy {
     }
 
     const h = this.last_trade_price > this.fu.open ? 82 : 0;
+    const b = this.last_trade_price <= this.fu.open;
     const sv = {
       // s, v are from 0 - 100
-      s: this.last_trade_price <= this.fu.open ? 0 : Math.min((this.last_trade_price - this.fu.open)/this.fu.open*600, 100),
-      v: this.last_trade_price <= this.fu.open ? 100 - Math.min((this.fu.open - this.last_trade_price)/this.fu.open*500, 100) : 100   // from 0 - 100
+      s: b ? 0 : Math.min((this.last_trade_price - this.fu.open) / this.fu.open*600, 100),
+      v: b ? 100 - Math.min((this.fu.open - this.last_trade_price) / this.fu.open*500, 100) : 100   // from 0 - 100
     };
     const sl = {
       s: -1,

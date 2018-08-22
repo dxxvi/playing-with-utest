@@ -71,3 +71,15 @@ case class OrderElement(
         s"${if (matchId.isEmpty) None else matchId.get}" +
         ")"
 }
+
+object BuySellOrderError {
+    def deserialize(s: String): BuySellOrderError = parse(s) \ "non_field_errors" match {
+        case JArray(jValues) => BuySellOrderError(jValues map {
+            case JString(x) => x
+            case _ => s
+        })
+        case _ => BuySellOrderError(Nil)
+    }
+}
+
+case class BuySellOrderError(non_field_errors: List[String])

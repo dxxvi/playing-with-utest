@@ -49,13 +49,16 @@ class WebSocketListener(system: ActorSystem, mainActorPath: String)
         val orderActor: ActorSelection = system.actorSelection(s"$mainActorPath/../${OrderActor.NAME}")
         if (s startsWith CANCEL)
             orderActor ! OrderActor.Cancel(s.replace(CANCEL, ""))
-        else if (s.startsWith(BUY) && s.count(_ == ' ') == 3) {   // s looks like this BUY: AMD: 19 11.07
+        else if ((s.startsWith(BUY) || s.startsWith(SELL)) && s.count(_ == ' ') == 4) {
+            // s looks like this BUY: AMD: 19 11.07 instrument
             val array = s.split(" ")
-            orderActor ! OrderActor.Buy(array(1).replace(":", ""), array(2).toInt, array(3).toDouble)
-        }
-        else if (s.startsWith(SELL) && s.count(_ == ' ') == 3) {  // s looks like this SELL: HTZ: 82 19.04
-            val array = s.split(" ")
-            orderActor ! OrderActor.Sell(array(1).replace(":", ""), array(2).toInt, array(3).toDouble)
+            orderActor ! OrderActor.BuySell(
+                array(0).replace(":", "").toLowerCase,
+                array(1).replace(":", ""),
+                array(4),
+                array(2).toInt,
+                array(3).toDouble
+            )
         }
         else if (s startsWith DEBUG_OFF) {
             val symbol = s.replace(DEBUG_OFF, "")                 // this is a symbol or actor name

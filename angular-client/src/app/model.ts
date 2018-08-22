@@ -17,6 +17,6 @@ export interface Order {
   price: number;
   average_price: number;
   side: string;
-  matchId: string;
-  mId: string;
+  matchId: string;  // a concatenation of the id's of 2 matched orders, is very long
+  mId: string;      // a shorter representation of matchId for display only
 }

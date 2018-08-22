@@ -7,23 +7,27 @@ import akka.util.ByteString
 import com.softwaremill.sttp.Uri.{QueryFragment, QueryFragmentEncoding}
 import com.softwaremill.sttp._
 import com.typesafe.config.Config
-import home.sparkjava.message.{HistoricalOrders, Tick}
-import model.{OrderElement, Orders}
+import message.{HistoricalOrders, Tick}
+import model.{BuySellOrderError, OrderElement, Orders}
 import org.apache.logging.log4j.ThreadContext
+import org.json4s._
 import org.json4s.JsonAST.{JDouble, JInt, JObject, JString}
+import org.json4s.native.Serialization
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
 object OrderActor {
     val NAME = "orderActor"
+    val BUY  = "buy"
+    val SELL = "sell"
 
-    case class Buy(symbol: String, quantity: Int, price: Double)
-    case class Sell(symbol: String, quantity: Int, price: Double)
+    case class BuySell(action: String, symbol: String, instrument: String, quantity: Int, price: Double)
     case class Cancel(orderId: String)
 
     case class HistoricalOrdersResponse(r: Response[Orders], ho: HistoricalOrders)
     case class OrdersResponse(r: Response[Orders])
+    case class BuySellOrderErrorResponse(r: Response[BuySellOrderError])
 
     def props(config: Config): Props = Props(new OrderActor(config))
 }
@@ -34,7 +38,7 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
 
     val SERVER: String = config.getString("server")
     val authorization: String = if (config.hasPath("Authorization")) config.getString("Authorization") else "No token"
-    val account: String =
+    val account: String = if (config.hasPath("AccountNumber")) config.getString("Authorization") else "No account"
     implicit val httpBackend: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(config)
     var historicalOrdersCount = 0
 
@@ -89,20 +93,34 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
                     }
                 }
             )
-        case Buy(symbol, quantity, price) =>
-            Main.instrument2Symbol.find(_._2 == symbol) foreach { t => {
-                JObject(
-                    "account" -> JString(account),
-                    "instrument" -> JString(instrument),
-                    "symbol" -> JString(symbol),
-                    "type" -> JString("limit"),
-                    "time_in_force" -> JString("gfd"),
-                    "trigger" -> JString("immediate"),
-                    "price" -> JDouble(price),
-                    "quantity" -> JInt(quantity),
-                    "side" -> JString("buy")
-                )
-            }}
+        case BuySell(action, symbol, instrument, quantity, price) =>
+            val body = Serialization.write(JObject(
+                "account" -> JString(s"${SERVER}accounts/$account/"),
+                "instrument" -> JString(instrument),
+                "symbol" -> JString(symbol),
+                "type" -> JString("limit"),
+                "time_in_force" -> JString("gfd"),
+                "trigger" -> JString("immediate"),
+                "price" -> JDouble(price),
+                "quantity" -> JInt(quantity),
+                "side" -> JString(action)
+            ))(DefaultFormats)
+            sttp
+                    .headers(("Content-Type", "application/json"), ("Authorization", authorization))
+                    .body(body)
+                    .post(uri"${SERVER}orders/")
+                    .response(asString.map(BuySellOrderError.deserialize))
+                    .send()
+                    .map(BuySellOrderErrorResponse)
+        case BuySellOrderErrorResponse(Response(rawErrorBody, code, statusText, _, _)) =>
+            rawErrorBody fold (
+                _ => logger.error(s"Error in buy/sell-ing $code $statusText"),
+                a => a.non_field_errors foreach { error => {
+                    logger.error(error)
+                    context.actorSelection(s"../../${WebSocketActor.NAME}") ! s"NOTICE: INFO: $error"
+                }}
+            )
+            printf(s"got BuySellOrderErrorResponse")
     }
 
     override def receive: Receive = sideEffect andThen _receive
