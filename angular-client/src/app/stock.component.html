@@ -29,7 +29,7 @@
                class="form-control" style="width: 4.75em"/></td>
     <td>
       <button (click)="buySell()" class="btn" [ngClass]="calculateBuSeButtonClass()" type="button"
-              [disabled]="buysell.quantity == null || buysell.price == null || buysell.quantity < 0 || buysell.price < 0">Bu / Se</button>
+              [disabled]="buysell.quantity == null || buysell.price == null || buysell.quantity <= 0 || buysell.price <= 0">Bu / Se</button>
     </td>
   </tr></table>
   <table style="font: .9em monospace; width: 100%">

@@ -13,6 +13,7 @@ import model.{DailyQuote, Fundamental, OrderElement, Quote}
 import org.json4s._
 import utest._
 
+import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -196,6 +197,25 @@ object ActorTests extends TestSuite with Util with TestUtil {
             orders -= OrderElement(S, Some("2018-08-06T19:45:45.751474Z"), N, Some("1818"), N, N, N, S, N, Some(3.7), Some("sell"), Some(2), N)
             orders += OrderElement(S, Some("2018-08-06T19:45:45.751474Z"), N, Some("1818"), N, N, N, S, N, Some(3.7), Some("sell"), Some(2), N)
             println(orders)
+        }
+
+        "Test lastRoundOrders" - {
+            def g(orders: Seq[OrderElement]): List[OrderElement] = {
+                @tailrec
+                def f(givenSum: Int, currentSum: Int, building: List[OrderElement], remain: List[OrderElement]): List[OrderElement] = {
+                    if (givenSum == currentSum || remain == Nil) building
+                    else f(
+                        givenSum,
+                        currentSum + (if (remain.head.side.contains("buy")) remain.head.quantity.get else -remain.head.quantity.get),
+                        building :+ remain.head,
+                        remain.tail
+                    )
+                }
+
+                f(33, 0, Nil, orders.toList)
+            }
+            val _orders = Seq[OrderElement]()
+            println(g(_orders))
         }
     }
 }

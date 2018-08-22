@@ -9,6 +9,8 @@ import com.softwaremill.sttp._
 import com.typesafe.config.Config
 import home.sparkjava.message.{HistoricalOrders, Tick}
 import model.{OrderElement, Orders}
+import org.apache.logging.log4j.ThreadContext
+import org.json4s.JsonAST.{JDouble, JInt, JObject, JString}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -32,6 +34,7 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
 
     val SERVER: String = config.getString("server")
     val authorization: String = if (config.hasPath("Authorization")) config.getString("Authorization") else "No token"
+    val account: String =
     implicit val httpBackend: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(config)
     var historicalOrdersCount = 0
 
@@ -55,8 +58,10 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
 
         case ho @ HistoricalOrders(_, instrument, _, _, next) =>
             if (historicalOrdersCount < 5) {
+                val uri = if (next.isDefined) uri"${next.get}"
+                    else uri"${SERVER}orders/".queryFragment(QueryFragment.KeyValue("instrument", instrument, valueEncoding = QueryFragmentEncoding.All))
                 sttp.header("Authorization", authorization)
-                        .get(uri"${SERVER}orders/".queryFragment(QueryFragment.KeyValue("instrument", instrument, valueEncoding = QueryFragmentEncoding.All)))
+                        .get(uri)
                         .response(asString.map(Orders.deserialize))
                         .send()
                         .map(r => HistoricalOrdersResponse(r, ho)) pipeTo self
@@ -84,7 +89,22 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
                     }
                 }
             )
+        case Buy(symbol, quantity, price) =>
+            Main.instrument2Symbol.find(_._2 == symbol) foreach { t => {
+                JObject(
+                    "account" -> JString(account),
+                    "instrument" -> JString(instrument),
+                    "symbol" -> JString(symbol),
+                    "type" -> JString("limit"),
+                    "time_in_force" -> JString("gfd"),
+                    "trigger" -> JString("immediate"),
+                    "price" -> JDouble(price),
+                    "quantity" -> JInt(quantity),
+                    "side" -> JString("buy")
+                )
+            }}
     }
 
-    override def receive: Receive = Main.clearThreadContextMap andThen _receive
+    override def receive: Receive = sideEffect andThen _receive
+    private def sideEffect: PartialFunction[Any, Any] = { case x => ThreadContext.put("symbol", OrderActor.NAME); x }
 }

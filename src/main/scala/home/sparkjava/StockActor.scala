@@ -50,7 +50,10 @@ class StockActor(symbol: String) extends Actor with Util {
             sendFundamental
             instrument = fu.instrument
         }
-        case o: OrderElement => if (gotHistoricalOrders) {
+        case _o: OrderElement => if (gotHistoricalOrders) {
+            val o = if (_o.state.contains("cancelled") && _o.cumulative_quantity.exists(_ > 0))
+                _o.copy(state = Some("filled"))
+            else _o
             orders -= o
             if (o.state.contains("filled") || o.state.exists(_.contains("confirm"))) orders += o
             // orders sent to browser when StockActor receives a Position which is every 4 secs
@@ -93,9 +96,12 @@ class StockActor(symbol: String) extends Actor with Util {
                 context.actorSelection(s"../../${QuoteActor.NAME}") ! GetDailyQuote(List(symbol), 0)
             }
             sendEstimate()
-        case HistoricalOrders(_, _, _, _orders, _) =>
+        case HistoricalOrders(_, _, times, _orders, _) =>
             gotHistoricalOrders = true
-            orders ++= _orders.filter(oe => oe.state.isDefined && (oe.state.get == "filled" || oe.state.get.contains("confirmed")))
+            orders ++= _orders.collect {
+                case oe @ OrderElement(_, _, _, _, _, _, _, Some(state), _, _, _, _, _) if isAcceptableOrderState(state, oe) =>
+                    if (state == "cancelled") oe.copy(state = Some("filled")) else oe
+            }
             println(s"... $symbol.log historicals orders ...")
             logger.debug(s"Got HistoricalOrders:\n${orders.toList.map(_.toString).mkString("\n")}")
         case DailyQuoteReturn(dQuotes) =>
@@ -124,8 +130,6 @@ class StockActor(symbol: String) extends Actor with Util {
             lastPositionHash = ""
             lastFundamentalHash = ""
             lastQuoteHash = ""
-            gotHistoricalOrders = false
-            orders.clear()
     }
     override def receive: Receive = sideEffect andThen _receive
     private def sideEffect: PartialFunction[Any, Any] = { case x => ThreadContext.put("symbol", symbol); x }
@@ -189,19 +193,24 @@ class StockActor(symbol: String) extends Actor with Util {
         f(List[OrderElement](), tbOrders)
     }
 
+    private def combineIds(s1: String, s2: String): String = if (s1 < s2) s"$s1-$s2" else s"$s2-$s1"
+
     private def doBuySellMatch(o1: OrderElement, o2: OrderElement): Option[Boolean] = for {
         side1 <- o1.side
         side2 <- o2.side
         if side1 == "buy" && side2 == "sell"
-        quantity1 <- o1.quantity
-        quantity2 <- o2.quantity
-        if quantity1 == quantity2
+        cumulative_quantity1 <- o1.cumulative_quantity
+        cumulative_quantity2 <- o2.cumulative_quantity
+        if cumulative_quantity1 == cumulative_quantity2
         average_price1 <- o1.average_price
         average_price2 <- o2.average_price
         if average_price1 < average_price2
     } yield true
 
-    private def combineIds(s1: String, s2: String): String = if (s1 < s2) s"$s1-$s2" else s"$s2-$s1"
+    private def isAcceptableOrderState(state: String, oe: OrderElement): Boolean =
+        state == "filled" || state.contains("confirmed") || (
+                state == "cancelled" && oe.cumulative_quantity.exists(_ > 0)
+        )
 
     // please make sure position.quantity is defined before calling this
     private def lastRoundOrders(): List[OrderElement] = {
@@ -210,7 +219,10 @@ class StockActor(symbol: String) extends Actor with Util {
             if (givenSum == currentSum || remain == Nil) building
             else f(
                 givenSum,
-                currentSum + (if (remain.head.side.contains("buy")) remain.head.quantity.get else -remain.head.quantity.get),
+                currentSum + (
+                        if (remain.head.side.contains("buy")) remain.head.cumulative_quantity.get
+                        else -remain.head.cumulative_quantity.get
+                ),
                 building :+ remain.head,
                 remain.tail
             )
