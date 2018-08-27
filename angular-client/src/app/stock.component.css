@@ -6,7 +6,7 @@ td.mono { font-family: monospace; }
 td.visible { visibility: visible;}
 td.hidden { visibility: hidden; }
 td.none { display: none; }
-span.dow { border-bottom: 2px solid #ccc; }
+div.dow { border-bottom: 2px solid #ccc; }
 
 tr.buy { color: hsl(0, 50%, 40%); }
 tr.sell { color: hsl(240, 50%, 40%); }

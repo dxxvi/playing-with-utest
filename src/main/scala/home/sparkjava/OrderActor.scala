@@ -38,7 +38,7 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
 
     val SERVER: String = config.getString("server")
     val authorization: String = if (config.hasPath("Authorization")) config.getString("Authorization") else "No token"
-    val account: String = if (config.hasPath("AccountNumber")) config.getString("Authorization") else "No account"
+    val account: String = if (config.hasPath("AccountNumber")) config.getString("AccountNumber") else "No account"
     implicit val httpBackend: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(config)
     var historicalOrdersCount = 0
 
@@ -111,7 +111,7 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
                     .post(uri"${SERVER}orders/")
                     .response(asString.map(BuySellOrderError.deserialize))
                     .send()
-                    .map(BuySellOrderErrorResponse)
+                    .map(BuySellOrderErrorResponse) pipeTo self
         case BuySellOrderErrorResponse(Response(rawErrorBody, code, statusText, _, _)) =>
             rawErrorBody fold (
                 _ => logger.error(s"Error in buy/sell-ing $code $statusText"),
@@ -120,7 +120,6 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
                     context.actorSelection(s"../../${WebSocketActor.NAME}") ! s"NOTICE: INFO: $error"
                 }}
             )
-            printf(s"got BuySellOrderErrorResponse")
     }
 
     override def receive: Receive = sideEffect andThen _receive

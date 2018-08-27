@@ -39,8 +39,16 @@ class StockActor(symbol: String) extends Actor with Util {
     var instrument = ""
     var lastTimeHistoricalOrdersRequested: Long = 0 // in seconds
     var lastTimeHistoricalQuotesRequested: Long = 0
+    var lastTimeBuy:  Long = 0
+    var lastTimeSell: Long = 0
     val orders: collection.mutable.SortedSet[OrderElement] =
         collection.mutable.SortedSet[OrderElement]()(Ordering.by[OrderElement, String](_.created_at.get)(Main.timestampOrdering.reverse))
+    /*
+     * This is the meaning of changeFromHigh: lowest_of_day = highest_of_day * changeFromHigh.
+     * We get the average of changeFromHigh's of the last 10 days (remove the highest & lowest days).
+     * If last_trade_price is closer to lowest_of_day, then we guess that the
+     * real lowest_of_day = highest_of_day * changeFromHigh
+     */
     var changeFromHigh: Double = 0
     var changeFromLow: Double = 0
 
@@ -53,9 +61,11 @@ class StockActor(symbol: String) extends Actor with Util {
         case _o: OrderElement => if (gotHistoricalOrders) {
             val o = if (_o.state.contains("cancelled") && _o.cumulative_quantity.exists(_ > 0))
                 _o.copy(state = Some("filled"))
+            // TODO this is for testing on weekends
+            else if (_o.state.contains("queued")) _o.copy(state = Some("confirmed"))
             else _o
             orders -= o
-            if (o.state.contains("filled") || o.state.exists(_.contains("confirm"))) orders += o
+            if (o.state.contains("filled") || o.state.exists(_.contains("confirmed"))) orders += o
             // orders sent to browser when StockActor receives a Position which is every 4 secs
         }
         case _p: Position => if (_p.quantity.isDefined) {
@@ -65,7 +75,9 @@ class StockActor(symbol: String) extends Actor with Util {
 
             if (p.quantity.exists(_ > 0) && orders.nonEmpty) {
                 var totalShares: Int = 0
-                val _lastRoundOrders = assignMatchId(lastRoundOrders())
+                val x = lastRoundOrders() // x has confirmed orders as well
+                logger.debug(s"Last round orders before assigning matchId:\n${x.map(_.toString).mkString("\n")}")
+                val _lastRoundOrders = assignMatchId(x)
                 val lastRoundOrdersString = _lastRoundOrders.map(oe => {
                     val cq = oe.cumulative_quantity.get
                     totalShares += (if (oe.side.get == "buy") cq else -cq)
@@ -220,6 +232,7 @@ class StockActor(symbol: String) extends Actor with Util {
             else f(
                 givenSum,
                 currentSum + (
+                        // confirmed orders have cumulative_quantity of 0
                         if (remain.head.side.contains("buy")) remain.head.cumulative_quantity.get
                         else -remain.head.cumulative_quantity.get
                 ),
@@ -277,6 +290,20 @@ class StockActor(symbol: String) extends Actor with Util {
                 lastQuoteHash = quoteHash
                 context.actorSelection(s"../../${WebSocketActor.NAME}") ! message
             }
+        }
+    }
+
+    private def shouldBuySell(
+        oes: List[OrderElement],
+        ltp: Double,                     // last trade price
+        cfh: Double,                     // change from high
+        cfl: Double                      // change from low
+    ): Option[(String, Int, Double)] = { // returns (action, quantity, price)
+        oes.find(_.state.contains("filled")).collect {
+            case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _) if ltp > 1.005 * price =>
+                ("sell", 1, 1.2)
+            case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _) if ltp < .995 * price =>
+                ("buy", 1, 1.3)
         }
     }
 }

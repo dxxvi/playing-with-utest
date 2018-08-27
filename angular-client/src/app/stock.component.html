@@ -7,26 +7,36 @@
       </td>
       <td class="small">Today</td>
       <td class="small">Est.</td>
-      <td><span [ngClass]="symbolClass()">{{ symbol }}</span>&nbsp;<span [ngStyle]="{'visibility': po.quantity >= 0 ? 'visible' : 'hidden'}">{{ po.quantity }}</span></td>
+      <td>
+        <div style="float: left" [ngClass]="symbolClass()">{{ symbol }}</div>
+        <div style="float: right" [ngStyle]="{'visibility': po.quantity >= 0 ? 'visible' : 'hidden'}">{{ po.quantity }}</div>
+        <div style="clear: both"></div>
+      </td>
     </tr>
     <tr>
       <td class="smaller">High</td>
-      <td class="small mono" [ngClass]="">{{ fu.high.toFixed(2) }}</td>
-      <td class="small mono">{{ estimate_high.toFixed(2) }}</td>
+      <td class="small mono"><span [hidden]="fu.high < 0">{{ fu.high.toFixed(2) }}</span></td>
+      <td class="small mono"><span [hidden]="estimate_high < 0">{{ estimate_high.toFixed(2) }}</span></td>
       <td></td>
     </tr>
     <tr>
       <td class="smaller">Low</td>
-      <td class="small mono">{{ fu.low.toFixed(2) }}</td>
-      <td class="small mono">{{ estimate_low.toFixed(2) }}</td>
-      <td style="text-align: right;" [ngStyle]="{'visibility': last_trade_price > 0 ? 'visible' : 'hidden'}">{{ last_trade_price.toFixed(2) }}</td>
+      <td class="small mono"><span [hidden]="fu.low < 0">{{ fu.low.toFixed(2) }}</span></td>
+      <td class="small mono"><span [hidden]="estimate_low < 0">{{ estimate_low.toFixed(2) }}</span></td>
+      <td style="text-align: right" [ngStyle]="{'visibility': last_trade_price > 0 ? 'visible' : 'hidden'}">
+        {{ last_trade_price.toFixed(2) }}
+      </td>
     </tr>
   </table>
-  <table style="width: 100%"><tr class="form-group">
-    <td><input name="quantity" [(ngModel)]="buysell.quantity" placeholder="quantity" type="number" step="1"
-               class="form-control"  style="width: 6em"/></td>
-    <td><input name="price" [(ngModel)]="buysell.price" placeholder="price" type="number" step=".01"
-               class="form-control" style="width: 4.75em"/></td>
+  <table style="width: 100%; margin-left: -.4em; margin-right: -.4em"><tr class="form-group">
+    <td style="padding-right: .4em">
+      <input name="quantity" [(ngModel)]="buysell.quantity" placeholder="quantity" type="number" step="1"
+             class="form-control"  style="width: 6em"/>
+    </td>
+    <td style="padding-right: .4em">
+      <input name="price" [(ngModel)]="buysell.price" placeholder="price" type="number" step=".01"
+             class="form-control" style="width: 4.75em"/>
+    </td>
     <td>
       <button (click)="buySell()" class="btn" [ngClass]="calculateBuSeButtonClass()" type="button"
               [disabled]="buysell.quantity == null || buysell.price == null || buysell.quantity <= 0 || buysell.price <= 0">Bu / Se</button>

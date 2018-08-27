@@ -9,14 +9,16 @@ import com.softwaremill.sttp._
 import com.typesafe.config.{Config, ConfigFactory}
 import home.TestUtil
 import message.{AddSymbol, Tick}
-import model.{DailyQuote, Fundamental, OrderElement, Quote}
+import model._
 import org.json4s._
+import org.json4s.native.Serialization
 import utest._
 
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.{Failure, Success}
 
 object ActorTests extends TestSuite with Util with TestUtil {
     val tests = Tests {

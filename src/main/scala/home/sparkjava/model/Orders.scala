@@ -82,4 +82,9 @@ object BuySellOrderError {
     }
 }
 
+/*
+ * When we make an order, if it's successful, Robinhood will return a json which doesn't have the field named
+ * `non_field_errors` and we don't care about that json; if it fails, Robinhood returns a json with the field
+ * `non_field_errors` which we want to check.
+ */
 case class BuySellOrderError(non_field_errors: List[String])
