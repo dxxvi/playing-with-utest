@@ -105,6 +105,9 @@ export class AppComponent implements OnInit, OnDestroy {
     else if (level === 'danger') {
       return ['danger'];
     }
+    else if (level === 'info') {
+      return ['info'];
+    }
     else {
       return ['light'];
     }
@@ -131,11 +134,9 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   private generateUUID(): string {
-    const s4 = function(): string {
-      return Math.floor((1 + Math.random()) * 0x10000)
-      .toString(16)
-      .substring(1);
+    const s = function(): string {
+      return Math.floor((1 + Math.random()) * 1679616).toString(36).substring(1);
     };
-    return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+    return s() + '-' + s();
   }
 }

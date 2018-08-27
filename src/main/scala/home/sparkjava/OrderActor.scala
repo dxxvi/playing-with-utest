@@ -120,6 +120,9 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
                     context.actorSelection(s"../../${WebSocketActor.NAME}") ! s"NOTICE: INFO: $error"
                 }}
             )
+        case Cancel(orderId) => sttp.header("Authorization", authorization)
+                .post(uri"${SERVER}orders/$orderId/cancel/")
+                .send()
     }
 
     override def receive: Receive = sideEffect andThen _receive

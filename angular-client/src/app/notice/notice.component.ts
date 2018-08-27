@@ -16,6 +16,6 @@ export class NoticeComponent implements OnInit {
   ngOnInit() {
     setTimeout(() => {
       this.websocketService.sendMessageThroughSubject('NOTICE_DELETE', this.uuid);
-    }, 3456);
+    }, 3500);
   }
 }

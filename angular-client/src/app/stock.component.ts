@@ -104,6 +104,10 @@ export class StockComponent implements OnInit, OnDestroy {
     ].join(' ').trim();
   }
 
+  cancelOrder(orderId: string) {
+    this.websocketService.sendMessageThroughWebsocket(`CANCEL: ${orderId}`);
+  }
+
   formatMoney(value: number): string {
     if (Number.isNaN(value)) {
       return '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'; // 7 spaces

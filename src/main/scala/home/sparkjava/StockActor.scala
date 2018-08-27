@@ -1,6 +1,8 @@
 package home.sparkjava
 
 import java.security.MessageDigest
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 import akka.actor.{Actor, Props}
 import org.apache.logging.log4j.ThreadContext
@@ -41,6 +43,7 @@ class StockActor(symbol: String) extends Actor with Util {
     var lastTimeHistoricalQuotesRequested: Long = 0
     var lastTimeBuy:  Long = 0
     var lastTimeSell: Long = 0
+    val today: String = LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)
     val orders: collection.mutable.SortedSet[OrderElement] =
         collection.mutable.SortedSet[OrderElement]()(Ordering.by[OrderElement, String](_.created_at.get)(Main.timestampOrdering.reverse))
     /*
@@ -61,8 +64,10 @@ class StockActor(symbol: String) extends Actor with Util {
         case _o: OrderElement => if (gotHistoricalOrders) {
             val o = if (_o.state.contains("cancelled") && _o.cumulative_quantity.exists(_ > 0))
                 _o.copy(state = Some("filled"))
+/*
             // TODO this is for testing on weekends
             else if (_o.state.contains("queued")) _o.copy(state = Some("confirmed"))
+*/
             else _o
             orders -= o
             if (o.state.contains("filled") || o.state.exists(_.contains("confirmed"))) orders += o
@@ -224,6 +229,11 @@ class StockActor(symbol: String) extends Actor with Util {
                 state == "cancelled" && oe.cumulative_quantity.exists(_ > 0)
         )
 
+    /**
+      * @param s in the form of 2018-06-04T22:00:03.783713Z or 2018-06-04T22:00:03Z
+      */
+    private def isToday(s: String): Boolean = s.startsWith(today)
+
     // please make sure position.quantity is defined before calling this
     private def lastRoundOrders(): List[OrderElement] = {
         @tailrec
@@ -260,7 +270,7 @@ class StockActor(symbol: String) extends Actor with Util {
     }
 
     private def sendFundamental {
-        val message = s"$symbol: FUNDAMENTAL: ${Fundamental.serialize(fu.copy(pe_ratio = None))}"
+        val message = s"$symbol: FUNDAMENTAL: ${Fundamental.serialize(fu.copy(pe_ratio = None, average_volume = None, average_volume_2_weeks = None))}"
         val fundamentalHash = new String(md5Digest.digest(message.getBytes))
         if (fundamentalHash != lastFundamentalHash) {
             lastFundamentalHash = fundamentalHash
@@ -284,7 +294,9 @@ class StockActor(symbol: String) extends Actor with Util {
 
     private def sendQuote {
         if (q.last_trade_price.isDefined && q.last_trade_price.get > 0) {
-            val message = s"$symbol: QUOTE: ${Quote.serialize(q.copy(updated_at = None, ask_price = None, ask_size = None, bid_price = None, bid_size = None))}"
+            val message = s"$symbol: QUOTE: ${Quote.serialize(q.copy(updated_at = None, ask_price = None,
+                ask_size = None, bid_price = None, bid_size = None, adjusted_previous_close = None,
+                previous_close = None, previous_close_date = None))}"
             val quoteHash = new String(md5Digest.digest(message.getBytes))
             if (quoteHash != lastQuoteHash) {
                 lastQuoteHash = quoteHash
@@ -299,11 +311,18 @@ class StockActor(symbol: String) extends Actor with Util {
         cfh: Double,                     // change from high
         cfl: Double                      // change from low
     ): Option[(String, Int, Double)] = { // returns (action, quantity, price)
+        val now = System.currentTimeMillis / 1000
         oes.find(_.state.contains("filled")).collect {
-            case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _) if ltp > 1.005 * price =>
-                ("sell", 1, 1.2)
-            case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _) if ltp < .995 * price =>
-                ("buy", 1, 1.3)
+            case OrderElement(_, _, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
+                if (ltp > 1.1*price) && (now - lastTimeSell > 15) =>
+                ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100)
+            case OrderElement(_, _, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
+                if (ltp < .89*price) && (now - lastTimeBuy > 15) =>
+                ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100)
+            case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _) =>
+                if (isToday(created_at)) ("", 1, 1.1)
+                else ("", 0, 1.2)
+
         }
     }
 }

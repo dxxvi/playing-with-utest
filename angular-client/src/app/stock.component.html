@@ -53,7 +53,7 @@
       <td style="text-align: right;">{{ order.state.indexOf('confirm') >= 0 ? order.quantity : order.cumulative_quantity }}</td>
       <td class="x-small">&#8903;</td>
       <td>{{ order.average_price ? order.average_price.toFixed(2) : order.price.toFixed(2) }}</td>
-      <td *ngIf="order.state != 'filled'">&#10008;</td>
+      <td *ngIf="order.state != 'filled'" (click)="cancelOrder(order.id)" class="pointer">&#10008;</td>
       <td *ngIf="order.mId !== undefined">({{ order.mId }})</td>
     </tr>
   </table>
