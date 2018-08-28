@@ -1,7 +1,5 @@
 package home.sparkjava
 
-import java.util.concurrent.atomic.AtomicInteger
-
 import akka.actor.ActorSystem
 import com.typesafe.config.{Config, ConfigFactory}
 import message.Tick

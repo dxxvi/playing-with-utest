@@ -54,6 +54,8 @@ class StockActor(symbol: String) extends Actor with Util {
      */
     var changeFromHigh: Double = 0
     var changeFromLow: Double = 0
+    var estimatedLow: Double = 0
+    var estimatedHigh: Double = Double.MaxValue
 
     val _receive: Receive = {
         case _fu: Fundamental => if ((_fu.low.isDefined && _fu.high.isDefined) || _fu.open.isDefined) {
@@ -257,10 +259,15 @@ class StockActor(symbol: String) extends Actor with Util {
     private def sendEstimate() {
         if (fu.low.exists(_ > 0) && fu.high.exists(_ > 0) && changeFromHigh > 0 && changeFromLow > 0) {
             // now we can estimate the low and high prices for today
-            val message = if (q.last_trade_price.get - fu.low.get < fu.high.get - q.last_trade_price.get)  // closer to low
-                s"""$symbol: ESTIMATE: {"low":${fu.high.get * changeFromHigh},"high":${fu.high.get}}"""
-            else
-                s"""$symbol: ESTIMATE: {"low":${fu.low.get},"high":${fu.low.get * changeFromLow}}"""
+            if (q.last_trade_price.get - fu.low.get < fu.high.get - q.last_trade_price.get) { // closer to low
+                estimatedLow = fu.high.get * changeFromHigh
+                estimatedHigh = fu.high.get
+            }
+            else {
+                estimatedLow = fu.low.get
+                estimatedHigh = fu.low.get * changeFromLow
+            }
+            val message = s"""$symbol: ESTIMATE: {"low":$estimatedLow,"high":$estimatedHigh}"""
             val estimateHash = new String(md5Digest.digest(message.getBytes))
             if (estimateHash != lastEstimateHash) {
                 lastEstimateHash = estimateHash
@@ -311,18 +318,19 @@ class StockActor(symbol: String) extends Actor with Util {
         cfh: Double,                     // change from high
         cfl: Double                      // change from low
     ): Option[(String, Int, Double)] = { // returns (action, quantity, price)
+        val hasBuy  = oes.exists(oe => oe.state.exists(_.contains("confirmed")) && oe.side.contains("buy"))
+        val hasSell = oes.exists(oe => oe.state.exists(_.contains("confirmed")) && oe.side.contains("sell"))
         val now = System.currentTimeMillis / 1000
         oes.find(_.state.contains("filled")).collect {
             case OrderElement(_, _, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
-                if (ltp > 1.1*price) && (now - lastTimeSell > 15) =>
-                ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100)
+                if (ltp > 1.1*price) && (now - lastTimeSell > 15) && !hasSell =>
+                    ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100)
             case OrderElement(_, _, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
-                if (ltp < .89*price) && (now - lastTimeBuy > 15) =>
-                ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100)
-            case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _) =>
-                if (isToday(created_at)) ("", 1, 1.1)
-                else ("", 0, 1.2)
-
+                if (ltp < .89*price) && (now - lastTimeBuy > 15) && !hasBuy =>
+                    ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100)
+            case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
+                if isToday(created_at) && (ltp > 1.01*price) && (now - lastTimeSell > 15) && !hasSell =>
+                    ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100)
         }
     }
 }
