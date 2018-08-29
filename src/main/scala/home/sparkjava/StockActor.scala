@@ -314,9 +314,7 @@ class StockActor(symbol: String) extends Actor with Util {
 
     private def shouldBuySell(
         oes: List[OrderElement],
-        ltp: Double,                     // last trade price
-        cfh: Double,                     // change from high
-        cfl: Double                      // change from low
+        ltp: Double                      // last trade price
     ): Option[(String, Int, Double)] = { // returns (action, quantity, price)
         val hasBuy  = oes.exists(oe => oe.state.exists(_.contains("confirmed")) && oe.side.contains("buy"))
         val hasSell = oes.exists(oe => oe.state.exists(_.contains("confirmed")) && oe.side.contains("sell"))
@@ -329,8 +327,23 @@ class StockActor(symbol: String) extends Actor with Util {
                 if (ltp < .89*price) && (now - lastTimeBuy > 15) && !hasBuy =>
                     ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100)
             case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
-                if isToday(created_at) && (ltp > 1.01*price) && (now - lastTimeSell > 15) && !hasSell =>
+                if isToday(created_at) && (ltp > 1.007*price) && (now - lastTimeSell > 15) && !hasSell =>
                     ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100)
+            case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
+                if !isToday(created_at) && (ltp > 1.01*price) && (now - lastTimeSell > 15) && !hasSell =>
+                    ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100)
+            case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
+                if isToday(created_at) && (ltp < .992*price) && (now - lastTimeBuy > 15) && !hasBuy =>
+                    ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100)
+            case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
+                if !isToday(created_at) && (ltp < .99*price) && (now - lastTimeBuy > 15) && !hasBuy =>
+                    ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100)
+            case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, None)
+                if isToday(created_at) && (ltp < .987*price) && fu.low.exists(ltp < 1.005*_) && (ltp < estimatedLow) && (now - lastTimeBuy > 15) && !hasBuy =>
+                    ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100)
+            case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, None)
+                if !isToday(created_at) && (ltp < .985*price) && fu.low.exists(ltp < 1.005*_) && (ltp < estimatedLow) && (now - lastTimeBuy > 15) && !hasBuy =>
+                    ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100)
         }
     }
 }
