@@ -85,6 +85,7 @@ export class StockComponent implements OnInit, OnDestroy {
     setTimeout(() => {
       this.buysell.quantity = null;
       this.buysell.price = null;
+      console.log('.');
     }, 3000);
   }
 

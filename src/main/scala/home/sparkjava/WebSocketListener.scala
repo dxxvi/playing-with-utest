@@ -11,8 +11,7 @@ class WebSocketListener(system: ActorSystem, mainActorPath: String)
         extends org.eclipse.jetty.websocket.api.WebSocketListener with Logging {
     private val BUY: String = "BUY: "
     private val CANCEL: String = "CANCEL: "
-    private val DEBUG_OFF: String = "DEBUG_OFF: "
-    private val DEBUG_ON: String = "DEBUG_ON: "
+    private val DEBUG: String = "DEBUG: "
     private val SELL: String = "SELL: "
     private val FUNDAMENTAL_REVIEW: String = "FUNDAMENTAL_REVIEW: "
     private val WATCHLIST_ADD: String = "WATCHLIST_ADD: "
@@ -60,19 +59,14 @@ class WebSocketListener(system: ActorSystem, mainActorPath: String)
                 array(3).toDouble
             )
         }
-        else if (s startsWith DEBUG_OFF) {
-            val symbol = s.replace(DEBUG_OFF, "")                 // this is a symbol or actor name
-            system.actorSelection(s"$mainActorPath/symbol-$symbol") ! "DEBUG_OFF"
-            system.actorSelection(s"$mainActorPath/../$symbol") ! "DEBUG_OFF"
-        }
-        else if (s startsWith DEBUG_ON) {
-            val symbol = s.replace(DEBUG_ON, "")                  // this is a symbol or actor name
-            system.actorSelection(s"$mainActorPath/symbol-$symbol") ! "DEBUG_ON"
-            system.actorSelection(s"$mainActorPath/../$symbol") ! "DEBUG_ON"
+        else if (s startsWith DEBUG) {
+            val symbol = s.replace(DEBUG, "")                  // this is a symbol or actor name
+            system.actorSelection(s"$mainActorPath/symbol-$symbol") ! "DEBUG"
+//            system.actorSelection(s"$mainActorPath/../$symbol") ! "DEBUG"
         }
         else if (s startsWith FUNDAMENTAL_REVIEW) {
             val symbol = s.replace(FUNDAMENTAL_REVIEW, "")
-            system.actorSelection(s"$mainActorPath/../${FundamentalActor.NAME}") ! symbol
+            system.actorSelection(s"$mainActorPath/../${FundamentalActor.NAME}") ! FundamentalActor.FundamentalReview(symbol)
         }
         else if (s startsWith WATCHLIST_ADD) {
             val symbol = s.replace(WATCHLIST_ADD, "")

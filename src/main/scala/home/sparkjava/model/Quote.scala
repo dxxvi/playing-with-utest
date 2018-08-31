@@ -20,7 +20,11 @@ object Quote extends Util {
                 fromToOption[Boolean](jValue, "has_traded"),
                 fromToOption[String](jValue, "instrument"),
                 fromStringToOption[Double](jValue, "last_extended_hours_trade_price"),
-                fromStringToOption[Double](jValue, "last_trade_price"),
+                /*
+                 * we have to round the last_trade_price or we'll send a lot of messages to the browser because the
+                 * last_trade_price changes only $.0001.
+                 */
+                fromStringToOption[Double](jValue, "last_trade_price").map(ltp => (ltp * 100).round.toDouble / 100),
                 fromToOption[String](jValue, "last_trade_price_source"),
                 fromStringToOption[Double](jValue, "previous_close"),
                 fromToOption[String](jValue, "previous_close_date"),

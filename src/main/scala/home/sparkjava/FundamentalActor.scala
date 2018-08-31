@@ -1,7 +1,5 @@
 package home.sparkjava
 
-import java.util
-
 import akka.actor.{Actor, Props, Timers}
 import akka.pattern.pipe
 import akka.stream.scaladsl.Source
@@ -19,6 +17,7 @@ object FundamentalActor {
     def props(config: Config): Props = Props(new FundamentalActor(config))
 
     case class FundamentalResponse(uri: Uri, r: Response[List[Fundamental]])
+    case class FundamentalReview(symbol: String)  // used when user wants to check the fundamental of a new symbol
 }
 
 class FundamentalActor(config: Config) extends Actor with Timers with Util {
@@ -67,6 +66,7 @@ class FundamentalActor(config: Config) extends Actor with Timers with Util {
                     case None => logger.error(s"Got a fundamental w/ a strange instrument: $fu")
                 })
             )
+        case FundamentalReview(_) => logger.warn(s"Need to implement the FundamentalReview")
         case x => logger.warn(s"Don't know what to do with $x")
     }
 

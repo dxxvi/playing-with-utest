@@ -43,10 +43,12 @@ class PositionActor(config: Config) extends Actor with Timers with Util {
                 a => {
                     logger.debug(s"Got ${a.size} positions: ${a.count(p => p.quantity.isDefined)} usable")
                     a foreach { position => {
-                        if (position.quantity.isDefined)
+                        if (position.quantity.exists(_ >= 0))
                             Main.instrument2Symbol.get(position.instrument.getOrElse("")).foreach(symbol =>
                                 context.actorSelection(s"../${MainActor.NAME}/symbol-$symbol") ! position
                             )
+                        else
+                            logger.warn(s"A position with wrong quantity: $position")
                     }}
                 }
             )

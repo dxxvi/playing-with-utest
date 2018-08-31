@@ -75,15 +75,19 @@ class StockActor(symbol: String) extends Actor with Util {
             if (o.state.contains("filled") || o.state.exists(_.contains("confirmed"))) orders += o
             // orders sent to browser when StockActor receives a Position which is every 4 secs
         }
-        case _p: Position => if (_p.quantity.isDefined) {
+        case _p: Position =>   // we receive this every 4 seconds
             p = _p
             sendPosition
             if (p.instrument.nonEmpty) instrument = p.instrument.get
 
-            if (p.quantity.exists(_ > 0) && orders.nonEmpty) {
+            if (orders.nonEmpty) {
                 var totalShares: Int = 0
                 val x = lastRoundOrders() // x has confirmed orders as well
-                logger.debug(s"Last round orders before assigning matchId:\n${x.map(_.toString).mkString("\n")}")
+                if (q.last_trade_price.isDefined) {
+                    shouldBuySell(x, q.last_trade_price.get) foreach { t =>
+
+                    }
+                }
                 val _lastRoundOrders = assignMatchId(x)
                 val lastRoundOrdersString = _lastRoundOrders.map(oe => {
                     val cq = oe.cumulative_quantity.get
@@ -92,19 +96,20 @@ class StockActor(symbol: String) extends Actor with Util {
                 }).mkString("\n")
                 val s = new String(MessageDigest.getInstance("MD5").digest(lastRoundOrdersString.getBytes))
                 if (s != lastRoundOrdersHash) {
+                    logger.debug(s"Last round orders before assigning matchId:\n${x.map(_.toString).mkString("\n")}")
                     lastRoundOrdersHash = s
                     logger.debug(s"Orders sent to browser: position ${p.quantity}\n$lastRoundOrdersString")
                     println(s"                               ...... $symbol.log matched orders ...")
                     sendOrdersToBrowser(_lastRoundOrders)
                 }
             }
-        }
         case _q: Quote => // the QuoteActor is sure that symbol, last_trade_price and instrument are there
             q = _q
             sendQuote
             instrument = q.instrument.get
             val now = System.currentTimeMillis / 1000
-            if (p.quantity.exists(_ > 0) && orders.isEmpty && (now - lastTimeHistoricalOrdersRequested > 15)) {
+            if (p.quantity.exists(_ >= 0) && orders.isEmpty && (now - lastTimeHistoricalOrdersRequested > 15)
+                    && !gotHistoricalOrders) {
                 // we should wait for the OrderActor a bit because we receive quote every 4 seconds
                 lastTimeHistoricalOrdersRequested = now
                 context.actorSelection(s"../../${OrderActor.NAME}") !
@@ -115,7 +120,7 @@ class StockActor(symbol: String) extends Actor with Util {
                 context.actorSelection(s"../../${QuoteActor.NAME}") ! GetDailyQuote(List(symbol), 0)
             }
             sendEstimate()
-        case HistoricalOrders(_, _, times, _orders, _) =>
+        case HistoricalOrders(_, _, _, _orders, _) =>
             gotHistoricalOrders = true
             orders ++= _orders.collect {
                 case oe @ OrderElement(_, _, _, _, _, _, _, Some(state), _, _, _, _, _) if isAcceptableOrderState(state, oe) =>
@@ -149,6 +154,8 @@ class StockActor(symbol: String) extends Actor with Util {
             lastPositionHash = ""
             lastFundamentalHash = ""
             lastQuoteHash = ""
+        case "DEBUG" =>
+            println(s"$symbol gotHistoricalOrders: $gotHistoricalOrders orders:\n$orders")
     }
     override def receive: Receive = sideEffect andThen _receive
     private def sideEffect: PartialFunction[Any, Any] = { case x => ThreadContext.put("symbol", symbol); x }
@@ -253,7 +260,7 @@ class StockActor(symbol: String) extends Actor with Util {
             )
         }
 
-        f(p.quantity.get, 0, Nil, orders.toList)
+        f(p.quantity.get, 0, orders.toList.takeWhile(_.state.exists(s => s.contains("confirmed"))), orders.toList)
     }
 
     private def sendEstimate() {

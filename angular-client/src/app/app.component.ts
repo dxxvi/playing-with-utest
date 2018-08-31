@@ -99,13 +99,14 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   calculateNoticeClass(level: string) {
-    if (level === 'primary') {
+    const _level = level.toLowerCase();
+    if (_level === 'primary') {
       return ['primary'];
     }
-    else if (level === 'danger') {
+    else if (_level === 'danger') {
       return ['danger'];
     }
-    else if (level === 'info') {
+    else if (_level === 'info') {
       return ['info'];
     }
     else {

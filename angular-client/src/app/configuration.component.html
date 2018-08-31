@@ -9,18 +9,15 @@
             <br/><br/>
             <input style="width: 5em;" class="form-control" placeholder="Symbol" name="symbol" [(ngModel)]="symbol">
             &nbsp;
-            <button class="btn btn-primary" (click)="setDebug(true)">DEBUG_ON</button>
-            &nbsp;
-            <button class="btn btn-primary" (click)="setDebug(false)">DEBUG_OFF</button>
-            &nbsp;
             <button class="btn btn-primary" (click)="getFundamental()">Fundamental</button>
+            &nbsp;
+            <button class="btn btn-primary" (click)="serverDebug()">Debug</button>
           </form>
           <table *ngIf="compound != null">
             <tr>
               <td>
                 <span class="button" (click)="removeFundamentalReviewSymbol()" title="Close this fundamental review">&#10006;</span>
                 {{ compound.symbol }}
-                <span class="button" (click)="addToWatchList(compound.symbol)" title="Add to watch list">&#10010;</span>
               </td>
               <td><span class="label">Low:</span> {{compound.fundamental.low}}</td>
               <td><span class="label">High:</span> {{compound.fundamental.high}}</td>

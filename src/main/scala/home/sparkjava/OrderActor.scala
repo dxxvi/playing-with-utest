@@ -27,7 +27,7 @@ object OrderActor {
 
     case class HistoricalOrdersResponse(r: Response[Orders], ho: HistoricalOrders)
     case class OrdersResponse(r: Response[Orders])
-    case class BuySellOrderErrorResponse(r: Response[BuySellOrderError])
+    case class BuySellOrderErrorResponse(bs: BuySell, r: Response[BuySellOrderError])
 
     def props(config: Config): Props = Props(new OrderActor(config))
 }
@@ -93,7 +93,7 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
                     }
                 }
             )
-        case BuySell(action, symbol, instrument, quantity, price) =>
+        case bs @ BuySell(action, symbol, instrument, quantity, price) =>
             val body = Serialization.write(JObject(
                 "account" -> JString(s"${SERVER}accounts/$account/"),
                 "instrument" -> JString(instrument),
@@ -111,13 +111,18 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
                     .post(uri"${SERVER}orders/")
                     .response(asString.map(BuySellOrderError.deserialize))
                     .send()
-                    .map(BuySellOrderErrorResponse) pipeTo self
-        case BuySellOrderErrorResponse(Response(rawErrorBody, code, statusText, _, _)) =>
+                    .map(r => BuySellOrderErrorResponse(bs, r)) pipeTo self
+        case BuySellOrderErrorResponse(bs, Response(rawErrorBody, code, statusText, _, _)) =>
             rawErrorBody fold (
-                _ => logger.error(s"Error in buy/sell-ing $code $statusText"),
+                _ => {
+                    val message = s"Error in ${bs.action}ing ${bs.quantity} ${bs.symbol} @ ${bs.price} $code $statusText"
+
+                    logger.error(message)
+                },
                 a => a.non_field_errors foreach { error => {
-                    logger.error(error)
-                    context.actorSelection(s"../../${WebSocketActor.NAME}") ! s"NOTICE: INFO: $error"
+                    val notice = s"NOTICE: DANGER: ${bs.action}ing ${bs.quantity} @ ${bs.price} $error"
+                    logger.error(notice)
+                    context.actorSelection(s"../../${WebSocketActor.NAME}") ! notice
                 }}
             )
         case Cancel(orderId) => sttp.header("Authorization", authorization)

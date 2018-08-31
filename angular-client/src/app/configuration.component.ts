@@ -121,13 +121,6 @@ export class ConfigurationComponent implements OnInit, OnDestroy {
     this.subscription.unsubscribe();
   }
 
-  addToWatchList(symbol: string) {
-    if (symbol != null && symbol.trim() != '') {
-      this.message = `WATCHLIST_ADD: ${symbol}`;
-      this.sendMessageToServer();
-    }
-  }
-
   clickConfiguration() {
     if (this.open) {
       this.removeFundamentalReviewSymbol();
@@ -176,9 +169,9 @@ export class ConfigurationComponent implements OnInit, OnDestroy {
     }
   }
 
-  setDebug(debug: boolean) {
+  serverDebug() {
     if (this.symbol != null && this.symbol.trim() != '') {
-      this.message = `${debug ? 'DEBUG_ON:' : 'DEBUG_OFF:'} ${this.symbol}`;
+      this.message = `DEBUG: ${this.symbol}`;
       this.sendMessageToServer();
       setTimeout(() => {
         this.symbol = null;
