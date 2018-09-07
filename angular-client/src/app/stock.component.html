@@ -42,6 +42,8 @@
               [disabled]="buysell.quantity == null || buysell.price == null || buysell.quantity <= 0 || buysell.price <= 0">Bu / Se</button>
     </td>
   </tr></table>
+  <span class="button" title="Export order list to console" *ngIf="orders != null && orders.length != 0"
+        (click)="exportOrders()">🍓</span>
   <table style="font: .9em monospace; width: 100%">
     <tr *ngFor="let order of orders; trackBy: trackByFunction" [ngClass]="calculateOrderCssClass(order)">
       <td>{{ minifyTimestamp(order.created_at) }}</td>

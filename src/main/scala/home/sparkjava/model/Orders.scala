@@ -54,6 +54,10 @@ case class OrderElement(
     quantity: Option[Int],
     matchId: Option[String] = None
 ) {
+    def this(_created_at: String, _id: String, _cumulative_quantity: Int, _state: String, _price: Double, _side: String,
+             matchId: Option[String]) = this(None, Some(_created_at), None, Some(_id),
+        Some(_cumulative_quantity), None, None, Some(_state), Some(_price), None, Some(_side), None, matchId)
+
     override def toString: String =
         "(" +
         s"${if (updated_at.isEmpty) None else updated_at.get}," +

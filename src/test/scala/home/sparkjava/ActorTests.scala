@@ -18,7 +18,7 @@ import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 object ActorTests extends TestSuite with Util with TestUtil {
     val tests = Tests {
@@ -218,6 +218,82 @@ object ActorTests extends TestSuite with Util with TestUtil {
             }
             val _orders = Seq[OrderElement]()
             println(g(_orders))
+        }
+
+        "Test shouldBuySell" - {
+            val N = None
+            val lastTimeSell = 0
+            val lastTimeBuy  = 0
+            val estimatedLow: Double = 0
+            val fu: Fundamental = Fundamental(N, N, N, N, Some(1.2), N, Some(.9), N, N, N, "")
+
+            def isToday(s: String): Boolean = s.startsWith("2018-09-05")
+
+            // returns (action, quantity, price)
+            def shouldBuySell(oes: List[OrderElement], ltp: Double /* last trade price */): Option[(String, Int, Double)] = {
+                val hasBuy  = oes.exists(oe => oe.state.exists(_.contains("confirmed")) && oe.side.contains("buy"))
+                val hasSell = oes.exists(oe => oe.state.exists(_.contains("confirmed")) && oe.side.contains("sell"))
+                val now = System.currentTimeMillis / 1000
+                oes.find(_.state.contains("filled")).collect {
+                    case OrderElement(_, _, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
+                        if (ltp > 1.1*price) && (now - lastTimeSell > 15) && !hasSell =>
+                        ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100)
+                    case OrderElement(_, _, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
+                        if (ltp < .89*price) && (now - lastTimeBuy > 15) && !hasBuy =>
+                        ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100)
+                    case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
+                        if isToday(created_at) && (ltp > 1.007*price) && (now - lastTimeSell > 15) && !hasSell =>
+                        ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100)
+                    case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
+                        if !isToday(created_at) && (ltp > 1.01*price) && (now - lastTimeSell > 15) && !hasSell =>
+                        ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100)
+                    case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
+                        if isToday(created_at) && (ltp < .992*price) && (now - lastTimeBuy > 15) && !hasBuy =>
+                        ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100)
+                    case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
+                        if !isToday(created_at) && (ltp < .99*price) && (now - lastTimeBuy > 15) && !hasBuy =>
+                        ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100)
+                    case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, None)
+                        if isToday(created_at) && (ltp < .987*price) && fu.low.exists(ltp < 1.005*_) && (ltp < estimatedLow) && (now - lastTimeBuy > 15) && !hasBuy =>
+                        ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100)
+                    case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, None)
+                        if !isToday(created_at) && (ltp < .985*price) && fu.low.exists(ltp < 1.005*_) && (ltp < estimatedLow) && (now - lastTimeBuy > 15) && !hasBuy =>
+                        ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100)
+                }
+            }
+
+            val orderElements = List(
+//                new OrderElement("2018-09-07T13:48:49", "a9n9-6fc12",  0,  "confirmed", 4.6,  "sell", None),
+                new OrderElement("2018-08-31T15:59:35", "22md-1n6io0", 8,  "filled",    4.45, "buy",  Some("3c")),
+                new OrderElement("2018-08-31T14:47:22", "4x3r-jb5qn",  8,  "filled",    4.5,  "sell", Some("3c")),
+                new OrderElement("2018-07-24T15:32:41", "kapg-zql4x",  8,  "filled",    4.65, "sell", Some("3c")),
+                new OrderElement("2018-07-23T15:12:25", "d7rx-6tru9",  8,  "filled",    4.45, "buy",  Some("n5")),
+                new OrderElement("2018-07-13T17:23:54", "xtsv-uml00",  8,  "filled",    4.65, "sell", Some("n5")),
+                new OrderElement("2018-07-10T14:06:43", "4jn7-wqv9n",  8,  "filled",    4.3,  "buy",  Some("3c")),
+                new OrderElement("2018-07-09T14:14:43", "1ynn-2ec4m",  8,  "filled",    4.45, "buy",  None),
+                new OrderElement("2018-06-04T14:26:59", "1gqh-x62sqv", 16, "filled",    4.8,  "sell", Some("lp")),
+                new OrderElement("2018-05-17T14:21:48", "19ff-x9hg6y", 32, "filled",    4.7,  "sell", Some("ji")),
+                new OrderElement("2018-05-10T19:59:47", "c540-idkof",  32, "filled",    4.5,  "buy",  Some("ji")),
+                new OrderElement("2018-05-10T19:51:46", "2ftr-2cx010", 16, "filled",    4.55, "buy",  Some("lp")),
+                new OrderElement("2018-05-10T19:37:25", "2288-5ayu10", 8,  "filled",    4.6,  "buy",  None),
+                new OrderElement("2018-05-10T17:35:05", "b3xa-o2lo9",  4,  "filled",    4.65, "buy",  None),
+                new OrderElement("2018-05-10T15:33:35", "31k8-iazu6",  4,  "filled",    4.7,  "buy",  None),
+                new OrderElement("2018-05-10T13:49:16", "f3r3-l033p",  4,  "filled",    4.75, "buy",  None),
+                new OrderElement("2018-05-04T13:33:39", "2emn-b42exw", 2,  "filled",    4.85, "buy",  None),
+                new OrderElement("2018-05-03T18:49:04", "2bne-zoskcl", 2,  "filled",    4.9,  "buy",  None),
+                new OrderElement("2018-05-03T17:50:54", "jtfn-po1ua",  2,  "filled",    4.95, "buy",  None),
+                new OrderElement("2018-05-03T17:50:29", "22iz-gpove5", 2,  "filled",    5,    "buy",  None),
+                new OrderElement("2018-05-03T14:56:26", "o1a1-ejem9",  1,  "filled",    5.05, "buy",  None),
+                new OrderElement("2018-05-03T14:48:52", "1lqa-mj4gau", 1,  "filled",    5.1,  "buy",  None),
+                new OrderElement("2018-05-03T14:48:34", "2l0s-2k7fgw", 1,  "filled",    5.15, "buy",  None),
+                new OrderElement("2018-04-13T19:02:50", "1xcr-s3waeo", 1,  "filled",    5.25, "buy",  None)
+            )
+        }
+
+        "test Try" - {
+            println(
+                List("one", "1", "two", "2").map(s => Try(s.toInt))
+            )
         }
     }
 }

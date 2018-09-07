@@ -27,7 +27,7 @@ object OrderActor {
 
     case class HistoricalOrdersResponse(r: Response[Orders], ho: HistoricalOrders)
     case class OrdersResponse(r: Response[Orders])
-    case class BuySellOrderErrorResponse(bs: BuySell, r: Response[BuySellOrderError])
+    case class BuySellOrderErrorResponse(bs: BuySell, requestBody: String, r: Response[BuySellOrderError])
 
     def props(config: Config): Props = Props(new OrderActor(config))
 }
@@ -94,7 +94,7 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
                 }
             )
         case bs @ BuySell(action, symbol, instrument, quantity, price) =>
-            val body = Serialization.write(JObject(
+            val body: String = Serialization.write(JObject(
                 "account" -> JString(s"${SERVER}accounts/$account/"),
                 "instrument" -> JString(instrument),
                 "symbol" -> JString(symbol),
@@ -111,13 +111,13 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
                     .post(uri"${SERVER}orders/")
                     .response(asString.map(BuySellOrderError.deserialize))
                     .send()
-                    .map(r => BuySellOrderErrorResponse(bs, r)) pipeTo self
-        case BuySellOrderErrorResponse(bs, Response(rawErrorBody, code, statusText, _, _)) =>
+                    .map(r => BuySellOrderErrorResponse(bs, body, r)) pipeTo self
+        case BuySellOrderErrorResponse(bs, requestBody, Response(rawErrorBody, code, statusText, _, _)) =>
             rawErrorBody fold (
                 _ => {
                     val message = s"Error in ${bs.action}ing ${bs.quantity} ${bs.symbol} @ ${bs.price} $code $statusText"
-
-                    logger.error(message)
+                    context.actorSelection(s"../../${WebSocketActor.NAME}") ! s"NOTICE: DANGER: $message"
+                    logger.error(message + s" request body: $requestBody")
                 },
                 a => a.non_field_errors foreach { error => {
                     val notice = s"NOTICE: DANGER: ${bs.action}ing ${bs.quantity} @ ${bs.price} $error"

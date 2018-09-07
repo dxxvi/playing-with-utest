@@ -109,6 +109,44 @@ export class StockComponent implements OnInit, OnDestroy {
     this.websocketService.sendMessageThroughWebsocket(`CANCEL: ${orderId}`);
   }
 
+  exportOrders() {
+    // returns a string which is s with spaces appended to it so that its length is l
+    function appendSpaces(s: string, l: number) {
+      return s + ' '.repeat(l - s.length);
+    }
+
+    const array1 = this.orders
+      .map(o => {
+        const s = parseInt(o.id.replace('-', ''), 16).toString(36);
+        const id = s.substring(0, 4) + '-' + s.substring(4);
+        const mId = o.mId === undefined ? 'None' : `Some("${o.mId}")`;
+        return `new OrderElement("${o.created_at.replace(/\.\d+Z$/, '')}", "${id}", ${o.cumulative_quantity}, "${o.state}", ${o.price}, "${o.side}", ${mId})`
+          .split(', ')
+          .map(e => e + ',')
+      });
+    /*
+     * array1 looks like this
+     * [
+     *   ["new OrderElement(\"2018-09-05T03:44:55\",", "\"7890-abcdef\",", "4,", "\"confirmed\",", "5.27,", "\"sell\",", "None),"],
+     *   ["new OrderElement(\"2018-09-04T11:22:33\",", "\"abcd-defghi\",", "3,", "\"filled\",", "5.12,", "\"buy\",", "Some(\"w2\")),"],
+     *   ["new OrderElement(\"2018-09-04T10:07:04\",", "\"abcd-defghi\",", "3,", "\"filled\",", "5.13,", "\"sell\",", "Some(\"w2\")),"]
+     * ]
+     */
+    const sizes = array1[0]
+      .map((v, i) => array1.map(row => row[i]))
+      .map(row => row.map(s => s.length))
+      .map(row => row.reduce((acc, v) => (acc < v) ? v : acc));
+
+    console.log(array1
+      .map(row => {
+        const s =row.map((e, i) => appendSpaces(e, sizes[i])).join(' ');
+        console.log(`- ${s}`);
+        return s;
+      })
+      .join('\n')
+    )
+  }
+
   formatMoney(value: number): string {
     if (Number.isNaN(value)) {
       return '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'; // 7 spaces
