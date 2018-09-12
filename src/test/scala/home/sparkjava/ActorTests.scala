@@ -225,7 +225,7 @@ object ActorTests extends TestSuite with Util with TestUtil {
             val lastTimeSell = 0
             val lastTimeBuy  = 0
             val estimatedLow: Double = 0
-            val fu: Fundamental = Fundamental(N, N, N, N, Some(1.2), N, Some(.9), N, N, N, "")
+            var fu: Fundamental = Fundamental(N, N, N, N, N, N, N, N, N, N, "")
 
             def isToday(s: String): Boolean = s.startsWith("2018-09-05")
 
@@ -234,13 +234,7 @@ object ActorTests extends TestSuite with Util with TestUtil {
                 val hasBuy  = oes.exists(oe => oe.state.exists(_.contains("confirmed")) && oe.side.contains("buy"))
                 val hasSell = oes.exists(oe => oe.state.exists(_.contains("confirmed")) && oe.side.contains("sell"))
                 val now = System.currentTimeMillis / 1000
-                oes.find(_.state.contains("filled")).collect {
-                    case OrderElement(_, _, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
-                        if (ltp > 1.1*price) && (now - lastTimeSell > 15) && !hasSell =>
-                        ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100)
-                    case OrderElement(_, _, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
-                        if (ltp < .89*price) && (now - lastTimeBuy > 15) && !hasBuy =>
-                        ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100)
+                val decisionFunction: PartialFunction[OrderElement, (String, Int, Double)] = {
                     case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
                         if isToday(created_at) && (ltp > 1.007*price) && (now - lastTimeSell > 15) && !hasSell =>
                         ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100)
@@ -260,9 +254,18 @@ object ActorTests extends TestSuite with Util with TestUtil {
                         if !isToday(created_at) && (ltp < .985*price) && fu.low.exists(ltp < 1.005*_) && (ltp < estimatedLow) && (now - lastTimeBuy > 15) && !hasBuy =>
                         ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100)
                 }
+                val filledOEs = oes.filter(_.state.contains("filled"))
+                val decision1: Option[(String, Int, Double)] = filledOEs.headOption collect decisionFunction
+                val decision2 = filledOEs.dropWhile(_.matchId.isDefined).headOption collect decisionFunction
+                if (decision1.isEmpty) decision2
+                else if (decision2.isEmpty) decision1
+                else for {
+                    d1 <- decision1
+                    d2 <- decision2
+                } yield if (d1._1 == "sell") d1 else d2
             }
 
-            val orderElements = List(
+            var orderElements = List(
 //                new OrderElement("2018-09-07T13:48:49", "a9n9-6fc12",  0,  "confirmed", 4.6,  "sell", None),
                 new OrderElement("2018-08-31T15:59:35", "22md-1n6io0", 8,  "filled",    4.45, "buy",  Some("3c")),
                 new OrderElement("2018-08-31T14:47:22", "4x3r-jb5qn",  8,  "filled",    4.5,  "sell", Some("3c")),
@@ -288,12 +291,9 @@ object ActorTests extends TestSuite with Util with TestUtil {
                 new OrderElement("2018-05-03T14:48:34", "2l0s-2k7fgw", 1,  "filled",    5.15, "buy",  None),
                 new OrderElement("2018-04-13T19:02:50", "1xcr-s3waeo", 1,  "filled",    5.25, "buy",  None)
             )
-        }
-
-        "test Try" - {
-            println(
-                List("one", "1", "two", "2").map(s => Try(s.toInt))
-            )
+            fu = Fundamental(N, N, N, N, Some(4.8), N, Some(4.3), N, N, N, "")
+            var decision = shouldBuySell(orderElements, 4.4)
+            println(decision)
         }
     }
 }
