@@ -34,7 +34,7 @@ class FundamentalActor(config: Config) extends Actor with Timers with Logging wi
     val settings: ConnectionPoolSettings = getConnectionPoolSettings(config, context.system)
     val http = Http(context.system)
 
-    timers.startPeriodicTimer(Tick, Tick, 19824.millis)
+
     var debug = false
 
     val _receive: Receive = {
