@@ -116,13 +116,13 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
             rawErrorBody fold (
                 _ => {
                     val message = s"Error in ${bs.action}ing ${bs.quantity} ${bs.symbol} @ ${bs.price} $code $statusText"
-                    context.actorSelection(s"../../${WebSocketActor.NAME}") ! s"NOTICE: DANGER: $message"
+                    context.actorSelection(s"../${WebSocketActor.NAME}") ! s"NOTICE: DANGER: $message"
                     logger.error(message + s" request body: $requestBody")
                 },
                 a => a.non_field_errors foreach { error => {
                     val notice = s"NOTICE: DANGER: ${bs.action}ing ${bs.quantity} @ ${bs.price} $error"
                     logger.error(notice)
-                    context.actorSelection(s"../../${WebSocketActor.NAME}") ! notice
+                    context.actorSelection(s"../${WebSocketActor.NAME}") ! notice
                 }}
             )
         case Cancel(orderId) => sttp.header("Authorization", authorization)

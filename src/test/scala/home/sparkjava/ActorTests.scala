@@ -236,22 +236,22 @@ object ActorTests extends TestSuite with Util with TestUtil {
                 val now = System.currentTimeMillis / 1000
                 val decisionFunction: PartialFunction[OrderElement, (String, Int, Double)] = {
                     case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
-                        if isToday(created_at) && (ltp > 1.007*price) && (now - lastTimeSell > 15) && !hasSell =>
+                        if !hasSell && isToday(created_at) && (ltp > 1.007*price) && (now - lastTimeSell > 15) =>
                         ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100)
                     case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
-                        if !isToday(created_at) && (ltp > 1.01*price) && (now - lastTimeSell > 15) && !hasSell =>
+                        if !hasSell && !isToday(created_at) && (ltp > 1.01*price) && fu.high.exists(ltp > .992*_) && (now - lastTimeSell > 15)  =>
                         ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100)
                     case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
-                        if isToday(created_at) && (ltp < .992*price) && (now - lastTimeBuy > 15) && !hasBuy =>
+                        if !hasBuy && isToday(created_at) && (ltp < .993*price) && (now - lastTimeBuy > 15) =>
                         ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100)
                     case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
-                        if !isToday(created_at) && (ltp < .99*price) && (now - lastTimeBuy > 15) && !hasBuy =>
+                        if !hasBuy && !isToday(created_at) && (ltp < .99*price) && fu.low.exists(ltp < 1.008*_) && (now - lastTimeBuy > 15) =>
                         ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100)
                     case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, None)
-                        if isToday(created_at) && (ltp < .987*price) && fu.low.exists(ltp < 1.005*_) && (ltp < estimatedLow) && (now - lastTimeBuy > 15) && !hasBuy =>
+                        if !hasBuy && isToday(created_at) && (ltp < .991*price) && (now - lastTimeBuy > 15) =>
                         ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100)
                     case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, None)
-                        if !isToday(created_at) && (ltp < .985*price) && fu.low.exists(ltp < 1.005*_) && (ltp < estimatedLow) && (now - lastTimeBuy > 15) && !hasBuy =>
+                        if !hasBuy && !isToday(created_at) && (ltp < .985*price) && fu.low.exists(ltp < 1.005*_) && (ltp < estimatedLow) && (now - lastTimeBuy > 15) =>
                         ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100)
                 }
                 val filledOEs = oes.filter(_.state.contains("filled"))
@@ -266,33 +266,82 @@ object ActorTests extends TestSuite with Util with TestUtil {
             }
 
             var orderElements = List(
-//                new OrderElement("2018-09-07T13:48:49", "a9n9-6fc12",  0,  "confirmed", 4.6,  "sell", None),
-                new OrderElement("2018-08-31T15:59:35", "22md-1n6io0", 8,  "filled",    4.45, "buy",  Some("3c")),
-                new OrderElement("2018-08-31T14:47:22", "4x3r-jb5qn",  8,  "filled",    4.5,  "sell", Some("3c")),
-                new OrderElement("2018-07-24T15:32:41", "kapg-zql4x",  8,  "filled",    4.65, "sell", Some("3c")),
-                new OrderElement("2018-07-23T15:12:25", "d7rx-6tru9",  8,  "filled",    4.45, "buy",  Some("n5")),
-                new OrderElement("2018-07-13T17:23:54", "xtsv-uml00",  8,  "filled",    4.65, "sell", Some("n5")),
-                new OrderElement("2018-07-10T14:06:43", "4jn7-wqv9n",  8,  "filled",    4.3,  "buy",  Some("3c")),
-                new OrderElement("2018-07-09T14:14:43", "1ynn-2ec4m",  8,  "filled",    4.45, "buy",  None),
-                new OrderElement("2018-06-04T14:26:59", "1gqh-x62sqv", 16, "filled",    4.8,  "sell", Some("lp")),
-                new OrderElement("2018-05-17T14:21:48", "19ff-x9hg6y", 32, "filled",    4.7,  "sell", Some("ji")),
-                new OrderElement("2018-05-10T19:59:47", "c540-idkof",  32, "filled",    4.5,  "buy",  Some("ji")),
-                new OrderElement("2018-05-10T19:51:46", "2ftr-2cx010", 16, "filled",    4.55, "buy",  Some("lp")),
-                new OrderElement("2018-05-10T19:37:25", "2288-5ayu10", 8,  "filled",    4.6,  "buy",  None),
-                new OrderElement("2018-05-10T17:35:05", "b3xa-o2lo9",  4,  "filled",    4.65, "buy",  None),
-                new OrderElement("2018-05-10T15:33:35", "31k8-iazu6",  4,  "filled",    4.7,  "buy",  None),
-                new OrderElement("2018-05-10T13:49:16", "f3r3-l033p",  4,  "filled",    4.75, "buy",  None),
-                new OrderElement("2018-05-04T13:33:39", "2emn-b42exw", 2,  "filled",    4.85, "buy",  None),
-                new OrderElement("2018-05-03T18:49:04", "2bne-zoskcl", 2,  "filled",    4.9,  "buy",  None),
-                new OrderElement("2018-05-03T17:50:54", "jtfn-po1ua",  2,  "filled",    4.95, "buy",  None),
-                new OrderElement("2018-05-03T17:50:29", "22iz-gpove5", 2,  "filled",    5,    "buy",  None),
-                new OrderElement("2018-05-03T14:56:26", "o1a1-ejem9",  1,  "filled",    5.05, "buy",  None),
-                new OrderElement("2018-05-03T14:48:52", "1lqa-mj4gau", 1,  "filled",    5.1,  "buy",  None),
-                new OrderElement("2018-05-03T14:48:34", "2l0s-2k7fgw", 1,  "filled",    5.15, "buy",  None),
-                new OrderElement("2018-04-13T19:02:50", "1xcr-s3waeo", 1,  "filled",    5.25, "buy",  None)
+//                new OrderElement("2018-09-13T13:48:41", "qlsk-g563s",  0,  "confirmed", 15.9,  "sell", None),
+                new OrderElement("2018-09-12T16:43:08", "1jdp-1ggzlu", 2,  "filled",    15.27, "buy",  None),
+                new OrderElement("2018-09-07T19:34:26", "1l3h-t990c8", 2,  "filled",    15.74, "buy",  None),
+                new OrderElement("2018-09-07T19:26:08", "21o8-3jrsf8", 1,  "filled",    15.81, "buy",  None),
+                new OrderElement("2018-09-05T14:15:30", "2e9i-f3tmde", 1,  "filled",    17.01, "buy",  Some("d")),
+                new OrderElement("2018-08-31T20:04:42", "x9dw-n7z54",  1,  "filled",    17.21, "sell", Some("d")),
+                new OrderElement("2018-08-31T17:58:09", "1iva-s92sux", 2,  "filled",    17.01, "sell", Some("7w")),
+                new OrderElement("2018-08-31T15:09:33", "22ut-yqhloy", 4,  "filled",    16.87, "sell", Some("dv")),
+                new OrderElement("2018-08-29T16:14:19", "1z7i-w9irsv", 4,  "filled",    16.88, "buy",  Some("2m")),
+                new OrderElement("2018-08-27T15:04:54", "1xpl-xkaxmn", 2,  "filled",    17.01, "buy",  Some("2t")),
+                new OrderElement("2018-08-27T14:21:13", "2qq5-qzdnwo", 2,  "filled",    17.11, "sell", Some("2t")),
+                new OrderElement("2018-08-27T14:16:07", "1tw0-2j5cfe", 4,  "filled",    17.08, "sell", Some("2m")),
+                new OrderElement("2018-08-22T16:47:43", "1mx7-fro0lj", 3,  "filled",    16.72, "sell", Some("s9")),
+                new OrderElement("2018-08-20T20:36:45", "10lh-nu2pnf", 3,  "filled",    16.27, "buy",  Some("s9")),
+                new OrderElement("2018-08-20T19:40:38", "13js-cycaza", 8,  "filled",    16.31, "sell", Some("k3")),
+                new OrderElement("2018-07-27T18:51:20", "beda-5x6kq",  8,  "filled",    17.93, "buy",  Some("r3")),
+                new OrderElement("2018-07-27T15:54:20", "2lgc-30u56x", 4,  "filled",    18.23, "buy",  Some("pz")),
+                new OrderElement("2018-07-27T14:25:22", "2mhk-7rhalk", 4,  "filled",    18.37, "sell", Some("pz")),
+                new OrderElement("2018-07-27T14:11:40", "2mu8-af2vmq", 8,  "filled",    18.31, "sell", Some("r3")),
+                new OrderElement("2018-07-27T14:09:33", "t3it-scfcj",  16, "filled",    18.27, "sell", Some("ta")),
+                new OrderElement("2018-07-27T14:07:57", "1i2u-86x8bn", 20, "filled",    18.19, "sell", Some("v1")),
+                new OrderElement("2018-07-24T15:33:46", "1c16-lavjlb", 20, "filled",    17.1,  "buy",  Some("oj")),
+                new OrderElement("2018-07-23T16:47:43", "2auq-z7s9ss", 20, "filled",    17.17, "sell", Some("oj")),
+                new OrderElement("2018-07-19T19:13:48", "2kc2-jrdiqx", 25, "filled",    17.12, "sell", Some("ez")),
+                new OrderElement("2018-07-17T14:24:22", "uav6-nndoi",  32, "filled",    16.8,  "sell", Some("ak")),
+                new OrderElement("2018-07-11T14:11:14", "aysy-tztjs",  10, "filled",    16.4,  "buy",  Some("6m")),
+                new OrderElement("2018-07-10T14:08:15", "g5in-xyhr9",  10, "filled",    16.65, "sell", Some("6m")),
+                new OrderElement("2018-06-26T15:28:41", "1rwa-0oa061", 10, "filled",    16.39, "buy",  Some("w5")),
+                new OrderElement("2018-06-07T15:05:19", "24p4-3w7w16", 10, "filled",    16.82, "buy",  Some("qu")),
+                new OrderElement("2018-06-06T17:29:16", "1x0s-73mx3g", 10, "filled",    16.99, "sell", Some("qu")),
+                new OrderElement("2018-06-06T17:22:24", "20x3-xuvq0q", 10, "filled",    16.93, "sell", Some("w5")),
+                new OrderElement("2018-05-22T18:35:24", "2g3p-wbe7va", 32, "filled",    16.36, "buy",  Some("41")),
+                new OrderElement("2018-05-22T17:39:41", "2dq5-ugpgxl", 32, "filled",    16.46, "sell", Some("41")),
+                new OrderElement("2018-05-09T13:56:21", "p6dj-hbwoe",  64, "filled",    16.08, "sell", Some("63")),
+                new OrderElement("2018-05-04T16:16:23", "18ys-ujccr4", 64, "filled",    15.42, "sell", Some("zu")),
+                new OrderElement("2018-05-03T18:19:06", "29f7-qskb97", 64, "filled",    15.16, "sell", Some("jo")),
+                new OrderElement("2018-05-02T14:26:06", "24mb-lioke1", 64, "filled",    15.09, "sell", Some("kt")),
+                new OrderElement("2018-04-30T19:21:42", "1htv-llh2f6", 64, "filled",    14.6,  "buy",  Some("4")),
+                new OrderElement("2018-04-30T16:22:18", "1b9v-j7enga", 64, "filled",    14.69, "sell", Some("4")),
+                new OrderElement("2018-04-30T16:02:15", "e65z-8rkaz",  64, "filled",    14.65, "buy",  Some("x5")),
+                new OrderElement("2018-04-30T15:42:29", "139f-gwtquh", 64, "filled",    14.88, "sell", Some("x5")),
+                new OrderElement("2018-04-30T15:42:03", "10bn-kdcsb3", 64, "filled",    14.75, "buy",  Some("kt")),
+                new OrderElement("2018-04-30T14:49:48", "21xn-dsojge", 64, "filled",    14.86, "buy",  Some("jo")),
+                new OrderElement("2018-04-30T14:29:16", "arzl-kmusd",  64, "filled",    14.97, "buy",  Some("zu")),
+                new OrderElement("2018-04-27T18:41:09", "93zd-m7s2d",  64, "filled",    15.17, "buy",  Some("63")),
+                new OrderElement("2018-04-27T15:55:33", "17ih-29jai",  32, "filled",    15.22, "buy",  Some("ak")),
+                new OrderElement("2018-04-27T15:35:33", "2gvb-vh8ofp", 25, "filled",    15.34, "buy",  Some("ez")),
+                new OrderElement("2018-04-27T15:32:01", "1jhl-3q42sv", 20, "filled",    15.39, "buy",  Some("v1")),
+                new OrderElement("2018-04-27T15:31:27", "8557-nyul8",  16, "filled",    15.43, "buy",  Some("ta")),
+                new OrderElement("2018-04-24T17:24:06", "1lez-4oux7d", 8,  "filled",    15.8,  "buy",  Some("k3")),
+                new OrderElement("2018-04-24T16:30:17", "m8kl-cry4r",  4,  "filled",    15.86, "buy",  Some("dv")),
+                new OrderElement("2018-04-24T16:29:50", "1qf4-7c8wba", 2,  "filled",    15.9,  "buy",  Some("7w")),
+                new OrderElement("2018-04-24T14:36:15", "25kq-mtjkg3", 1,  "filled",    16,    "buy",  None),
+                new OrderElement("2018-04-12T15:34:37", "c9vv-ynrno",  20, "filled",    17.64, "sell", Some("91")),
+                new OrderElement("2018-04-12T15:19:54", "1mch-ewsj2u", 30, "filled",    17.56, "sell", Some("f6")),
+                new OrderElement("2018-04-12T15:11:28", "256b-kb7v99", 30, "filled",    17.53, "sell", Some("tr")),
+                new OrderElement("2018-04-11T16:00:18", "q173-0p635",  10, "filled",    17.12, "sell", Some("t")),
+                new OrderElement("2018-04-11T15:59:08", "1qhx-2y1eoj", 20, "filled",    17.09, "sell", Some("9c")),
+                new OrderElement("2018-04-09T19:58:27", "6fa8-50q92",  20, "filled",    16.24, "buy",  Some("qd")),
+                new OrderElement("2018-04-09T15:00:39", "2bl6-sx4k06", 20, "filled",    16.61, "sell", Some("qd")),
+                new OrderElement("2018-04-02T13:34:10", "1ea2-zkgr6a", 20, "filled",    16.07, "buy",  Some("9c")),
+                new OrderElement("2018-03-28T13:38:18", "2et5-o846we", 10, "filled",    16.77, "buy",  Some("t")),
+                new OrderElement("2018-03-27T19:53:13", "daga-h7hrr",  30, "filled",    17.14, "buy",  Some("tr")),
+                new OrderElement("2018-03-27T19:41:52", "21ag-s8auaz", 30, "filled",    17.09, "buy",  Some("2j")),
+                new OrderElement("2018-03-27T19:41:28", "1isz-acrl2u", 30, "filled",    17.16, "sell", Some("2j")),
+                new OrderElement("2018-03-27T19:39:47", "16vg-v4fawc", 30, "filled",    17.12, "buy",  Some("f6")),
+                new OrderElement("2018-03-27T19:07:48", "8p7p-y8qk6",  20, "filled",    17.24, "buy",  Some("91")),
+                new OrderElement("2018-03-27T18:59:13", "2gt4-0o2084", 12, "filled",    17.35, "buy",  None),
+                new OrderElement("2018-03-27T18:39:22", "245n-84z6wt", 6,  "filled",    17.42, "buy",  None),
+                new OrderElement("2018-03-27T18:08:30", "nlwp-cq26s",  2,  "filled",    17.5,  "buy",  None),
+                new OrderElement("2018-03-19T15:46:38", "2jzy-66dyyp", 1,  "filled",    17.58, "buy",  None),
+                new OrderElement("2018-03-19T15:45:46", "g0bf-cnv5v",  1,  "filled",    17.64, "buy",  None),
+                new OrderElement("2018-03-19T15:05:06", "1kg2-oka5h0", 1,  "filled",    17.76, "buy",  None)
             )
-            fu = Fundamental(N, N, N, N, Some(4.8), N, Some(4.3), N, N, N, "")
-            var decision = shouldBuySell(orderElements, 4.4)
+            fu = Fundamental(N, N, N, N, Some(15.68), N, Some(15.25), N, N, N, "")
+            var decision = shouldBuySell(orderElements, 15.43)
             println(decision)
         }
     }

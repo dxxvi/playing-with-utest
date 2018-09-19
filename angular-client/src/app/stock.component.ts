@@ -13,12 +13,12 @@ export class StockComponent implements OnInit, OnDestroy {
   symbol: string;
   fu: Fundamental = new Fundamental();
   po: Position = new Position();
-  last_trade_price: number = -.1;
-  estimate_low: number = -.1;
-  estimate_high: number = -.1;
-  hideMatches: boolean = false;
+  last_trade_price = -.1;
+  estimate_low = -.1;
+  estimate_high = -.1;
+  hideMatches = false;
   orders: Array<Order> = [];
-  matchId2mId: { [key:string]: string; } = {};
+  matchId2mId: { [key: string]: string; } = {};
   buysell: { quantity: number, price: number } = { quantity: null, price: null};
   private subscription: Subscription;
 
@@ -42,9 +42,8 @@ export class StockComponent implements OnInit, OnDestroy {
         this.last_trade_price = message.QUOTE.last_trade_price;
         this.instrument = message.QUOTE.instrument;
       }
-      else if (message.ORDERS) {
-        this.orders = (message.ORDERS as Array<any>).map(v => {
-          let mId: string = undefined;
+      else if (message.ORDERS) this.orders = (message.ORDERS as Array<any>).map(v => {
+          let mId: string;
           if (typeof v.matchId !== 'undefined') {
             mId = this.matchId2mId[v.matchId];
             if (typeof mId === 'undefined') {
@@ -64,8 +63,7 @@ export class StockComponent implements OnInit, OnDestroy {
             matchId: v.matchId,
             mId: mId
           };
-        })
-      }
+        });
       else if (message.ESTIMATE) {
         this.estimate_low = message.ESTIMATE.low;
         this.estimate_high = message.ESTIMATE.high;
