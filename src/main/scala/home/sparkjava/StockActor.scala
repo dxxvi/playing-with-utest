@@ -1,7 +1,7 @@
 package home.sparkjava
 
 import java.security.MessageDigest
-import java.time.LocalDate
+import java.time.{LocalDate, LocalTime}
 import java.time.format.DateTimeFormatter
 import java.util.Date
 
@@ -82,11 +82,12 @@ class StockActor(symbol: String) extends Actor with Util {
             sendPosition
             if (p.instrument.nonEmpty) instrument = p.instrument.get
 
+            val currentHour = LocalTime.now.getHour
             if (orders.nonEmpty) {
                 var totalShares: Int = 0
                 val x = lastRoundOrders() // x has confirmed orders as well
                 val _lastRoundOrders = assignMatchId(x)
-                if (q.last_trade_price.isDefined && instrument != "") {
+                if (q.last_trade_price.isDefined && instrument != "" && currentHour > 8 && currentHour < 16) {
                     shouldBuySell(_lastRoundOrders, q.last_trade_price.get, debug) foreach { t =>
                         // (action, quantity, price)
                         context.actorSelection(s"../../${OrderActor.NAME}") ! OrderActor.BuySell(t._1, symbol, instrument, t._2, t._3)
