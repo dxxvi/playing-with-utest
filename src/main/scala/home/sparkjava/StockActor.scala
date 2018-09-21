@@ -89,13 +89,13 @@ class StockActor(symbol: String) extends Actor with Util {
                 val _lastRoundOrders = assignMatchId(x)
                 if (q.last_trade_price.isDefined && instrument != "" && currentHour > 8 && currentHour < 16) {
                     shouldBuySell(_lastRoundOrders, q.last_trade_price.get, debug) foreach { t =>
-                        // (action, quantity, price)
+                        // (action, quantity, price, orderElement)
                         context.actorSelection(s"../../${OrderActor.NAME}") ! OrderActor.BuySell(t._1, symbol, instrument, t._2, t._3)
                         t._1 match {
                             case "buy" => lastTimeBuy = System.currentTimeMillis / 1000
                             case "sell" => lastTimeSell = System.currentTimeMillis / 1000
                         }
-                        logger.warn(s"Just ${t._1.toUpperCase} ${t._2} $symbol $$${t._3}")
+                        logger.warn(s"Just ${t._1.toUpperCase} ${t._2} $symbol $$${t._3} ${t._4}")
                     }
                 }
                 val lastRoundOrdersString = _lastRoundOrders.map(oe => {
@@ -103,10 +103,10 @@ class StockActor(symbol: String) extends Actor with Util {
                     totalShares += (if (oe.side.get == "buy") cq else -cq)
                     s"${oe.toString}  $totalShares"
                 }).mkString("\n")
-                val s = new String(MessageDigest.getInstance("MD5").digest(lastRoundOrdersString.getBytes))
-                if (s != lastRoundOrdersHash) {
+                val newHash = new String(MessageDigest.getInstance("MD5").digest(lastRoundOrdersString.getBytes))
+                if (newHash != lastRoundOrdersHash) {
                     logger.debug(s"Last round orders before assigning matchId:\n${x.map(_.toString).mkString("\n")}")
-                    lastRoundOrdersHash = s
+                    lastRoundOrdersHash = newHash
                     logger.debug(s"Orders sent to browser: position ${p.quantity}\n$lastRoundOrdersString")
                     sendOrdersToBrowser(_lastRoundOrders)
                 }
@@ -342,13 +342,14 @@ class StockActor(symbol: String) extends Actor with Util {
                                      ltp: Double      /* last trade price */,
                                      _d: Boolean      /* true means debug */,
                                      T: Long = 60
-                             ): Option[(String, Int, Double)] = oes match {
-        // returns (action, quantity, price)
+                             ): Option[(String, Int, Double, OrderElement)] = oes match {
+        // returns (action, quantity, price, orderElement used to give this decision)
         case Nil =>
+            val N = None
             val now = System.currentTimeMillis / 1000
             val quantity = (10 / ltp + 1).round.toInt
             if (ltp < estimatedLow && fu.low.exists(ltp < 1.005*_) && (now - lastTimeBuy > T))
-                Some(("buy", quantity, (ltp*100).round.toDouble / 100))
+                Some(("buy", quantity, (ltp*100).round.toDouble / 100, OrderElement(N, N, N, N, N, N, N, N, N, N, N, N)))
             else
                 None
         case _ =>
@@ -358,34 +359,28 @@ class StockActor(symbol: String) extends Actor with Util {
             if (_d) logger.debug(s"hasBuy: $hasBuy, hasSell: $hasSell")
 
             val now = System.currentTimeMillis / 1000
-            val decisionFunction: PartialFunction[OrderElement, (String, Int, Double)] = {
-                case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
+            val decisionFunction: PartialFunction[OrderElement, (String, Int, Double, OrderElement)] = {
+                case oe @ OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
                     if !hasSell && isToday(created_at) && (ltp > 1.007*price) && (now - lastTimeSell > T) =>
-                    if (_d) logger.debug("branch 1")
-                    ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100)
-                case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
+                    ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100, oe)
+                case oe @ OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
                     if !hasSell && !isToday(created_at) && (ltp > 1.01*price) && fu.high.exists(ltp > .992*_) && (now - lastTimeSell > T)  =>
-                    if (_d) logger.debug("branch 2")
-                    ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100)
-                case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
+                    ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100, oe)
+                case oe @ OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
                     if !hasBuy && isToday(created_at) && (ltp < .993*price) && (now - lastTimeBuy > T) =>
-                    if (_d) logger.debug("branch 3")
-                    ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100)
-                case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
+                    ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100, oe)
+                case oe @ OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
                     if !hasBuy && !isToday(created_at) && (ltp < .99*price) && fu.low.exists(ltp < 1.008*_) && (now - lastTimeBuy > T) =>
-                    if (_d) logger.debug("branch 4")
-                    ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100)
-                case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, None)
+                    ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100, oe)
+                case oe @ OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, None)
                     if !hasBuy && isToday(created_at) && (ltp < .991*price) && (now - lastTimeBuy > T) =>
-                    if (_d) logger.debug("branch 5")
-                    ("buy", cumulative_quantity + 1, (ltp*100).round.toDouble / 100)
-                case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, None)
+                    ("buy", cumulative_quantity + 1, (ltp*100).round.toDouble / 100, oe)
+                case oe @ OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, None)
                     if !hasBuy && !isToday(created_at) && (ltp < .985*price) && fu.low.exists(ltp < 1.005*_) && (ltp < estimatedLow) && (now - lastTimeBuy > T) =>
-                    if (_d) logger.debug("branch 6")
-                    ("buy", cumulative_quantity + 1, (ltp*100).round.toDouble / 100)
+                    ("buy", cumulative_quantity + 1, (ltp*100).round.toDouble / 100, oe)
             }
             val filledOEs = oes.filter(_.state.contains("filled"))
-            val decision1: Option[(String, Int, Double)] = filledOEs.headOption collect decisionFunction
+            val decision1: Option[(String, Int, Double, OrderElement)] = filledOEs.headOption collect decisionFunction
             if (_d) logger.debug(s"decision1: $decision1")
             val decision2 = filledOEs.dropWhile(_.matchId.isDefined).headOption collect decisionFunction
             if (_d) logger.debug(s"decision2: $decision2")

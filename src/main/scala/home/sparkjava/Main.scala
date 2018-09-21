@@ -1,5 +1,8 @@
 package home.sparkjava
 
+import java.time.LocalTime
+import java.util.concurrent.TimeUnit
+
 import akka.actor.ActorSystem
 import com.typesafe.config.{Config, ConfigFactory}
 import message.Tick
@@ -30,6 +33,8 @@ object Main {
         val config: Config = ConfigFactory.load()
 
         buildDowStocks(config)
+
+        waitUntil930()
 
         val actorSystem = ActorSystem("R")
         val mainActor = actorSystem.actorOf(MainActor.props(config), MainActor.NAME)
@@ -62,6 +67,18 @@ object Main {
 
     private def buildDowStocks(config: Config) {
         dowStocks ++= config.getConfig("dow").entrySet().asScala.map(_.getKey)
+    }
+
+    private def waitUntil930() {
+        var now = LocalTime.now
+        var hour = now.getHour
+        var minute = now.getMinute
+        while (hour < 9 && minute < 30) {
+            TimeUnit.MINUTES.sleep(1)
+            now = LocalTime.now
+            hour = now.getHour
+            minute = now.getMinute
+        }
     }
 }
 
