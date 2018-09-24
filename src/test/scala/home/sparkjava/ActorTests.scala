@@ -344,6 +344,11 @@ object ActorTests extends TestSuite with Util with TestUtil {
             var decision = shouldBuySell(orderElements, 15.43)
             println(decision)
         }
+
+        "Test load factors" - {
+            val config: Config = ConfigFactory.load("factors.conf").getConfig("factors")
+            config.entrySet()
+        }
     }
 }
 

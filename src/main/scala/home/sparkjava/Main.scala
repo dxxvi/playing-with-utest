@@ -1,6 +1,7 @@
 package home.sparkjava
 
-import java.time.LocalTime
+import java.time.DayOfWeek._
+import java.time.{LocalDate, LocalTime}
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
@@ -69,11 +70,15 @@ object Main {
         dowStocks ++= config.getConfig("dow").entrySet().asScala.map(_.getKey)
     }
 
+    /**
+      * Only wait until 9.30am if it's a weekday and it's before 9.30am.
+      */
     private def waitUntil930() {
+        val isWeekDay = ! Seq(SATURDAY, SUNDAY).contains(LocalDate.now.getDayOfWeek)
         var now = LocalTime.now
         var hour = now.getHour
         var minute = now.getMinute
-        while (hour < 9 && minute < 30) {
+        while (isWeekDay && hour < 9 && minute < 30) {
             TimeUnit.MINUTES.sleep(1)
             now = LocalTime.now
             hour = now.getHour

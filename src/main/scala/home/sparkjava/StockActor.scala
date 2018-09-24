@@ -1,6 +1,7 @@
 package home.sparkjava
 
 import java.security.MessageDigest
+import java.time.DayOfWeek._
 import java.time.{LocalDate, LocalTime}
 import java.time.format.DateTimeFormatter
 import java.util.Date
@@ -19,6 +20,7 @@ object StockActor {
 }
 
 class StockActor(symbol: String) extends Actor with Util {
+    val isWeekDay: Boolean = ! Seq(SATURDAY, SUNDAY).contains(LocalDate.now.getDayOfWeek)
     val md5Digest: MessageDigest = MessageDigest.getInstance("MD5")
     val isDow: Boolean = isDow(symbol)
     var fu = new Fundamental(
@@ -66,6 +68,7 @@ class StockActor(symbol: String) extends Actor with Util {
             instrument = fu.instrument
         }
         case _o: OrderElement => if (gotHistoricalOrders) {
+            // TODO what about partially filled orders?
             val o = if (_o.state.contains("cancelled") && _o.cumulative_quantity.exists(_ > 0))
                 _o.copy(state = Some("filled"))
 /*
@@ -87,7 +90,7 @@ class StockActor(symbol: String) extends Actor with Util {
                 var totalShares: Int = 0
                 val x = lastRoundOrders() // x has confirmed orders as well
                 val _lastRoundOrders = assignMatchId(x)
-                if (q.last_trade_price.isDefined && instrument != "" && currentHour > 8 && currentHour < 16) {
+                if (isWeekDay && currentHour > 8 && currentHour < 16 && q.last_trade_price.isDefined && instrument != "") {
                     shouldBuySell(_lastRoundOrders, q.last_trade_price.get, debug) foreach { t =>
                         // (action, quantity, price, orderElement)
                         context.actorSelection(s"../../${OrderActor.NAME}") ! OrderActor.BuySell(t._1, symbol, instrument, t._2, t._3)
@@ -113,18 +116,19 @@ class StockActor(symbol: String) extends Actor with Util {
             }
             debug = false
         case _q: Quote => // the QuoteActor is sure that symbol, last_trade_price and instrument are there
+            val T = 19
             q = _q
             sendQuote
             instrument = q.instrument.get
             val now = System.currentTimeMillis / 1000
-            if (p.quantity.exists(_ >= 0) && orders.isEmpty && (now - lastTimeHistoricalOrdersRequested > 19)
+            if (p.quantity.exists(_ >= 0) && orders.isEmpty && (now - lastTimeHistoricalOrdersRequested > T)
                     && !gotHistoricalOrders) {
-                // we should wait for the OrderActor a bit because we receive quote every 4 seconds
+                // Use T because we should wait for the OrderActor a bit because we receive quote every 4 seconds
                 lastTimeHistoricalOrdersRequested = now
                 context.actorSelection(s"../../${OrderActor.NAME}") !
                         HistoricalOrders(symbol, instrument, 4, Seq[OrderElement](), None)
             }
-            if (changeFromHigh == 0 && changeFromLow == 0 && (now - lastTimeHistoricalQuotesRequested > 19)) {
+            if (changeFromHigh == 0 && changeFromLow == 0 && (now - lastTimeHistoricalQuotesRequested > T)) {
                 lastTimeHistoricalQuotesRequested = now
                 context.actorSelection(s"../../${QuoteActor.NAME}") ! GetDailyQuote(List(symbol), 0)
             }
@@ -139,13 +143,13 @@ class StockActor(symbol: String) extends Actor with Util {
         case DailyQuoteReturn(dQuotes) =>
             val n = dQuotes.size
             var dailyQuotes = if (n >= 10) dQuotes.drop(n - 10) else Nil
-            // the day low_price/high_price smallest
+            // the day when low_price/high_price is smallest
             val d1 = dailyQuotes.foldLeft(("", Double.MaxValue))((b, dq) =>
                     if (dq.low_price.get / dq.high_price.get < b._2)
                         (dq.begins_at.get, dq.low_price.get / dq.high_price.get)
                     else (b._1, b._2)
             )._1
-            // the day low_price/high_price biggest
+            // the day when low_price/high_price is biggest
             val d2 = dailyQuotes.foldLeft(("", Double.MinValue))((b, dq) =>
                     if (dq.low_price.get / dq.high_price.get > b._2)
                         (dq.begins_at.get, dq.low_price.get / dq.high_price.get)
@@ -348,8 +352,11 @@ class StockActor(symbol: String) extends Actor with Util {
             val N = None
             val now = System.currentTimeMillis / 1000
             val quantity = (10 / ltp + 1).round.toInt
-            if (ltp < estimatedLow && fu.low.exists(ltp < 1.005*_) && (now - lastTimeBuy > T))
-                Some(("buy", quantity, (ltp*100).round.toDouble / 100, OrderElement(N, N, N, N, N, N, N, N, N, N, N, N)))
+            if (ltp < .997*estimatedLow && fu.low.exists(ltp < 1.005*_) && (now - lastTimeBuy > T)) {
+                val buyPrice = (ltp * 100).round.toDouble / 100
+                logger.warn(s"Buy new $quantity $symbol at $buyPrice estimatedLow: $estimatedLow, fundamental low: ${fu.low.get}")
+                Some(("buy", quantity, buyPrice, OrderElement(N, N, N, N, N, N, N, N, N, N, N, N)))
+            }
             else
                 None
         case _ =>
