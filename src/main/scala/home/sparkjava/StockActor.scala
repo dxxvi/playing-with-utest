@@ -59,6 +59,7 @@ class StockActor(symbol: String) extends Actor with Util {
     var changeFromLow: Double = 0
     var estimatedLow: Double = 0
     var estimatedHigh: Double = Double.MaxValue
+    var recentLowest: Double = 0 // this is the lowest in the last couple of days
     var debug: Boolean = false
 
     val _receive: Receive = {
@@ -159,6 +160,7 @@ class StockActor(symbol: String) extends Actor with Util {
             dailyQuotes = dailyQuotes.filter(dq => !dq.begins_at.contains(d1) && !dq.begins_at.contains(d2))
             changeFromHigh = dailyQuotes.map(dq => dq.low_price.get / dq.high_price.get).sum / dailyQuotes.size
             changeFromLow  = dailyQuotes.map(dq => dq.high_price.get / dq.low_price.get).sum / dailyQuotes.size
+            recentLowest = dailyQuotes.map(_.low_price.get).min
         case Tick => // Tick means there's a new web socket connection. purpose: send the symbol to the browser
             if (p.quantity.get >= 0) sendPosition else sendFundamental
             lastRoundOrdersHash = ""
@@ -352,7 +354,7 @@ class StockActor(symbol: String) extends Actor with Util {
             val N = None
             val now = System.currentTimeMillis / 1000
             val quantity = (10 / ltp + 1).round.toInt
-            if (ltp < .997*estimatedLow && fu.low.exists(ltp < 1.005*_) && (now - lastTimeBuy > T)) {
+            if (ltp < 1.01*recentLowest && ltp < .997*estimatedLow && fu.low.exists(ltp < 1.005*_) && (now - lastTimeBuy > T)) {
                 val buyPrice = (ltp * 100).round.toDouble / 100
                 logger.warn(s"Buy new $quantity $symbol at $buyPrice estimatedLow: $estimatedLow, fundamental low: ${fu.low.get}")
                 Some(("buy", quantity, buyPrice, OrderElement(N, N, N, N, N, N, N, N, N, N, N, N)))
