@@ -1,5 +1,8 @@
 package home.sparkjava.model
 
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+
 import home.sparkjava.Util
 import org.json4s._
 import org.json4s.native.JsonMethods._
@@ -12,23 +15,33 @@ object Orders extends Util {
             case JString(nextUrl) => Some(nextUrl)
             case _ => None
         }
+        var issueFound = false // true when there's issue in converting json to OrderElement
         val results: Option[List[OrderElement]] = jValue \ "results" match {
             case JArray(jValues) =>
-                val orderElements = jValues map { jv => OrderElement(
-                    fromStringToOption[String](jv, "updated_at"),
-                    fromStringToOption[String](jv, "created_at"),
-                    fromStringToOption[Double](jv, "fees"),
-                    fromStringToOption[String](jv, "id"),
-                    fromStringToOption[Int](jv, "cumulative_quantity"),
-                    fromStringToOption[String](jv, "reject_reason"),
-                    fromStringToOption[String](jv, "instrument"),
-                    fromStringToOption[String](jv, "state"),
-                    fromStringToOption[Double](jv, "price"),
-                    fromStringToOption[Double](jv, "average_price"),
-                    fromStringToOption[String](jv, "side"),
-                    fromStringToOption[Int](jv, "quantity")
-                )}
-                Some(orderElements)
+                val orderElements = jValues.map(jv => {
+                    val updated_at = fromStringToOption[String](jv, "updated_at")
+                    val created_at = fromStringToOption[String](jv, "created_at")
+                    val instrument = fromStringToOption[String](jv, "instrument")
+                    if (updated_at.isEmpty || created_at.isEmpty || instrument.isEmpty) issueFound = true
+                    OrderElement(
+                        updated_at.getOrElse("_"),
+                        created_at.getOrElse("_"),
+                        fromStringToOption[Double](jv, "fees"),
+                        fromStringToOption[String](jv, "id"),
+                        fromStringToOption[Int](jv, "cumulative_quantity"),
+                        fromStringToOption[String](jv, "reject_reason"),
+                        instrument.getOrElse("_"),
+                        fromStringToOption[String](jv, "state"),
+                        fromStringToOption[Double](jv, "price"),
+                        fromStringToOption[Double](jv, "average_price"),
+                        fromStringToOption[String](jv, "side"),
+                        fromStringToOption[Int](jv, "quantity")
+                    )
+                })
+                if (issueFound) {
+                    println(s"${LocalTime.now.format(DateTimeFormatter.ISO_LOCAL_TIME)} issues w/ deserializing order $s")
+                    None
+                } else Some(orderElements)
             case _ => None
         }
         Orders(next, results)
@@ -40,13 +53,13 @@ object Orders extends Util {
 case class Orders(next: Option[String], results: Option[List[OrderElement]])
 
 case class OrderElement(
-    updated_at: Option[String],
-    created_at: Option[String],
+    updated_at: String,
+    created_at: String,
     fees: Option[Double],
     id: Option[String],
     cumulative_quantity: Option[Int],
     reject_reason: Option[String],
-    instrument: Option[String],
+    instrument: String,
     state: Option[String],
     price: Option[Double],
     average_price: Option[Double],
@@ -55,18 +68,18 @@ case class OrderElement(
     matchId: Option[String] = None
 ) {
     def this(_created_at: String, _id: String, _cumulative_quantity: Int, _state: String, _price: Double, _side: String,
-             matchId: Option[String]) = this(None, Some(_created_at), None, Some(_id),
-        Some(_cumulative_quantity), None, None, Some(_state), Some(_price), None, Some(_side), None, matchId)
+             matchId: Option[String]) = this("_", _created_at, None, Some(_id),
+        Some(_cumulative_quantity), None, "_", Some(_state), Some(_price), None, Some(_side), None, matchId)
 
     override def toString: String =
         "(" +
-        s"${if (updated_at.isEmpty) None else updated_at.get}," +
-        s"${if (created_at.isEmpty) None else created_at.get}," +
+        s"$updated_at," +
+        s"$created_at," +
         s"${if (fees.isEmpty) None else fees.get}," +
         s"${if (id.isEmpty) None else id.get}," +
         s"${if (cumulative_quantity.isEmpty) None else cumulative_quantity.get}," +
         s"${if (reject_reason.isEmpty) None else reject_reason.get}," +
-        s"${if (instrument.isEmpty) None else instrument.get}," +
+        s"$instrument," +
         s"${if (state.isEmpty) None else state.get}," +
         s"${if (price.isEmpty) None else price.get}," +
         s"${if (average_price.isEmpty) None else average_price.get}," +

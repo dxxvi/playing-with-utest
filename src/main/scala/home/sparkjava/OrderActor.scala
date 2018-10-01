@@ -53,11 +53,11 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
                     .map(OrdersResponse) pipeTo self
         case OrdersResponse(Response(rawErrorBody, code, statusText, _, _)) => rawErrorBody fold (
                 _ => logger.error(s"Error in getting recent orders $code $statusText"),
-                a => a.results foreach { _.foreach(orderElement => {
-                    orderElement.instrument.flatMap(Main.instrument2Symbol.get).foreach(symbol => {
+                a => a.results foreach { _.foreach(orderElement =>
+                    Main.instrument2Symbol.get(orderElement.instrument).foreach(symbol =>
                         context.actorSelection(s"../${MainActor.NAME}/symbol-$symbol") ! orderElement
-                    })
-                })}
+                    )
+                )}
         )
 
         case ho @ HistoricalOrders(_, instrument, _, _, next) =>

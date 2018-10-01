@@ -1,6 +1,7 @@
 package home.sparkjava
 
 import java.nio.file.{Files, Paths, StandardOpenOption}
+import java.time.Instant
 
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.stream.scaladsl.Source
@@ -161,7 +162,7 @@ object ActorTests extends TestSuite with Util with TestUtil {
                     if (matchFound) f(_withMatchIds, _working)
                     else {
                         val set: collection.mutable.SortedSet[OrderElement] =
-                            collection.mutable.SortedSet[OrderElement]()(Ordering.by[OrderElement, String](_.created_at.get)(Main.timestampOrdering.reverse))
+                            collection.mutable.SortedSet[OrderElement]()(Ordering.by[OrderElement, String](_.created_at)(Main.timestampOrdering.reverse))
                         set ++= withMatchIds
                         set ++= working
                         set.toList
@@ -173,10 +174,10 @@ object ActorTests extends TestSuite with Util with TestUtil {
             val N = None
             val S = Some("")
             val orders = assignMatchId(List[OrderElement](
-                OrderElement(S, Some("2018-08-07T19:45:45.751474Z"), N, Some("ID19"), N, N, N, S, N, Some(3.4), Some("buy"),  Some(2), N),
-                OrderElement(S, Some("2018-08-06T19:45:45.751474Z"), N, Some("ID18"), N, N, N, S, N, Some(3.7), Some("sell"), Some(2), N),
-                OrderElement(S, Some("2018-08-05T19:45:45.751474Z"), N, Some("ID17"), N, N, N, S, N, Some(3.5), Some("buy"),  Some(2), N),
-                OrderElement(S, Some("2018-08-04T19:45:45.751474Z"), N, Some("ID16"), N, N, N, S, N, Some(3.6), Some("sell"), Some(2), N)
+                OrderElement("_", "2018-08-07T19:45:45.751474Z", N, Some("ID19"), N, N, "_", S, N, Some(3.4), Some("buy"),  Some(2), N),
+                OrderElement("_", "2018-08-06T19:45:45.751474Z", N, Some("ID18"), N, N, "_", S, N, Some(3.7), Some("sell"), Some(2), N),
+                OrderElement("_", "2018-08-05T19:45:45.751474Z", N, Some("ID17"), N, N, "_", S, N, Some(3.5), Some("buy"),  Some(2), N),
+                OrderElement("_", "2018-08-04T19:45:45.751474Z", N, Some("ID16"), N, N, "_", S, N, Some(3.6), Some("sell"), Some(2), N)
             ))
             println(s"${orders.map(_.toString).mkString("\n")}")
         }
@@ -190,14 +191,13 @@ object ActorTests extends TestSuite with Util with TestUtil {
             val N = None
             val S = Some("")
             val orders: collection.mutable.SortedSet[OrderElement] =
-                collection.mutable.SortedSet[OrderElement]()(Ordering.by[OrderElement, String](_.created_at.get)(Main.timestampOrdering.reverse))
-            orders += OrderElement(S, Some("2018-08-07T19:45:45.751474Z"), N, Some("ID19"), N, N, N, S, N, Some(3.4), Some("buy"),  Some(2), N)
-            orders += OrderElement(S, Some("2018-08-06T19:45:45.751474Z"), N, Some("ID18"), N, N, N, S, N, Some(3.7), Some("sell"), Some(2), N)
-            orders += OrderElement(S, Some("2018-08-05T19:45:45.751474Z"), N, Some("ID17"), N, N, N, S, N, Some(3.5), Some("buy"),  Some(2), N)
-            orders += OrderElement(S, Some("2018-08-04T19:45:45.751474Z"), N, Some("ID16"), N, N, N, S, N, Some(3.6), Some("sell"), Some(2), N)
-
-            orders -= OrderElement(S, Some("2018-08-06T19:45:45.751474Z"), N, Some("1818"), N, N, N, S, N, Some(3.7), Some("sell"), Some(2), N)
-            orders += OrderElement(S, Some("2018-08-06T19:45:45.751474Z"), N, Some("1818"), N, N, N, S, N, Some(3.7), Some("sell"), Some(2), N)
+                collection.mutable.SortedSet[OrderElement]()(Ordering.by[OrderElement, String](_.created_at)(Main.timestampOrdering.reverse))
+            orders += OrderElement("_", "2018-08-07T19:45:45.751474Z", N, Some("ID19"), N, N, "_", S, N, Some(3.4), Some("buy"),  Some(2), N)
+            orders += OrderElement("_", "2018-08-06T19:45:45.751474Z", N, Some("ID18"), N, N, "_", S, N, Some(3.7), Some("sell"), Some(2), N)
+            orders += OrderElement("_", "2018-08-05T19:45:45.751474Z", N, Some("ID17"), N, N, "_", S, N, Some(3.5), Some("buy"),  Some(2), N)
+            orders += OrderElement("_", "2018-08-04T19:45:45.751474Z", N, Some("ID16"), N, N, "_", S, N, Some(3.6), Some("sell"), Some(2), N)
+            orders -= OrderElement("_", "2018-08-06T19:45:45.751474Z", N, Some("1818"), N, N, "_", S, N, Some(3.7), Some("sell"), Some(2), N)
+            orders += OrderElement("_", "2018-08-06T19:45:45.751474Z", N, Some("1818"), N, N, "_", S, N, Some(3.7), Some("sell"), Some(2), N)
             println(orders)
         }
 
@@ -235,22 +235,22 @@ object ActorTests extends TestSuite with Util with TestUtil {
                 val hasSell = oes.exists(oe => oe.state.exists(_.contains("confirmed")) && oe.side.contains("sell"))
                 val now = System.currentTimeMillis / 1000
                 val decisionFunction: PartialFunction[OrderElement, (String, Int, Double)] = {
-                    case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
+                    case OrderElement(_, created_at, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
                         if !hasSell && isToday(created_at) && (ltp > 1.007*price) && (now - lastTimeSell > 15) =>
                         ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100)
-                    case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
+                    case OrderElement(_, created_at, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
                         if !hasSell && !isToday(created_at) && (ltp > 1.01*price) && fu.high.exists(ltp > .992*_) && (now - lastTimeSell > 15)  =>
                         ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100)
-                    case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
+                    case OrderElement(_, created_at, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
                         if !hasBuy && isToday(created_at) && (ltp < .993*price) && (now - lastTimeBuy > 15) =>
                         ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100)
-                    case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
+                    case OrderElement(_, created_at, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
                         if !hasBuy && !isToday(created_at) && (ltp < .99*price) && fu.low.exists(ltp < 1.008*_) && (now - lastTimeBuy > 15) =>
                         ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100)
-                    case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, None)
+                    case OrderElement(_, created_at, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, None)
                         if !hasBuy && isToday(created_at) && (ltp < .991*price) && (now - lastTimeBuy > 15) =>
                         ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100)
-                    case OrderElement(_, Some(created_at), _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, None)
+                    case OrderElement(_, created_at, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, None)
                         if !hasBuy && !isToday(created_at) && (ltp < .985*price) && fu.low.exists(ltp < 1.005*_) && (ltp < estimatedLow) && (now - lastTimeBuy > 15) =>
                         ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100)
                 }
@@ -266,7 +266,7 @@ object ActorTests extends TestSuite with Util with TestUtil {
             }
 
             var orderElements = List(
-//                new OrderElement("2018-09-13T13:48:41", "qlsk-g563s",  0,  "confirmed", 15.9,  "sell", None),
+                new OrderElement("2018-09-13T13:48:41", "qlsk-g563s",  0,  "confirmed", 15.9,  "sell", None),
                 new OrderElement("2018-09-12T16:43:08", "1jdp-1ggzlu", 2,  "filled",    15.27, "buy",  None),
                 new OrderElement("2018-09-07T19:34:26", "1l3h-t990c8", 2,  "filled",    15.74, "buy",  None),
                 new OrderElement("2018-09-07T19:26:08", "21o8-3jrsf8", 1,  "filled",    15.81, "buy",  None),
@@ -343,11 +343,6 @@ object ActorTests extends TestSuite with Util with TestUtil {
             fu = Fundamental(N, N, N, N, Some(15.68), N, Some(15.25), N, N, N, "")
             var decision = shouldBuySell(orderElements, 15.43)
             println(decision)
-        }
-
-        "Test load factors" - {
-            val config: Config = ConfigFactory.load("factors.conf").getConfig("factors")
-            config.entrySet()
         }
     }
 }

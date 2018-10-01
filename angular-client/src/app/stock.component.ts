@@ -99,8 +99,17 @@ export class StockComponent implements OnInit, OnDestroy {
       o.side,
       (typeof o.matchId) !== 'undefined' ? 'matched' : '',
       (typeof o.matchId) !== 'undefined' && this.hideMatches ? 'hide' : '',
-      o.state.indexOf('confirmed') >= 0 ? 'confirmed' : ''
+      o.state.indexOf('confirmed') >= 0 || o.state.indexOf('partial') >= 0 ? 'confirmed' : ''
     ].join(' ').trim();
+  }
+
+  calculateQuantityToPrint(order: Order): string {
+    if (order.state.indexOf('confirm') >= 0)
+      return '' + order.quantity;
+    else if (order.state.indexOf('partial') >= 0)
+      return order.cumulative_quantity + '/' + order.quantity;
+    else
+      return '' + order.cumulative_quantity;
   }
 
   cancelOrder(orderId: string) {

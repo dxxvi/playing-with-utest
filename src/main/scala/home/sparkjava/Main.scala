@@ -29,13 +29,12 @@ object Main {
     })
 
     val dowStocks: collection.mutable.Set[String] = collection.mutable.HashSet[String]()
+    var djia: Double = 0 // from cnbc.com
 
     def main(args: Array[String]): Unit = {
         val config: Config = ConfigFactory.load()
 
         buildDowStocks(config)
-
-        waitUntil930()
 
         val actorSystem = ActorSystem("R")
         val mainActor = actorSystem.actorOf(MainActor.props(config), MainActor.NAME)
@@ -68,22 +67,6 @@ object Main {
 
     private def buildDowStocks(config: Config) {
         dowStocks ++= config.getConfig("dow").entrySet().asScala.map(_.getKey)
-    }
-
-    /**
-      * Only wait until 9.30am if it's a weekday and it's before 9.30am.
-      */
-    private def waitUntil930() {
-        val isWeekDay = ! Seq(SATURDAY, SUNDAY).contains(LocalDate.now.getDayOfWeek)
-        var now = LocalTime.now
-        var hour = now.getHour
-        var minute = now.getMinute
-        while (isWeekDay && hour < 9 && minute < 30) {
-            TimeUnit.MINUTES.sleep(1)
-            now = LocalTime.now
-            hour = now.getHour
-            minute = now.getMinute
-        }
     }
 }
 

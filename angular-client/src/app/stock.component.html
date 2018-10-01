@@ -52,10 +52,10 @@
       <td class="none">state: {{ order.state }}</td>
       <td class="none">side: {{ order.side }}</td>
       <td class="none">matchId: {{ order.matchId }}</td>
-      <td style="text-align: right;">{{ order.state.indexOf('confirm') >= 0 ? order.quantity : order.cumulative_quantity }}</td>
+      <td style="text-align: right;">{{ calculateQuantityToPrint(order) }}</td>
       <td class="x-small">&#8903;</td>
       <td>{{ order.average_price ? order.average_price.toFixed(2) : order.price.toFixed(2) }}</td>
-      <td *ngIf="order.state != 'filled'" (click)="cancelOrder(order.id)" class="pointer">&#10008;</td>
+      <td *ngIf="order.state != 'filled' || order.state.indexOf('partial') >= 0" (click)="cancelOrder(order.id)" class="pointer">&#10008;</td>
       <td *ngIf="order.mId !== undefined">({{ order.mId }})</td>
     </tr>
   </table>
