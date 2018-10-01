@@ -256,6 +256,14 @@ class StockActor(symbol: String) extends Actor with Util {
         if average_price1 < average_price2
     } yield true
 
+/*
+    private def findFilledBuyNonMatchedOrderBefore(created_at: String, oes: List[OrderElement]): Option[OrderElement] = {
+        import java.time.Instant
+        val instant = Instant.parse(created_at)
+        oes.find()
+    }
+*/
+
     private def isAcceptableOrderState(state: String, oe: OrderElement): Boolean =
         state == "filled" || state.contains("confirmed") || (
                 state == "cancelled" && oe.cumulative_quantity.exists(_ > 0)
