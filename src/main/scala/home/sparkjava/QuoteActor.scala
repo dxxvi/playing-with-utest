@@ -1,5 +1,7 @@
 package home.sparkjava
 
+import java.util.concurrent.TimeUnit
+
 import akka.actor.{Actor, Props, Timers}
 import akka.pattern.pipe
 import akka.stream.scaladsl.Source
@@ -52,6 +54,7 @@ class QuoteActor(config: Config) extends Actor with Timers with Util {
                             .response(asString.map(DailyQuote.deserialize))
                             .send()
                             .map(DailyQuoteResponse) pipeTo self
+                    TimeUnit.SECONDS.sleep(2)
                 }
                 getDailyQuote = GetDailyQuote(Nil, now)
             }
