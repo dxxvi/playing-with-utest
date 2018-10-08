@@ -44,8 +44,7 @@ class StockActor(symbol: String) extends Actor with Util {
     var instrument = ""
     var lastTimeHistoricalOrdersRequested: Long = 0 // in seconds
     var lastTimeHistoricalQuotesRequested: Long = 0
-    var lastTimeBuy:  Long = 0 // in seconds
-    var lastTimeSell: Long = 0
+    var lastTimeBuySell:  Long = 0 // in seconds
     val today: String = LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)
     val orders: collection.mutable.SortedSet[OrderElement] =
         collection.mutable.SortedSet[OrderElement]()(Ordering.by[OrderElement, String](_.created_at)(Main.timestampOrdering.reverse))
@@ -94,10 +93,7 @@ class StockActor(symbol: String) extends Actor with Util {
                     shouldBuySell(_lastRoundOrders, q.last_trade_price.get, debug) foreach { t =>
                         // (action, quantity, price, orderElement)
                         context.actorSelection(s"../../${OrderActor.NAME}") ! OrderActor.BuySell(t._1, symbol, instrument, t._2, t._3)
-                        t._1 match {
-                            case "buy" => lastTimeBuy = System.currentTimeMillis / 1000
-                            case "sell" => lastTimeSell = System.currentTimeMillis / 1000
-                        }
+                        lastTimeBuySell = System.currentTimeMillis / 1000
                         logger.warn(s"Just ${t._1.toUpperCase} ${t._2} $symbol $$${t._3} ${t._4}")
                     }
                 }
@@ -174,7 +170,7 @@ class StockActor(symbol: String) extends Actor with Util {
                    | gotHistoricalOrders: $gotHistoricalOrders, instrument: $instrument,
                    | lastTimeHistoricalOrdersRequested: ${new Date(lastTimeHistoricalOrdersRequested * 1000)},
                    | lastTimeHistoricalQuotesRequested: ${new Date(lastTimeHistoricalQuotesRequested * 1000)},
-                   | lastTimeBuy: ${new Date(lastTimeBuy * 1000)}, lastTimeSell: ${new Date(lastTimeSell * 1000)},
+                   | lastTimeBuySell: ${new Date(lastTimeBuySell * 1000)}, lastTimeBuySell: ${new Date(lastTimeBuySell * 1000)},
                    | orders: ${orders.map(_.toString).mkString("\n")},
                    | estimatedLow: $estimatedLow, estimatedHigh: $estimatedHigh
                    | """.stripMargin)
@@ -377,16 +373,16 @@ class StockActor(symbol: String) extends Actor with Util {
 
     private def shouldBuySell(
                                      oes: List[OrderElement],
-                                     ltp: Double      /* last trade price */,
-                                     _d: Boolean      /* true means debug */,
-                                     T: Long = 60
+                                     ltp: Double     /* last trade price */,
+                                     _d: Boolean     /* true means debug */,
+                                     T: Long = 99    /* the amount of seconds we need to wait since last time buy/sell*/
                              ): Option[(String, Int, Double, OrderElement)] = oes match {
         // returns (action, quantity, price, orderElement used to give this decision)
         case Nil =>
             val N = None
             val now = System.currentTimeMillis / 1000
             val quantity = (10 / ltp + 1).round.toInt
-            if (ltp < 1.01*recentLowest && ltp < .997*estimatedLow && fu.low.exists(ltp < 1.005*_) && (now - lastTimeBuy > T)) {
+            if (ltp < 1.01*recentLowest && ltp < .997*estimatedLow && fu.low.exists(ltp < 1.005*_) && (now - lastTimeBuySell > T)) {
                 val buyPrice = (ltp * 100).round.toDouble / 100
                 logger.warn(s"Buy new $quantity $symbol at $buyPrice estimatedLow: $estimatedLow, fundamental low: ${fu.low.get}")
                 Some(("buy", quantity, buyPrice, OrderElement("_", "_", N, N, N, N, "_", N, N, N, N, N)))
@@ -402,22 +398,24 @@ class StockActor(symbol: String) extends Actor with Util {
             val now = System.currentTimeMillis / 1000
             val decisionFunction: PartialFunction[OrderElement, (String, Int, Double, OrderElement)] = {
                 case oe @ OrderElement(updated_at, _, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
-                    if !hasSell && isTodayAndMoreThanFromNow(updated_at) && (ltp > 1.007*price) && (now - lastTimeSell > T) =>
+                    if !hasSell && isTodayAndMoreThanFromNow(updated_at) && (ltp > 1.007*price) && (now - lastTimeBuySell > T) =>
                     ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100, oe)
                 case oe @ OrderElement(_, created_at, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
-                    if !hasSell && !isToday(created_at) && (ltp > 1.01*price) && fu.high.exists(ltp > .992*_) && (now - lastTimeSell > T)  =>
+                    if !hasSell && !isToday(created_at) && (ltp > 1.01*price) && fu.high.exists(ltp > .992*_) && (now - lastTimeBuySell > T)  =>
                     ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100, oe)
                 case oe @ OrderElement(updated_at, _, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
-                    if !hasBuy && isTodayAndMoreThanFromNow(updated_at) && (ltp < .993*price) && (now - lastTimeBuy > T) =>
+                    if !hasBuy && isTodayAndMoreThanFromNow(updated_at) && (ltp < .993*price) &&
+                      (2*ltp < estimatedLow + estimatedHigh) && (now - lastTimeBuySell > T) =>
                     ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100, oe)
                 case oe @ OrderElement(_, created_at, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
-                    if !hasBuy && !isToday(created_at) && (ltp < .99*price) && fu.low.exists(ltp < 1.008*_) && (now - lastTimeBuy > T) =>
+                    if !hasBuy && !isToday(created_at) && (ltp < .99*price) && fu.low.exists(ltp < 1.008*_) && (now - lastTimeBuySell > T) =>
                     ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100, oe)
                 case oe @ OrderElement(updated_at, _, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, None)
-                    if !hasBuy && isTodayAndMoreThanFromNow(updated_at) && (ltp < .991*price) && (now - lastTimeBuy > T) =>
+                    if !hasBuy && isTodayAndMoreThanFromNow(updated_at) && (ltp < .991*price) && (now - lastTimeBuySell > T) =>
                     ("buy", cumulative_quantity + 1, (ltp*100).round.toDouble / 100, oe)
                 case oe @ OrderElement(_, created_at, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, None)
-                    if !hasBuy && !isToday(created_at) && (ltp < .985*price) && fu.low.exists(ltp < 1.005*_) && (ltp < estimatedLow) && (now - lastTimeBuy > T) =>
+                    if !hasBuy && !isToday(created_at) && (ltp < .985*price) && fu.low.exists(ltp < 1.005*_) &&
+                      (ltp < estimatedLow) && (now - lastTimeBuySell > T) =>
                     ("buy", cumulative_quantity + 1, (ltp*100).round.toDouble / 100, oe)
             }
             val filledOEs = oes.filter(_.state.contains("filled"))
@@ -437,7 +435,7 @@ class StockActor(symbol: String) extends Actor with Util {
         val now = LocalTime.now
         val hour = now.getHour
         val minute = now.getMinute
-        isWeekDay && (
+        isWeekDay && (estimatedLow > 0) && (estimatedHigh < 10000) && (
                 (hour > 9 && hour < 16) || (hour == 9 && minute >= 30)
         )
     }
