@@ -1,0 +1,1591 @@
+// https://api.robinhood.com/quotes/historicals/?symbols=AMD,TSLA&interval=5minute
+{
+  "results": [
+    {
+      "quote": "https://api.robinhood.com/quotes/940fc3f5-1db5-4fed-b452-f3a2e4562b5f/",
+      "symbol": "AMD",
+      "interval": "5minute",
+      "span": "day",
+      "bounds": "regular",
+      "previous_close_price": "25.000000",
+      "open_price": "24.770000",
+      "open_time": "2018-10-11T13:30:00Z",
+      "instrument": "https://api.robinhood.com/instruments/940fc3f5-1db5-4fed-b452-f3a2e4562b5f/",
+      "historicals": [
+        {
+          "begins_at": "2018-10-11T13:30:00Z",
+          "open_price": "24.770000",
+          "close_price": "25.070000",
+          "high_price": "25.180000",
+          "low_price": "24.550000",
+          "volume": 3476373,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T13:35:00Z",
+          "open_price": "25.080000",
+          "close_price": "25.272100",
+          "high_price": "25.420000",
+          "low_price": "24.860000",
+          "volume": 1927692,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T13:40:00Z",
+          "open_price": "25.270000",
+          "close_price": "25.496200",
+          "high_price": "25.530000",
+          "low_price": "25.070000",
+          "volume": 1850688,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T13:45:00Z",
+          "open_price": "25.490000",
+          "close_price": "25.780000",
+          "high_price": "25.790000",
+          "low_price": "25.380000",
+          "volume": 1719816,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T13:50:00Z",
+          "open_price": "25.770000",
+          "close_price": "25.830000",
+          "high_price": "25.890000",
+          "low_price": "25.470000",
+          "volume": 1750930,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T13:55:00Z",
+          "open_price": "25.840000",
+          "close_price": "26.070000",
+          "high_price": "26.100000",
+          "low_price": "25.670000",
+          "volume": 1568230,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T14:00:00Z",
+          "open_price": "26.050000",
+          "close_price": "25.690100",
+          "high_price": "26.070000",
+          "low_price": "25.680000",
+          "volume": 1218973,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T14:05:00Z",
+          "open_price": "25.690000",
+          "close_price": "25.810000",
+          "high_price": "25.849900",
+          "low_price": "25.540000",
+          "volume": 1259133,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T14:10:00Z",
+          "open_price": "25.820000",
+          "close_price": "25.440000",
+          "high_price": "25.850000",
+          "low_price": "25.420000",
+          "volume": 1000279,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T14:15:00Z",
+          "open_price": "25.450000",
+          "close_price": "25.198900",
+          "high_price": "25.450000",
+          "low_price": "24.970000",
+          "volume": 1692666,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T14:20:00Z",
+          "open_price": "25.200000",
+          "close_price": "25.315000",
+          "high_price": "25.380000",
+          "low_price": "25.080000",
+          "volume": 1303773,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T14:25:00Z",
+          "open_price": "25.310000",
+          "close_price": "25.640000",
+          "high_price": "25.640000",
+          "low_price": "25.250100",
+          "volume": 1124612,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T14:30:00Z",
+          "open_price": "25.640000",
+          "close_price": "25.550000",
+          "high_price": "25.760000",
+          "low_price": "25.520000",
+          "volume": 950626,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T14:35:00Z",
+          "open_price": "25.560000",
+          "close_price": "25.570000",
+          "high_price": "25.710000",
+          "low_price": "25.490000",
+          "volume": 720461,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T14:40:00Z",
+          "open_price": "25.570100",
+          "close_price": "25.425000",
+          "high_price": "25.570100",
+          "low_price": "25.370000",
+          "volume": 599404,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T14:45:00Z",
+          "open_price": "25.420000",
+          "close_price": "25.165000",
+          "high_price": "25.490000",
+          "low_price": "25.165000",
+          "volume": 707985,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T14:50:00Z",
+          "open_price": "25.165000",
+          "close_price": "25.240000",
+          "high_price": "25.339900",
+          "low_price": "25.150000",
+          "volume": 500696,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T14:55:00Z",
+          "open_price": "25.240000",
+          "close_price": "25.100000",
+          "high_price": "25.310000",
+          "low_price": "25.100000",
+          "volume": 688667,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T15:00:00Z",
+          "open_price": "25.090000",
+          "close_price": "24.810000",
+          "high_price": "25.120000",
+          "low_price": "24.770000",
+          "volume": 1087246,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T15:05:00Z",
+          "open_price": "24.800000",
+          "close_price": "25.060000",
+          "high_price": "25.139900",
+          "low_price": "24.800000",
+          "volume": 696569,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T15:10:00Z",
+          "open_price": "25.060000",
+          "close_price": "24.944800",
+          "high_price": "25.090000",
+          "low_price": "24.890000",
+          "volume": 726375,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T15:15:00Z",
+          "open_price": "24.950000",
+          "close_price": "25.185000",
+          "high_price": "25.260000",
+          "low_price": "24.920000",
+          "volume": 878465,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T15:20:00Z",
+          "open_price": "25.190000",
+          "close_price": "25.349900",
+          "high_price": "25.400000",
+          "low_price": "25.150000",
+          "volume": 593739,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T15:25:00Z",
+          "open_price": "25.330000",
+          "close_price": "25.380000",
+          "high_price": "25.400000",
+          "low_price": "25.240000",
+          "volume": 526383,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T15:30:00Z",
+          "open_price": "25.370000",
+          "close_price": "25.260000",
+          "high_price": "25.370000",
+          "low_price": "25.060000",
+          "volume": 529492,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T15:35:00Z",
+          "open_price": "25.260000",
+          "close_price": "25.235000",
+          "high_price": "25.270000",
+          "low_price": "25.070100",
+          "volume": 527500,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T15:40:00Z",
+          "open_price": "25.240000",
+          "close_price": "25.560000",
+          "high_price": "25.560000",
+          "low_price": "25.240000",
+          "volume": 678242,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T15:45:00Z",
+          "open_price": "25.560000",
+          "close_price": "25.670000",
+          "high_price": "25.760000",
+          "low_price": "25.500000",
+          "volume": 946018,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T15:50:00Z",
+          "open_price": "25.680000",
+          "close_price": "25.670000",
+          "high_price": "25.785000",
+          "low_price": "25.550000",
+          "volume": 843357,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T15:55:00Z",
+          "open_price": "25.670000",
+          "close_price": "25.500000",
+          "high_price": "25.745000",
+          "low_price": "25.460100",
+          "volume": 1046246,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T16:00:00Z",
+          "open_price": "25.505000",
+          "close_price": "25.891200",
+          "high_price": "25.900000",
+          "low_price": "25.490000",
+          "volume": 1172112,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T16:05:00Z",
+          "open_price": "25.895000",
+          "close_price": "25.790000",
+          "high_price": "25.980000",
+          "low_price": "25.770000",
+          "volume": 1124604,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T16:10:00Z",
+          "open_price": "25.790000",
+          "close_price": "25.910000",
+          "high_price": "25.940000",
+          "low_price": "25.770000",
+          "volume": 567851,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T16:15:00Z",
+          "open_price": "25.909900",
+          "close_price": "25.895000",
+          "high_price": "26.030000",
+          "low_price": "25.880000",
+          "volume": 668665,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T16:20:00Z",
+          "open_price": "25.890000",
+          "close_price": "26.069800",
+          "high_price": "26.150000",
+          "low_price": "25.890000",
+          "volume": 941258,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T16:25:00Z",
+          "open_price": "26.070000",
+          "close_price": "25.950000",
+          "high_price": "26.200000",
+          "low_price": "25.950000",
+          "volume": 2416006,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T16:30:00Z",
+          "open_price": "25.950000",
+          "close_price": "25.930000",
+          "high_price": "26.060000",
+          "low_price": "25.880000",
+          "volume": 627312,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T16:35:00Z",
+          "open_price": "25.930000",
+          "close_price": "25.910000",
+          "high_price": "26.000000",
+          "low_price": "25.900000",
+          "volume": 413599,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T16:40:00Z",
+          "open_price": "25.910000",
+          "close_price": "26.125500",
+          "high_price": "26.150000",
+          "low_price": "25.900000",
+          "volume": 704209,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T16:45:00Z",
+          "open_price": "26.130000",
+          "close_price": "25.920000",
+          "high_price": "26.130000",
+          "low_price": "25.870000",
+          "volume": 508982,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T16:50:00Z",
+          "open_price": "25.910000",
+          "close_price": "25.860000",
+          "high_price": "25.939900",
+          "low_price": "25.810000",
+          "volume": 510890,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T16:55:00Z",
+          "open_price": "25.868700",
+          "close_price": "25.925000",
+          "high_price": "25.950000",
+          "low_price": "25.821600",
+          "volume": 342221,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T17:00:00Z",
+          "open_price": "25.920000",
+          "close_price": "25.710000",
+          "high_price": "25.940000",
+          "low_price": "25.671000",
+          "volume": 573736,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T17:05:00Z",
+          "open_price": "25.710000",
+          "close_price": "25.800000",
+          "high_price": "25.830000",
+          "low_price": "24.650000",
+          "volume": 387626,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T17:10:00Z",
+          "open_price": "25.800000",
+          "close_price": "26.010000",
+          "high_price": "26.010100",
+          "low_price": "25.760000",
+          "volume": 408398,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T17:15:00Z",
+          "open_price": "26.010000",
+          "close_price": "25.960000",
+          "high_price": "26.050000",
+          "low_price": "25.940000",
+          "volume": 400291,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T17:20:00Z",
+          "open_price": "25.955000",
+          "close_price": "25.920000",
+          "high_price": "26.040000",
+          "low_price": "25.910000",
+          "volume": 228871,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T17:25:00Z",
+          "open_price": "25.910000",
+          "close_price": "25.975000",
+          "high_price": "25.980000",
+          "low_price": "25.870000",
+          "volume": 226296,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T17:30:00Z",
+          "open_price": "25.974000",
+          "close_price": "25.867200",
+          "high_price": "26.010000",
+          "low_price": "25.850000",
+          "volume": 354285,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T17:35:00Z",
+          "open_price": "25.870000",
+          "close_price": "25.920000",
+          "high_price": "25.920000",
+          "low_price": "25.800000",
+          "volume": 285556,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T17:40:00Z",
+          "open_price": "25.923600",
+          "close_price": "25.740000",
+          "high_price": "25.940000",
+          "low_price": "25.730000",
+          "volume": 319859,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T17:45:00Z",
+          "open_price": "25.740000",
+          "close_price": "25.655000",
+          "high_price": "25.780000",
+          "low_price": "25.250000",
+          "volume": 431615,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T17:50:00Z",
+          "open_price": "25.660000",
+          "close_price": "25.605000",
+          "high_price": "25.665000",
+          "low_price": "25.550200",
+          "volume": 337250,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T17:55:00Z",
+          "open_price": "25.605000",
+          "close_price": "25.635000",
+          "high_price": "25.679800",
+          "low_price": "25.530000",
+          "volume": 340307,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T18:00:00Z",
+          "open_price": "25.630000",
+          "close_price": "25.605000",
+          "high_price": "25.680000",
+          "low_price": "25.500000",
+          "volume": 340340,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T18:05:00Z",
+          "open_price": "25.603100",
+          "close_price": "25.530000",
+          "high_price": "25.626700",
+          "low_price": "25.470000",
+          "volume": 391360,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T18:10:00Z",
+          "open_price": "25.525000",
+          "close_price": "25.390000",
+          "high_price": "25.550000",
+          "low_price": "25.320000",
+          "volume": 597353,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T18:15:00Z",
+          "open_price": "25.381400",
+          "close_price": "25.395000",
+          "high_price": "25.460000",
+          "low_price": "25.350000",
+          "volume": 346721,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T18:20:00Z",
+          "open_price": "25.390000",
+          "close_price": "25.440100",
+          "high_price": "25.580000",
+          "low_price": "25.380000",
+          "volume": 419231,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T18:25:00Z",
+          "open_price": "25.430000",
+          "close_price": "25.460000",
+          "high_price": "25.540000",
+          "low_price": "25.390000",
+          "volume": 255408,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T18:30:00Z",
+          "open_price": "25.450000",
+          "close_price": "25.360000",
+          "high_price": "25.475000",
+          "low_price": "25.360000",
+          "volume": 241330,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T18:35:00Z",
+          "open_price": "25.360000",
+          "close_price": "25.310000",
+          "high_price": "25.370000",
+          "low_price": "25.260000",
+          "volume": 481945,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T18:40:00Z",
+          "open_price": "25.313100",
+          "close_price": "25.120000",
+          "high_price": "25.330000",
+          "low_price": "25.110000",
+          "volume": 587015,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T18:45:00Z",
+          "open_price": "25.110000",
+          "close_price": "25.200000",
+          "high_price": "25.320000",
+          "low_price": "24.990000",
+          "volume": 1023634,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T18:50:00Z",
+          "open_price": "25.203000",
+          "close_price": "25.330000",
+          "high_price": "25.420000",
+          "low_price": "25.190000",
+          "volume": 618303,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T18:55:00Z",
+          "open_price": "25.330000",
+          "close_price": "25.315300",
+          "high_price": "25.360000",
+          "low_price": "25.180000",
+          "volume": 485033,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T19:00:00Z",
+          "open_price": "25.315000",
+          "close_price": "25.430000",
+          "high_price": "25.460000",
+          "low_price": "25.220000",
+          "volume": 501972,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T19:05:00Z",
+          "open_price": "25.430000",
+          "close_price": "25.340000",
+          "high_price": "25.460000",
+          "low_price": "25.210000",
+          "volume": 392080,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T19:10:00Z",
+          "open_price": "25.330000",
+          "close_price": "25.480000",
+          "high_price": "25.530000",
+          "low_price": "25.210000",
+          "volume": 531403,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T19:15:00Z",
+          "open_price": "25.470000",
+          "close_price": "25.720000",
+          "high_price": "25.730000",
+          "low_price": "25.440000",
+          "volume": 711199,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T19:20:00Z",
+          "open_price": "25.720000",
+          "close_price": "25.680000",
+          "high_price": "25.765000",
+          "low_price": "25.595000",
+          "volume": 647673,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T19:25:00Z",
+          "open_price": "25.680000",
+          "close_price": "25.575000",
+          "high_price": "25.710000",
+          "low_price": "25.560000",
+          "volume": 335989,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T19:30:00Z",
+          "open_price": "25.580000",
+          "close_price": "25.540000",
+          "high_price": "25.638500",
+          "low_price": "25.480000",
+          "volume": 480154,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T19:35:00Z",
+          "open_price": "25.530000",
+          "close_price": "25.510000",
+          "high_price": "25.570000",
+          "low_price": "25.370000",
+          "volume": 568374,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T19:40:00Z",
+          "open_price": "25.510000",
+          "close_price": "25.410000",
+          "high_price": "25.546800",
+          "low_price": "25.400000",
+          "volume": 451016,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T19:45:00Z",
+          "open_price": "25.425000",
+          "close_price": "25.310000",
+          "high_price": "25.440000",
+          "low_price": "25.310000",
+          "volume": 622382,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T19:50:00Z",
+          "open_price": "25.320000",
+          "close_price": "25.345000",
+          "high_price": "25.480000",
+          "low_price": "25.270000",
+          "volume": 765043,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T19:55:00Z",
+          "open_price": "25.340000",
+          "close_price": "25.300000",
+          "high_price": "25.405000",
+          "low_price": "25.300000",
+          "volume": 1059244,
+          "session": "reg",
+          "interpolated": false
+        }
+      ]
+    },
+    {
+      "quote": "https://api.robinhood.com/quotes/e39ed23a-7bd1-4587-b060-71988d9ef483/",
+      "symbol": "TSLA",
+      "interval": "5minute",
+      "span": "day",
+      "bounds": "regular",
+      "previous_close_price": "256.880000",
+      "open_price": "257.530000",
+      "open_time": "2018-10-11T13:30:00Z",
+      "instrument": "https://api.robinhood.com/instruments/e39ed23a-7bd1-4587-b060-71988d9ef483/",
+      "historicals": [
+        {
+          "begins_at": "2018-10-11T13:30:00Z",
+          "open_price": "257.530000",
+          "close_price": "258.302300",
+          "high_price": "261.180000",
+          "low_price": "255.730000",
+          "volume": 192116,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T13:35:00Z",
+          "open_price": "258.380000",
+          "close_price": "254.500000",
+          "high_price": "258.500000",
+          "low_price": "254.140000",
+          "volume": 107433,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T13:40:00Z",
+          "open_price": "254.720000",
+          "close_price": "253.999400",
+          "high_price": "254.720000",
+          "low_price": "251.480000",
+          "volume": 99468,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T13:45:00Z",
+          "open_price": "253.810000",
+          "close_price": "258.600000",
+          "high_price": "258.800000",
+          "low_price": "252.500000",
+          "volume": 81190,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T13:50:00Z",
+          "open_price": "258.500000",
+          "close_price": "260.570000",
+          "high_price": "262.250000",
+          "low_price": "257.000000",
+          "volume": 132465,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T13:55:00Z",
+          "open_price": "260.625800",
+          "close_price": "259.800000",
+          "high_price": "260.827700",
+          "low_price": "257.900000",
+          "volume": 86842,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T14:00:00Z",
+          "open_price": "259.996600",
+          "close_price": "254.500000",
+          "high_price": "259.996600",
+          "low_price": "254.350000",
+          "volume": 84227,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T14:05:00Z",
+          "open_price": "254.650000",
+          "close_price": "256.330000",
+          "high_price": "256.729900",
+          "low_price": "253.800000",
+          "volume": 98264,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T14:10:00Z",
+          "open_price": "256.350000",
+          "close_price": "254.710000",
+          "high_price": "256.845000",
+          "low_price": "253.600000",
+          "volume": 60277,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T14:15:00Z",
+          "open_price": "254.659800",
+          "close_price": "253.000000",
+          "high_price": "254.960000",
+          "low_price": "252.210000",
+          "volume": 46531,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T14:20:00Z",
+          "open_price": "252.820000",
+          "close_price": "253.140000",
+          "high_price": "254.183600",
+          "low_price": "252.600000",
+          "volume": 45053,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T14:25:00Z",
+          "open_price": "253.035300",
+          "close_price": "254.629800",
+          "high_price": "254.804000",
+          "low_price": "252.700100",
+          "volume": 58982,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T14:30:00Z",
+          "open_price": "254.454100",
+          "close_price": "252.890000",
+          "high_price": "254.800000",
+          "low_price": "252.860000",
+          "volume": 45741,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T14:35:00Z",
+          "open_price": "253.080000",
+          "close_price": "253.112000",
+          "high_price": "254.030000",
+          "low_price": "252.755000",
+          "volume": 32923,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T14:40:00Z",
+          "open_price": "253.389200",
+          "close_price": "253.010000",
+          "high_price": "253.490000",
+          "low_price": "252.430000",
+          "volume": 51784,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T14:45:00Z",
+          "open_price": "253.020000",
+          "close_price": "252.000000",
+          "high_price": "253.020000",
+          "low_price": "251.281000",
+          "volume": 71092,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T14:50:00Z",
+          "open_price": "251.800000",
+          "close_price": "251.774900",
+          "high_price": "253.000000",
+          "low_price": "251.500000",
+          "volume": 32499,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T14:55:00Z",
+          "open_price": "251.800000",
+          "close_price": "252.613500",
+          "high_price": "252.966000",
+          "low_price": "251.693200",
+          "volume": 30101,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T15:00:00Z",
+          "open_price": "252.491000",
+          "close_price": "251.005000",
+          "high_price": "252.687300",
+          "low_price": "250.750000",
+          "volume": 43486,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T15:05:00Z",
+          "open_price": "250.950000",
+          "close_price": "251.110000",
+          "high_price": "252.380000",
+          "low_price": "250.440000",
+          "volume": 40999,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T15:10:00Z",
+          "open_price": "251.160000",
+          "close_price": "250.820000",
+          "high_price": "251.640000",
+          "low_price": "250.330000",
+          "volume": 31818,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T15:15:00Z",
+          "open_price": "250.690000",
+          "close_price": "252.369900",
+          "high_price": "252.860000",
+          "low_price": "250.690000",
+          "volume": 46180,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T15:20:00Z",
+          "open_price": "252.174500",
+          "close_price": "252.040000",
+          "high_price": "253.320000",
+          "low_price": "251.980000",
+          "volume": 40269,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T15:25:00Z",
+          "open_price": "252.225000",
+          "close_price": "251.920000",
+          "high_price": "252.430000",
+          "low_price": "251.200000",
+          "volume": 28484,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T15:30:00Z",
+          "open_price": "251.716000",
+          "close_price": "251.865200",
+          "high_price": "252.000000",
+          "low_price": "251.400000",
+          "volume": 28229,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T15:35:00Z",
+          "open_price": "251.750000",
+          "close_price": "252.050000",
+          "high_price": "252.050000",
+          "low_price": "250.795200",
+          "volume": 35149,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T15:40:00Z",
+          "open_price": "252.000000",
+          "close_price": "252.730000",
+          "high_price": "252.980000",
+          "low_price": "252.000000",
+          "volume": 30454,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T15:45:00Z",
+          "open_price": "252.810000",
+          "close_price": "255.179700",
+          "high_price": "255.440000",
+          "low_price": "252.779500",
+          "volume": 57454,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T15:50:00Z",
+          "open_price": "255.060000",
+          "close_price": "254.880000",
+          "high_price": "255.790000",
+          "low_price": "254.010000",
+          "volume": 44283,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T15:55:00Z",
+          "open_price": "254.630000",
+          "close_price": "254.264400",
+          "high_price": "255.180600",
+          "low_price": "254.000000",
+          "volume": 28393,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T16:00:00Z",
+          "open_price": "254.362400",
+          "close_price": "253.770000",
+          "high_price": "254.569000",
+          "low_price": "253.300000",
+          "volume": 21482,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T16:05:00Z",
+          "open_price": "253.710000",
+          "close_price": "253.750000",
+          "high_price": "254.530000",
+          "low_price": "253.407600",
+          "volume": 15761,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T16:10:00Z",
+          "open_price": "253.760000",
+          "close_price": "254.170000",
+          "high_price": "254.619900",
+          "low_price": "253.760000",
+          "volume": 10868,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T16:15:00Z",
+          "open_price": "254.100000",
+          "close_price": "254.180000",
+          "high_price": "254.600000",
+          "low_price": "253.800000",
+          "volume": 22641,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T16:20:00Z",
+          "open_price": "254.245000",
+          "close_price": "256.170000",
+          "high_price": "256.350000",
+          "low_price": "254.230000",
+          "volume": 41878,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T16:25:00Z",
+          "open_price": "256.330000",
+          "close_price": "254.400000",
+          "high_price": "256.330000",
+          "low_price": "254.400000",
+          "volume": 22317,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T16:30:00Z",
+          "open_price": "254.100000",
+          "close_price": "253.860000",
+          "high_price": "254.800000",
+          "low_price": "253.580000",
+          "volume": 20093,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T16:35:00Z",
+          "open_price": "254.160000",
+          "close_price": "252.930000",
+          "high_price": "254.470000",
+          "low_price": "252.790000",
+          "volume": 23110,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T16:40:00Z",
+          "open_price": "253.070000",
+          "close_price": "254.159100",
+          "high_price": "254.350000",
+          "low_price": "253.070000",
+          "volume": 13000,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T16:45:00Z",
+          "open_price": "254.200000",
+          "close_price": "252.460000",
+          "high_price": "254.200000",
+          "low_price": "252.380000",
+          "volume": 32256,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T16:50:00Z",
+          "open_price": "252.500000",
+          "close_price": "252.570000",
+          "high_price": "252.800800",
+          "low_price": "252.010000",
+          "volume": 17584,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T16:55:00Z",
+          "open_price": "252.610000",
+          "close_price": "252.255000",
+          "high_price": "253.280000",
+          "low_price": "252.200000",
+          "volume": 24565,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T17:00:00Z",
+          "open_price": "252.152700",
+          "close_price": "251.690000",
+          "high_price": "252.360600",
+          "low_price": "251.200100",
+          "volume": 29280,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T17:05:00Z",
+          "open_price": "251.500000",
+          "close_price": "251.836700",
+          "high_price": "252.500000",
+          "low_price": "251.360000",
+          "volume": 18796,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T17:10:00Z",
+          "open_price": "251.525000",
+          "close_price": "252.938800",
+          "high_price": "253.339900",
+          "low_price": "251.250000",
+          "volume": 20080,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T17:15:00Z",
+          "open_price": "253.340000",
+          "close_price": "253.000000",
+          "high_price": "253.750000",
+          "low_price": "253.000000",
+          "volume": 14816,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T17:20:00Z",
+          "open_price": "253.000000",
+          "close_price": "252.580500",
+          "high_price": "253.133100",
+          "low_price": "252.560000",
+          "volume": 13828,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T17:25:00Z",
+          "open_price": "252.750000",
+          "close_price": "253.500000",
+          "high_price": "253.520000",
+          "low_price": "252.750000",
+          "volume": 10966,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T17:30:00Z",
+          "open_price": "253.447900",
+          "close_price": "253.300000",
+          "high_price": "254.270000",
+          "low_price": "253.220000",
+          "volume": 16611,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T17:35:00Z",
+          "open_price": "253.470000",
+          "close_price": "252.895000",
+          "high_price": "253.525000",
+          "low_price": "252.750000",
+          "volume": 15850,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T17:40:00Z",
+          "open_price": "252.828400",
+          "close_price": "252.280000",
+          "high_price": "253.000000",
+          "low_price": "251.894000",
+          "volume": 33894,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T17:45:00Z",
+          "open_price": "252.240000",
+          "close_price": "251.800000",
+          "high_price": "252.549900",
+          "low_price": "251.660000",
+          "volume": 8801,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T17:50:00Z",
+          "open_price": "251.918200",
+          "close_price": "252.413200",
+          "high_price": "252.413200",
+          "low_price": "251.480000",
+          "volume": 17411,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T17:55:00Z",
+          "open_price": "252.500000",
+          "close_price": "252.650000",
+          "high_price": "253.000000",
+          "low_price": "251.925000",
+          "volume": 19697,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T18:00:00Z",
+          "open_price": "252.510000",
+          "close_price": "252.784500",
+          "high_price": "252.921600",
+          "low_price": "252.110000",
+          "volume": 11697,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T18:05:00Z",
+          "open_price": "252.780000",
+          "close_price": "251.920000",
+          "high_price": "253.086000",
+          "low_price": "251.910000",
+          "volume": 11104,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T18:10:00Z",
+          "open_price": "252.189800",
+          "close_price": "252.009000",
+          "high_price": "252.339600",
+          "low_price": "251.500000",
+          "volume": 17479,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T18:15:00Z",
+          "open_price": "252.100000",
+          "close_price": "251.820000",
+          "high_price": "252.100000",
+          "low_price": "251.330000",
+          "volume": 13388,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T18:20:00Z",
+          "open_price": "251.805000",
+          "close_price": "251.760000",
+          "high_price": "252.818000",
+          "low_price": "251.760000",
+          "volume": 17870,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T18:25:00Z",
+          "open_price": "251.700000",
+          "close_price": "251.990000",
+          "high_price": "252.621000",
+          "low_price": "251.430000",
+          "volume": 17625,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T18:30:00Z",
+          "open_price": "251.913100",
+          "close_price": "251.560000",
+          "high_price": "252.140000",
+          "low_price": "251.198300",
+          "volume": 11658,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T18:35:00Z",
+          "open_price": "251.350000",
+          "close_price": "251.370000",
+          "high_price": "251.520000",
+          "low_price": "250.750000",
+          "volume": 34328,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T18:40:00Z",
+          "open_price": "251.500000",
+          "close_price": "249.740000",
+          "high_price": "251.800000",
+          "low_price": "249.690000",
+          "volume": 89360,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T18:45:00Z",
+          "open_price": "249.690000",
+          "close_price": "250.700000",
+          "high_price": "251.500000",
+          "low_price": "249.030000",
+          "volume": 70075,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T18:50:00Z",
+          "open_price": "250.580000",
+          "close_price": "250.645000",
+          "high_price": "251.650000",
+          "low_price": "249.880000",
+          "volume": 42796,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T18:55:00Z",
+          "open_price": "250.510000",
+          "close_price": "250.481600",
+          "high_price": "250.990000",
+          "low_price": "250.000000",
+          "volume": 23650,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T19:00:00Z",
+          "open_price": "250.711100",
+          "close_price": "250.649300",
+          "high_price": "251.000000",
+          "low_price": "249.560000",
+          "volume": 35025,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T19:05:00Z",
+          "open_price": "250.770000",
+          "close_price": "250.360800",
+          "high_price": "251.400000",
+          "low_price": "250.040000",
+          "volume": 32333,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T19:10:00Z",
+          "open_price": "250.290000",
+          "close_price": "252.435000",
+          "high_price": "252.869800",
+          "low_price": "250.000000",
+          "volume": 40682,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T19:15:00Z",
+          "open_price": "252.100000",
+          "close_price": "252.500000",
+          "high_price": "253.000000",
+          "low_price": "251.540000",
+          "volume": 56207,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T19:20:00Z",
+          "open_price": "252.500000",
+          "close_price": "253.000000",
+          "high_price": "253.800000",
+          "low_price": "251.934000",
+          "volume": 50711,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T19:25:00Z",
+          "open_price": "253.000000",
+          "close_price": "251.735000",
+          "high_price": "253.350000",
+          "low_price": "251.620000",
+          "volume": 30567,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T19:30:00Z",
+          "open_price": "251.690000",
+          "close_price": "251.849800",
+          "high_price": "252.910000",
+          "low_price": "251.180000",
+          "volume": 38381,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T19:35:00Z",
+          "open_price": "251.767000",
+          "close_price": "252.325000",
+          "high_price": "252.540000",
+          "low_price": "250.845000",
+          "volume": 59764,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T19:40:00Z",
+          "open_price": "252.140000",
+          "close_price": "252.480000",
+          "high_price": "253.000000",
+          "low_price": "251.590000",
+          "volume": 39396,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T19:45:00Z",
+          "open_price": "252.480000",
+          "close_price": "252.420000",
+          "high_price": "253.530000",
+          "low_price": "252.360000",
+          "volume": 45640,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T19:50:00Z",
+          "open_price": "252.510000",
+          "close_price": "252.610000",
+          "high_price": "253.030000",
+          "low_price": "251.900000",
+          "volume": 74035,
+          "session": "reg",
+          "interpolated": false
+        },
+        {
+          "begins_at": "2018-10-11T19:55:00Z",
+          "open_price": "252.570000",
+          "close_price": "252.330000",
+          "high_price": "253.550000",
+          "low_price": "252.000000",
+          "volume": 104814,
+          "session": "reg",
+          "interpolated": false
+        }
+      ]
+    }
+  ]
+}

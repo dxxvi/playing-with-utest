@@ -1,7 +1,7 @@
 package home.sparkjava
 
 import java.nio.file.{Files, Paths, StandardOpenOption}
-import java.time.Instant
+import java.time.format.DateTimeFormatter
 
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.stream.scaladsl.Source
@@ -12,14 +12,13 @@ import home.TestUtil
 import message.{AddSymbol, Tick}
 import model._
 import org.json4s._
-import org.json4s.native.Serialization
+import org.json4s.native.JsonMethods._
 import utest._
 
 import scala.annotation.tailrec
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
-import scala.util.{Failure, Success, Try}
 
 object ActorTests extends TestSuite with Util with TestUtil {
     val tests = Tests {
@@ -343,6 +342,55 @@ object ActorTests extends TestSuite with Util with TestUtil {
             fu = Fundamental(N, N, N, N, Some(15.68), N, Some(15.25), N, N, N, "")
             var decision = shouldBuySell(orderElements, 15.43)
             println(decision)
+        }
+
+        "Test X" - {
+            import com.softwaremill.sttp._
+
+            def f(s: String): List[(String, String, Double, Double)] = {
+                val today: String = java.time.LocalDate.now.format(DateTimeFormatter.ISO_DATE)
+
+                def g(jValue: JValue): (Option[String], Option[String], Double, Double) = {
+                    val instrumentO = fromStringToOption[String](jValue, "instrument")
+                    val symbolO = fromStringToOption[String](jValue, "symbol")
+                    val historicalsJ = jValue \ "historicals"
+                    val x = for {
+                        instrument <- instrumentO
+                        symbol <- symbolO
+                        jVals <- Some(historicalsJ.asInstanceOf[JArray].arr) if historicalsJ.isInstanceOf[JArray]
+                    } yield (
+                            symbol,
+                            instrument,
+                            jVals
+                                .foldLeft((Double.MinValue, Double.MaxValue))((t, jVal) => {
+                                    val u = (fromStringToOption[Double](jVal, "high_price"), fromStringToOption[Double](jVal, "low_price"))
+                                    (
+                                            if (u._1.exists(_ > t._1)) u._1.get else t._1,
+                                            if (u._2.exists(_ < t._2)) u._2.get else t._2
+                                    )
+                                })
+                    )
+                    if (x.isDefined) (Some(x.get._1), Some(x.get._2), x.get._3._1, x.get._3._2)
+                    else (None, None, Double.MinValue, Double.MaxValue)
+                }
+
+                parse(s) \ "results" match {
+                    case JArray(jValues) => jValues.map(g).collect {
+                        case (Some(symbol), Some(instrument), high_price, low_price) => (symbol, instrument, high_price, low_price)
+                    }
+                    case _ => Nil
+                }
+            }
+
+            implicit val httpBackend: SttpBackend[Future, Source[ByteString, Any]] =
+                configureAkkaHttpBackend(ConfigFactory.load())
+            val uri: Uri = uri"https://api.robinhood.com/quotes/historicals/?symbols=AMD,TSLA&interval=5minute"
+            val responseFuture: Future[Response[List[(String, String, Double, Double)]]] =
+                sttp.get(uri).response(asString.map(f)).send()
+            Await.result(responseFuture, 10.seconds).rawErrorBody fold (
+                _ => println("error"),
+                a => println(a)
+            )
         }
     }
 }

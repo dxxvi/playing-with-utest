@@ -8,7 +8,7 @@ import {Subscription} from 'rxjs';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit, OnDestroy {
-  symbols: Array<string> = [];
+  symbolsEmpty: Array<string> = [];
   notices: Array<{uuid: string, message: string, level: string}> = [];
   private symbolFoundSubscription: Subscription;
   private noticeAddSubscription: Subscription;
@@ -90,9 +90,9 @@ export class AppComponent implements OnInit, OnDestroy {
    * @return true if this is a new symbol
    */
   addSymbolIfNotExist(symbol: string): boolean {
-    if (!this.symbols.includes(symbol)) {
-      this.symbols.push(symbol);
-      this.symbols.sort();
+    if (!this.symbolsEmpty.includes(symbol)) {
+      this.symbolsEmpty.push(symbol);
+      this.symbolsEmpty.sort();
       return true;
     }
     return false;
@@ -122,8 +122,8 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   removeSymbol(symbol: string) {
-    const i = this.symbols.findIndex(e => e === symbol);
-    if (i >= 0) this.symbols.splice(i, 1);
+    const i = this.symbolsEmpty.findIndex(e => e === symbol);
+    if (i >= 0) this.symbolsEmpty.splice(i, 1);
   }
 
   trackByFunction(i: number, symbol: string): string {

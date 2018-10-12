@@ -4,10 +4,6 @@
 </ol>
 
 <div class="notice-container">
-<!--
-  <div class="notice" *ngFor="let n of notices; trackBy: trackByNoticeFunction"
-       [uuid]="n.uuid"></div>
--->
   <div class="notice"
        *ngFor="let n of notices; trackBy: trackByNoticeFunction"
        [ngClass]="calculateNoticeClass(n.level)"

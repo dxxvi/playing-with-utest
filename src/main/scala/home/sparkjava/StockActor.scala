@@ -23,14 +23,14 @@ class StockActor(symbol: String) extends Actor with Util {
     val isWeekDay: Boolean = ! Seq(SATURDAY, SUNDAY).contains(LocalDate.now.getDayOfWeek)
     val md5Digest: MessageDigest = MessageDigest.getInstance("MD5")
     val isDow: Boolean = isDow(symbol)
-    var fu = new Fundamental(
+    var fu = Fundamental(
         Some(-.1), Some(-.1), Some(""), Some(-.1), Some(-.1), Some(-.1), Some(-.1), Some(-.1), Some(-.1), Some(-.1), ""
     )
-    var p = new Position(
+    var p = Position(
         Some(-.1), Some(-.1), Some(-.1), Some(-.1), Some(-.1), None, None, Some(-.1), Some(-.1), None, Some(-.1),
         Some(-.1), Some(-.1), Some(-1)
     )
-    var q = new Quote(
+    var q = Quote(
         None, None, None, None, None, None, None, None, None, None, None, None, None, None, None
     )
 
@@ -62,8 +62,10 @@ class StockActor(symbol: String) extends Actor with Util {
     var debug: Boolean = false
 
     val _receive: Receive = {
-        case _fu: Fundamental => if ((_fu.low.isDefined && _fu.high.isDefined) || _fu.open.isDefined) {
+        case _fu: Fundamental => if (_fu.low.isDefined && _fu.high.isDefined) {
             fu = _fu
+            if (q.last_trade_price.get > fu.high.get) fu = fu.copy(high = q.last_trade_price)
+            if (q.last_trade_price.get < fu.low.get)  fu = fu.copy(low = q.last_trade_price)
             sendFundamental
             instrument = fu.instrument
         }
