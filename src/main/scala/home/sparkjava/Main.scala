@@ -51,6 +51,8 @@ object Main {
 
         dwlActor ! Tick
 
+
+
         StdIn.readLine()
         Spark.stop()
         actorSystem.terminate()

@@ -27,21 +27,22 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with Util 
     val authorization: String = if (config.hasPath("Authorization")) config.getString("Authorization") else "No token"
     implicit val httpBackend: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(config)
 
-    timers.startPeriodicTimer(Tick, Tick, 30.seconds)
+    timers.startPeriodicTimer(Tick, Tick, 60.seconds)
 
     val _receive: Receive = {
         case Tick => sttp.header("Authorization", authorization)
-                .get(uri"${SERVER}watchlists/Default")
+                .get(uri"${SERVER}watchlists/Default/")
                 .response(asString.map(extractInstruments))
                 .send()
                 .map(InstrumentResponse) pipeTo self
         case InstrumentResponse(Response(rawErrorBody, code, statusText, _, _)) =>
             logger.debug(s"Got InstrumentResponse: $code $statusText")
             rawErrorBody.fold(
-                a => logger.error(s"Error in getting default watch list: $code $statusText"),
-                a => a foreach { instrument =>
-                    if (!Main.instrument2Symbol.contains(instrument))
-                        context.actorSelection(s"../${InstrumentActor.NAME}") ! instrument
+                _ => logger.error(s"Error in getting default watch list: $code $statusText"),
+                a => {
+                    val instruments = a.filter(!Main.instrument2Symbol.contains(_))
+                    if (instruments.nonEmpty)
+                        context.actorSelection(s"../${InstrumentActor.NAME}") ! InstrumentActor.InstrumentList(instruments)
                 }
             )
         case x => logger.error(s"Don't know what to do with $x: type ${x.getClass.getName}")

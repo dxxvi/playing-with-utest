@@ -64,8 +64,8 @@ class StockActor(symbol: String) extends Actor with Util {
     val _receive: Receive = {
         case _fu: Fundamental => if (_fu.low.isDefined && _fu.high.isDefined) {
             fu = _fu
-            if (q.last_trade_price.get > fu.high.get) fu = fu.copy(high = q.last_trade_price)
-            if (q.last_trade_price.get < fu.low.get)  fu = fu.copy(low = q.last_trade_price)
+            if (q.last_trade_price.exists(_ > fu.high.get)) fu = fu.copy(high = q.last_trade_price)
+            if (q.last_trade_price.exists(_ < fu.low.get))  fu = fu.copy(low = q.last_trade_price)
             sendFundamental
             instrument = fu.instrument
         }

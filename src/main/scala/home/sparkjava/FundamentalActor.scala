@@ -31,46 +31,6 @@ class FundamentalActor(config: Config) extends Actor with Timers with Util {
 
     timers.startPeriodicTimer(Tick, Tick, 5.minutes)
 
-/*
-    val _receive: Receive = {
-        case Tick =>
-            flag = !flag
-            if (flag)
-                Main.instrument2Symbol.values
-                        .filter(s => !errorProneStocks.contains(s))
-                        .grouped(10)
-                        .foreach { symbols => {
-                            val uri: Uri = uri"${SERVER}fundamentals/?symbols=${symbols.mkString(",")}"
-                            sttp
-                                    .get(uri)
-                                    .response(asString.map(Fundamental.deserialize))
-                                    .send()
-                                    .map(r => FundamentalResponse(uri, r)) pipeTo self
-                        }}
-            else
-                Main.instrument2Symbol.values
-                        .filter(s => errorProneStocks.contains(s))
-                        .foreach { symbol => {
-                            val uri: Uri = uri"${SERVER}fundamentals/?symbols=$symbol"
-                            sttp
-                                    .get(uri)
-                                    .response(asString.map(Fundamental.deserialize))
-                                    .send()
-                                    .map(r => FundamentalResponse(uri, r)) pipeTo self
-                        }}
-
-        case FundamentalResponse(uri, Response(rawErrorBody, code, statusText, _, _)) =>
-            rawErrorBody fold (
-                a => logger.error(s"Error in getting fundamentals: $code $statusText, uri: $uri"),
-                a => a.foreach(fu => Main.instrument2Symbol.get(fu.instrument) match {
-                    case Some(symbol) => context.actorSelection(s"../${MainActor.NAME}/symbol-$symbol") ! fu
-                    case None => logger.error(s"Got a fundamental w/ a strange instrument: $fu")
-                })
-            )
-        case FundamentalReview(_) => logger.warn(s"Need to implement the FundamentalReview")
-        case x => logger.warn(s"Don't know what to do with $x")
-    }
-*/
     val _receive: Receive = {
         case Tick =>
             Main.instrument2Symbol.values
@@ -94,6 +54,7 @@ class FundamentalActor(config: Config) extends Actor with Timers with Util {
                     }
                 })
             )
+        case x => logger.warn(s"Don't know what to do with $x")
     }
 
     override def receive: Receive = Main.clearThreadContextMap andThen _receive
