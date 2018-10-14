@@ -16,7 +16,7 @@ object FundamentalActor {
     val NAME = "fundamentalActor"
     def props(config: Config): Props = Props(new FundamentalActor(config))
 
-    case class FundamentalResponse(uri: Uri, r: Response[List[(String, String, Double, Double)]])
+    case class FundamentalResponse(uri: Uri, r: Response[List[(String, String, Double, Double, Double)]])
     case class FundamentalReview(symbol: String)  // used when user wants to check the fundamental of a new symbol
 }
 
@@ -49,7 +49,7 @@ class FundamentalActor(config: Config) extends Actor with Timers with Util {
                 _ => logger.error(s"Error in getting fundamentals: $code $statusText, uri: $uri"),
                 a => a.foreach(t => {
                     if (t._3 > Double.MinValue && t._4 < Double.MaxValue) {
-                        val fu = Fundamental(N, N, N, N, Some(t._3), N, Some(t._4), N, N, N, t._2)
+                        val fu = Fundamental(N, N, N, N, Some(t._4), N, Some(t._5), N, Some(t._3), N, t._2)
                         context.actorSelection(s"../${MainActor.NAME}/symbol-${t._1}") ! fu
                     }
                 })
@@ -59,8 +59,11 @@ class FundamentalActor(config: Config) extends Actor with Timers with Util {
 
     override def receive: Receive = Main.clearThreadContextMap andThen _receive
 
-    // s is like historicals-quotes.json /quotes/historicals/?symbols=AMD,TSLA&interval=5minute
-    private def f(s: String): List[(String, String, Double, Double)] = {
+    /**
+     * s is like historicals-quotes.json /quotes/historicals/?symbols=AMD,TSLA&interval=5minute
+     * @return List[(symbol, instrument, open, high_price, low_price)]
+     */
+    private def f(s: String): List[(String, String, Double, Double, Double)] = {
         import org.json4s._
         import org.json4s.native.JsonMethods._
 
@@ -69,6 +72,7 @@ class FundamentalActor(config: Config) extends Actor with Timers with Util {
           * {
           *   "symbol": "AMD",
           *   "instrument": "https://api.robinhood.com/instruments/940fc3f5-1db5-4fed-b452-f3a2e4562b5f/",
+          *   "open_price": "24.770000",
           *   "historicals": [
           *     {
           *       "high_price": "25.180000",
@@ -79,17 +83,20 @@ class FundamentalActor(config: Config) extends Actor with Timers with Util {
           * }
           * @return (symbol, instrument, high_price, low_price)
           */
-        def g(jValue: JValue): (Option[String], Option[String], Double, Double) = {
+        def g(jValue: JValue): (Option[String], Option[String], Double, Double, Double) = {
             val instrumentO = fromStringToOption[String](jValue, "instrument")
             val symbolO = fromStringToOption[String](jValue, "symbol")
+            val openO = fromStringToOption[Double](jValue, "open_price")
             val historicalsJ = jValue \ "historicals"
             val x = for {
                 instrument <- instrumentO
                 symbol <- symbolO
+                open <- openO
                 jVals <- Some(historicalsJ.asInstanceOf[JArray].arr) if historicalsJ.isInstanceOf[JArray]
             } yield (
                     symbol,
                     instrument,
+                    open,
                     jVals
                             .foldLeft((Double.MinValue, Double.MaxValue))((t, jVal) => {
                                 val u = (fromStringToOption[Double](jVal, "high_price"), fromStringToOption[Double](jVal, "low_price"))
@@ -99,13 +106,14 @@ class FundamentalActor(config: Config) extends Actor with Timers with Util {
                                 )
                             })
             )
-            if (x.isDefined) (Some(x.get._1), Some(x.get._2), x.get._3._1, x.get._3._2)
-            else (None, None, Double.MinValue, Double.MaxValue)
+            if (x.isDefined) (Some(x.get._1), Some(x.get._2), x.get._3, x.get._4._1, x.get._4._2)
+            else (None, None, Double.MinValue, Double.MinValue, Double.MaxValue)
         }
 
         parse(s) \ "results" match {
             case JArray(jValues) => jValues.map(g).collect {
-                case (Some(symbol), Some(instrument), high_price, low_price) => (symbol, instrument, high_price, low_price)
+                case (Some(symbol), Some(instrument), open, high_price, low_price) =>
+                    (symbol, instrument, open, high_price, low_price)
             }
             case _ => Nil
         }

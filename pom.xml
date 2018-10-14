@@ -163,6 +163,11 @@
             <artifactId>log4j-api-scala_${scala.version.major}</artifactId>
             <version>11.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-reflect</artifactId>
+            <version>${scala.version}</version>
+        </dependency>
 <!--
         <dependency>
             <groupId>ch.qos.logback</groupId>
@@ -187,9 +192,10 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.scala-lang</groupId>
-            <artifactId>scala-reflect</artifactId>
-            <version>${scala.version}</version>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>1.4.197</version>
+            <scope>test</scope>
         </dependency>
 
         <!-- Google Calendar API -->
