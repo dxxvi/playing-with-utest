@@ -1,5 +1,6 @@
 package home.sparkjava
 
+import java.time.LocalTime
 import java.util.concurrent.TimeUnit
 
 import akka.actor.{Actor, Props, Timers}
@@ -37,7 +38,8 @@ class QuoteActor(config: Config) extends Actor with Timers with Util {
 
     val _receive: Receive = {
         case Tick =>
-            if (Main.instrument2Symbol.nonEmpty) {
+            val currentHour = LocalTime.now.getHour
+            if (Main.instrument2Symbol.nonEmpty && currentHour >= 9 && currentHour < 16) {
                 sttp
                         .get(uri"${SERVER}quotes/?symbols=${Main.instrument2Symbol.values.mkString(",")}")
                         .response(asString.map(Quote.deserialize))

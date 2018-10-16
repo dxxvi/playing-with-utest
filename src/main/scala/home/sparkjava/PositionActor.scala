@@ -1,5 +1,7 @@
 package home.sparkjava
 
+import java.time.LocalTime
+
 import akka.actor.{Actor, Props, Timers}
 import akka.pattern.pipe
 import akka.stream.scaladsl.Source
@@ -32,11 +34,13 @@ class PositionActor(config: Config) extends Actor with Timers with Util {
 
     val _receive: Receive = {
         case Tick =>
-            sttp.header("Authorization", authorization)
-                .get(uri"${SERVER}positions/")
-                .response(asString.map(Position.deserialize))
-                .send()
-                .map(PositionResponse) pipeTo self
+            val currentHour = LocalTime.now.getHour
+            if (currentHour >= 9 && currentHour < 16)
+                sttp.header("Authorization", authorization)
+                    .get(uri"${SERVER}positions/")
+                    .response(asString.map(Position.deserialize))
+                    .send()
+                    .map(PositionResponse) pipeTo self
         case PositionResponse(Response(rawErrorBody, code, statusText, _, _)) =>
             rawErrorBody.fold(
                 _ => logger.error(s"Error in getting positions: $code $statusText"),

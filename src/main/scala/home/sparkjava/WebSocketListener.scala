@@ -34,6 +34,8 @@ class WebSocketListener(system: ActorSystem, mainActorPath: String)
         send(s"DOW_STOCKS: ${Serialization.write(Main.dowStocks)(DefaultFormats)}")
 
         system.actorSelection(s"$mainActorPath/*") ! Tick
+        // send FundamentalActor a Tick so that it calculates fundamentals and sends to StockActor which sends to browser
+        system.actorSelection(s"$mainActorPath/../${FundamentalActor.NAME}") ! Tick
     }
 
     override def onWebSocketError(throwable: Throwable): Unit = {

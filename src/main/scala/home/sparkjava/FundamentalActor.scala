@@ -1,5 +1,7 @@
 package home.sparkjava
 
+import java.time.LocalTime
+
 import akka.actor.{Actor, Props, Timers}
 import akka.pattern.pipe
 import akka.stream.scaladsl.Source
@@ -33,16 +35,19 @@ class FundamentalActor(config: Config) extends Actor with Timers with Util {
 
     val _receive: Receive = {
         case Tick =>
-            Main.instrument2Symbol.values
-                    .grouped(75)
-                    .foreach(symbols => {
-                        val uri = uri"${SERVER}quotes/historicals/?symbols=${symbols.mkString(",")}&interval=5minute"
-                        sttp
-                                .get(uri)
-                                .response(asString.map(f))
-                                .send()
-                                .map(r => FundamentalResponse(uri, r)) pipeTo self
-                    })
+            val currentHour = LocalTime.now.getHour
+            if (currentHour >= 9 && currentHour < 16)
+                Main.instrument2Symbol.values
+                        .grouped(75)
+                        .foreach(symbols => {
+                            val syms = symbols.mkString(",")
+                            val uri = uri"${SERVER}quotes/historicals/?symbols=$syms&interval=5minute"
+                            sttp
+                                    .get(uri)
+                                    .response(asString.map(f))
+                                    .send()
+                                    .map(r => FundamentalResponse(uri, r)) pipeTo self
+                        })
         case FundamentalResponse(uri, Response(rawErrorBody, code, statusText, _, _)) =>
             val N = None
             rawErrorBody fold (

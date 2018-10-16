@@ -1,5 +1,7 @@
 package home.sparkjava
 
+import java.time.LocalTime
+
 import akka.actor.{Actor, Props, Timers}
 import akka.pattern.pipe
 import akka.stream.scaladsl.Source
@@ -30,11 +32,14 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with Util 
     timers.startPeriodicTimer(Tick, Tick, 60.seconds)
 
     val _receive: Receive = {
-        case Tick => sttp.header("Authorization", authorization)
-                .get(uri"${SERVER}watchlists/Default/")
-                .response(asString.map(extractInstruments))
-                .send()
-                .map(InstrumentResponse) pipeTo self
+        case Tick =>
+            val currentHour = LocalTime.now.getHour
+            if (currentHour >= 9 && currentHour < 16)
+                sttp.header("Authorization", authorization)
+                    .get(uri"${SERVER}watchlists/Default/")
+                    .response(asString.map(extractInstruments))
+                    .send()
+                    .map(InstrumentResponse) pipeTo self
         case InstrumentResponse(Response(rawErrorBody, code, statusText, _, _)) =>
             logger.debug(s"Got InstrumentResponse: $code $statusText")
             rawErrorBody.fold(
