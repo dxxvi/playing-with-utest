@@ -1,9 +1,5 @@
 package home.sparkjava
 
-import java.time.DayOfWeek._
-import java.time.{LocalDate, LocalTime}
-import java.util.concurrent.TimeUnit
-
 import akka.actor.ActorSystem
 import com.typesafe.config.{Config, ConfigFactory}
 import message.Tick
@@ -34,7 +30,7 @@ object Main {
     def main(args: Array[String]): Unit = {
         val config: Config = ConfigFactory.load()
 
-        buildDowStocks(config)
+        buildStocksDB(config)
 
         val actorSystem = ActorSystem("R")
         val mainActor = actorSystem.actorOf(MainActor.props(config), MainActor.NAME)
@@ -67,8 +63,26 @@ object Main {
         webSocketListener
     }
 
-    private def buildDowStocks(config: Config) {
-        dowStocks ++= config.getConfig("dow").entrySet().asScala.map(_.getKey)
+    private def buildStocksDB(config: Config) {
+        dowStocks ++= config.getConfig("dow").root().keySet().asScala
+
+        def f(a: String, b: String): String =
+            if (a == "") b
+            else if (b == "") a
+            else if (a.length < b.length) a
+            else b
+
+        InstrumentActor.instrument2NameSymbol ++= config.getConfig("dow").root().keySet().asScala
+                .map(symbol => (
+                        config.getString(s"dow.$symbol.instrument"),
+                        (f(config.getString(s"dow.$symbol.name"), config.getString(s"dow.$symbol.simple_name")), symbol)
+                ))
+        val conf = ConfigFactory.load("stock.conf")
+        InstrumentActor.instrument2NameSymbol ++= conf.getConfig("soi").root().keySet().asScala
+                .map(symbol => (
+                        conf.getString(s"soi.$symbol.instrument"),
+                        (f(conf.getString(s"soi.$symbol.name"), conf.getString(s"soi.$symbol.simple_name")), symbol)
+                ))
     }
 }
 

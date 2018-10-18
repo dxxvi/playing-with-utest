@@ -11,6 +11,7 @@ import {Fundamental, Order, Position} from './model';
 export class StockComponent implements OnInit, OnDestroy {
   instrument: string;
   symbol: string;
+  name = '';
   fu: Fundamental = new Fundamental();
   po: Position = new Position();
   last_trade_price = -.1;
@@ -20,6 +21,8 @@ export class StockComponent implements OnInit, OnDestroy {
   orders: Array<Order> = [];
   matchId2mId: { [key: string]: string; } = {};
   buysell: { quantity: number, price: number } = { quantity: null, price: null};
+  thresholdBuy = 9999;
+  thresholdSell = 0;
   private subscription: Subscription;
 
   @Input('_symbol') set _symbol(value: string) {
@@ -37,6 +40,9 @@ export class StockComponent implements OnInit, OnDestroy {
         if (f.low && f.low > 0) this.fu.low = f.low;
         if (f.high && f.high > 0) this.fu.high = f.high;
         if (f.open && f.open > 0) this.fu.open = f.open;
+        this.name = f.name;
+        this.thresholdBuy = f.thresholdBuy;
+        this.thresholdSell = f.thresholdSell;
       }
       else if (message.QUOTE) {
         this.last_trade_price = message.QUOTE.last_trade_price;
@@ -191,6 +197,12 @@ export class StockComponent implements OnInit, OnDestroy {
     };
     sl.s = sv.s * sv.v / (sl.l < 50 ? sl.l * 2 : 200 - sl.l * 2);
     return `hsl(${h}, ${sl.s}%, ${sl.l}%)`;
+  }
+
+  showThreshold(x: number): string {
+    if (x == 0 || x == 9999)
+      return '';
+    return '' + x;
   }
 
   symbolClass(): Array<String> {

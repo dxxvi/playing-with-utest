@@ -1,33 +1,33 @@
 <div [ngStyle]="{'background-color': backgroundColor()}" style="padding: .25em .75em;">
-  <table style="width: 100%">
-    <tr>
-      <td>
-        <span *ngIf="!hideMatches" (click)="hideMatches = !hideMatches" class="button">&#x21D2;</span>
-        <span *ngIf="hideMatches"  (click)="hideMatches = !hideMatches" class="button">&#x21D0;</span>
-      </td>
-      <td class="small">Today</td>
-      <td class="small">Est.</td>
-      <td>
-        <div style="float: left" [ngClass]="symbolClass()">{{ symbol }}</div>
-        <div style="float: right" [ngStyle]="{'visibility': po.quantity >= 0 ? 'visible' : 'hidden'}">{{ po.quantity }}</div>
-        <div style="clear: both"></div>
-      </td>
-    </tr>
-    <tr>
-      <td class="smaller">High</td>
-      <td class="small mono"><span [hidden]="fu.high < 0">{{ fu.high.toFixed(2) }}</span></td>
-      <td class="small mono"><span [hidden]="estimate_high < 0">{{ estimate_high.toFixed(2) }}</span></td>
-      <td></td>
-    </tr>
-    <tr>
-      <td class="smaller">Low</td>
-      <td class="small mono"><span [hidden]="fu.low < 0">{{ fu.low.toFixed(2) }}</span></td>
-      <td class="small mono"><span [hidden]="estimate_low < 0">{{ estimate_low.toFixed(2) }}</span></td>
-      <td style="text-align: right" [ngStyle]="{'visibility': last_trade_price > 0 ? 'visible' : 'hidden'}">
-        {{ last_trade_price.toFixed(2) }}
-      </td>
-    </tr>
-  </table>
+  <div style="position: relative; z-index: 5;">
+    <div class="name">{{name}}</div>
+    <table style="width: 100%">
+      <tr>
+        <td class="small">Today</td>
+        <td class="small">Est.</td>
+        <td></td>
+        <td>
+          <div style="float: left" [ngClass]="symbolClass()">{{ symbol }}</div>
+          <div style="float: right" [ngStyle]="{'visibility': po.quantity >= 0 ? 'visible' : 'hidden'}">{{ po.quantity }}</div>
+          <div style="clear: both"></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="small mono"><span [hidden]="fu.high < 0">{{ fu.high.toFixed(2) }}</span></td>
+        <td class="small mono"><span [hidden]="estimate_high < 0">{{ estimate_high.toFixed(2) }}</span></td>
+        <td class="small mono" style="color: #13f;">{{ showThreshold(thresholdSell) }}</td>
+        <td></td>
+      </tr>
+      <tr>
+        <td class="small mono"><span [hidden]="fu.low < 0">{{ fu.low.toFixed(2) }}</span></td>
+        <td class="small mono"><span [hidden]="estimate_low < 0">{{ estimate_low.toFixed(2) }}</span></td>
+        <td class="small mono" style="color: #f00;">{{ showThreshold(thresholdBuy) }}</td>
+        <td style="text-align: right" [ngStyle]="{'visibility': last_trade_price > 0 ? 'visible' : 'hidden'}">
+          {{ last_trade_price.toFixed(2) }}
+        </td>
+      </tr>
+    </table>
+  </div>
   <table style="width: 100%; margin-left: -.4em; margin-right: -.4em"><tr class="form-group">
     <td style="padding-right: .4em">
       <input name="quantity" [(ngModel)]="buysell.quantity" placeholder="quantity" type="number" step="1"
@@ -42,8 +42,11 @@
               [disabled]="buysell.quantity == null || buysell.price == null || buysell.quantity <= 0 || buysell.price <= 0">Bu / Se</button>
     </td>
   </tr></table>
-  <span class="button" title="Export order list to console" *ngIf="orders != null && orders.length != 0"
-        (click)="exportOrders()">🍓</span>
+  <div *ngIf="orders != null && orders.length != 0">
+    <span class="button" title="Export order list to console" (click)="exportOrders()">🍓</span>&nbsp;&nbsp;
+    <span *ngIf="!hideMatches" (click)="hideMatches = !hideMatches" class="button">&#x21D2;</span>
+    <span *ngIf="hideMatches"  (click)="hideMatches = !hideMatches" class="button">&#x21D0;</span>
+  </div>
   <table style="font: .9em monospace; width: 100%">
     <tr *ngFor="let order of orders; trackBy: trackByFunction" [ngClass]="calculateOrderCssClass(order)">
       <td>{{ minifyTimestamp(order.created_at) }}</td>

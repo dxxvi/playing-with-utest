@@ -1,6 +1,6 @@
 package home.sparkjava.model
 
-import home.sparkjava.Util
+import home.sparkjava.{InstrumentActor, Util}
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.json4s.native.Serialization
@@ -12,19 +12,25 @@ object Fundamental extends Util {
     def deserialize(s: String): List[Fundamental] = {
         parse(s) \ "results" match {
             case JArray(jValues) =>
-                jValues map { jValue => Fundamental(
-                    fromStringToOption[Double](jValue, "average_volume"),
-                    fromStringToOption[Double](jValue, "average_volume_2_weeks"),
-                    fromStringToOption[String](jValue, "description"),
-                    fromStringToOption[Double](jValue, "dividend_yield"),
-                    fromStringToOption[Double](jValue, "high"),
-                    fromStringToOption[Double](jValue, "high_52_weeks"),
-                    fromStringToOption[Double](jValue, "low"),
-                    fromStringToOption[Double](jValue, "low_52_weeks"),
-                    fromStringToOption[Double](jValue, "open"),
-                    fromStringToOption[Double](jValue, "pe_ratio"),
-                    fromStringToOption[String](jValue, "instrument").getOrElse("~hm~")
-                )}
+                jValues map { jValue => {
+                    val instrument = fromStringToOption[String](jValue, "instrument").getOrElse("~hm~")
+                    Fundamental(
+                        fromStringToOption[Double](jValue, "average_volume"),
+                        fromStringToOption[Double](jValue, "average_volume_2_weeks"),
+                        fromStringToOption[String](jValue, "description"),
+                        fromStringToOption[Double](jValue, "dividend_yield"),
+                        fromStringToOption[Double](jValue, "high"),
+                        fromStringToOption[Double](jValue, "high_52_weeks"),
+                        fromStringToOption[Double](jValue, "low"),
+                        fromStringToOption[Double](jValue, "low_52_weeks"),
+                        fromStringToOption[Double](jValue, "open"),
+                        fromStringToOption[Double](jValue, "pe_ratio"),
+                        instrument,
+                        InstrumentActor.instrument2NameSymbol.get(instrument).map(_._1).getOrElse(""),
+                        0,
+                        9999
+                    )
+                }}
             case _ => List[Fundamental]()
         }
     }
@@ -43,6 +49,9 @@ case class Fundamental(
                       low_52_weeks: Option[Double],
                       open: Option[Double],
                       pe_ratio: Option[Double],
-                      instrument: String
+                      instrument: String,
+                      name: String, // name of this stock
+                      thresholdBuy: Double,
+                      thresholdSell: Double
                       )
 

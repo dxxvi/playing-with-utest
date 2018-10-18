@@ -15,10 +15,10 @@ object MainActor {
     val NAME = "mainActor"
     implicit val timeout: Timeout = Timeout(1904.millis)
 
-    def props(config: Config): Props = Props(new MainActor)
+    def props(config: Config): Props = Props(new MainActor(config))
 }
 
-class MainActor extends Actor with Util {
+class MainActor(config: Config) extends Actor with Util {
     import MainActor._
     import context.dispatcher
 
@@ -26,9 +26,9 @@ class MainActor extends Actor with Util {
         case AddSymbol(symbol) if symbol != "TESTING" =>
             context.actorSelection(s"../$NAME/symbol-$symbol") ! Identify(symbol)
         case ActorIdentity(id, None) =>
-            val actorRef = context.actorOf(StockActor.props(id.asInstanceOf[String]), s"symbol-$id")
+            val actorRef = context.actorOf(StockActor.props(id.asInstanceOf[String], config), s"symbol-$id")
             logger.debug(s"Just created StockActor $actorRef")
-        case ActorIdentity(id, Some(actorRef)) => // This StockActor already exists.
+        case ActorIdentity(_, Some(_)) => // This StockActor already exists.
         case x => logger.warn(s"$x")
     }
 
