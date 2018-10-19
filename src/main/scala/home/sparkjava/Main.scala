@@ -4,7 +4,7 @@ import akka.actor.ActorSystem
 import com.typesafe.config.{Config, ConfigFactory}
 import message.Tick
 import org.apache.logging.log4j.ThreadContext
-import spark.Spark
+import spark.{Request, Response, Route, Spark}
 
 import scala.collection.JavaConverters._
 import scala.collection.concurrent.TrieMap
@@ -47,17 +47,21 @@ object Main {
 
         dwlActor ! Tick
 
-
-
         StdIn.readLine()
         Spark.stop()
         actorSystem.terminate()
     }
 
-    private def initializeSpark(system: ActorSystem, mainActorPath: String): WebSocketListener = {
-        val webSocketListener = new WebSocketListener(system, mainActorPath)
+    private def initializeSpark(actorSystem: ActorSystem, mainActorPath: String): WebSocketListener = {
+        val webSocketListener = new WebSocketListener(actorSystem, mainActorPath)
         Spark.staticFiles.location("/static")
         Spark.webSocket("/ws", webSocketListener)
+
+        Spark.get("/quotes/historicals/:symbol", (request: Request, response: Response) => {
+            val symbol = request.params(":symbol")
+            actorSystem.actorSelection(s"$mainActorPath/../${QuoteActor.NAME}") ! QuoteActor.Download(symbol)
+            s"$symbol.csv was generated."
+        })
 
         Spark.init()                   // Needed if no HTTP route is defined after the WebSocket routes
         webSocketListener

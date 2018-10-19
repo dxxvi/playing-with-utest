@@ -65,16 +65,7 @@ object DailyQuote extends Util {
         parse(s) \ "results" match {
             case JArray(jValues) =>
                 val x = jValues map { jValue => {
-                    val historicals: List[DailyQuote] = jValue \ "historicals" match {
-                        case JArray(_historicals) => _historicals map {_h => DailyQuote(
-                            fromStringToOption[String](_h, "begins_at"),
-                            fromStringToOption[Double](_h, "open_price"),
-                            fromStringToOption[Double](_h, "close_price"),
-                            fromStringToOption[Double](_h, "high_price"),
-                            fromStringToOption[Double](_h, "low_price")
-                        )}
-                        case _ => List[DailyQuote]()
-                    }
+                    val historicals: List[DailyQuote] = historicalsJValueToDailyQuoteList(jValue \ "historicals")
                     fromToOption[String](jValue, "symbol") match {
                         case Some(symbol) => (symbol, historicals)
                         case None => ("", historicals)
@@ -83,6 +74,22 @@ object DailyQuote extends Util {
                 x.toMap
             case _ => Map[String, List[DailyQuote]]()
         }
+    }
+
+    /**
+      * @param s the result of https://api.robinhood.com/quotes/historicals/AMD/?interval=day&span=year
+      */
+    def deserialize2(s: String): List[DailyQuote] = historicalsJValueToDailyQuoteList(parse(s) \ "historicals")
+
+    private def historicalsJValueToDailyQuoteList(jValue: JValue): List[DailyQuote] = jValue match {
+        case JArray(_historicals) => _historicals map {_h => DailyQuote(
+            fromStringToOption[String](_h, "begins_at"),
+            fromStringToOption[Double](_h, "open_price"),
+            fromStringToOption[Double](_h, "close_price"),
+            fromStringToOption[Double](_h, "high_price"),
+            fromStringToOption[Double](_h, "low_price")
+        )}
+        case _ => List[DailyQuote]()
     }
 }
 

@@ -1,5 +1,6 @@
 package home.sparkjava
 
+import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.time.LocalTime
 import java.util.concurrent.TimeUnit
 
@@ -19,8 +20,11 @@ import scala.concurrent.duration._
 object QuoteActor {
     val NAME = "quoteActor"
 
+    case class Download(symbol: String) // download historical data and save to .csv file
+
     case class QuoteResponse(r: Response[List[Quote]])
     case class DailyQuoteResponse(r: Response[Map[String, List[DailyQuote]]])
+    case class SingleDailyQuoteResponse(symbol: String, r: Response[List[DailyQuote]])
 
     def props(config: Config): Props = Props(new QuoteActor(config))
 }
@@ -79,6 +83,25 @@ class QuoteActor(config: Config) extends Actor with Timers with Util {
                 }
         )
         case GetDailyQuote(symbols, _) => getDailyQuote = GetDailyQuote(getDailyQuote.symbols ++ symbols, getDailyQuote.ts)
+        case Download(symbol) =>
+            sttp
+                    .get(uri"${SERVER}quotes/historicals/$symbol/?interval=day&span=year")
+                    .response(asString.map(DailyQuote.deserialize2))
+                    .send()
+                    .map(r => SingleDailyQuoteResponse(symbol, r)) pipeTo self
+        case SingleDailyQuoteResponse(symbol, Response(rawErrorBody, code, statusText, _, _)) => rawErrorBody fold (
+                _ => logger.error(s"Error in getting daily quotes for $symbol: $code $statusText"),
+                a => {
+                    val n = a.size
+                    val quotes = if (n >= 20) a.drop(n - 20) else a
+                    val s = "Date,Open,Low,High,Close,Delta\n" + quotes.collect {
+                        case DailyQuote(Some(begins), Some(open), Some(close), Some(high), Some(low)) =>
+                            s"${begins.substring(0, 10)},$open,$close,$high,$low,${high-low}"
+                    }.mkString("\n")
+                    Files.write(Paths.get(s"$symbol.csv"), s.getBytes,
+                        StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)
+                }
+        )
     }
 
     override def receive: Receive = sideEffect andThen _receive
