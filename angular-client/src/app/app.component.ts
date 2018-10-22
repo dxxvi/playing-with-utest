@@ -1,6 +1,6 @@
-import {Component, OnDestroy, OnInit} from '@angular/core';
-import {WebsocketService} from './websocket.service';
-import {Subscription} from 'rxjs';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { WebsocketService } from './websocket.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'div.app-root',
@@ -8,11 +8,12 @@ import {Subscription} from 'rxjs';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit, OnDestroy {
-  symbolsEmpty: Array<string> = [];
+  symbols: Array<string> = [];
   notices: Array<{uuid: string, message: string, level: string}> = [];
   private symbolFoundSubscription: Subscription;
   private noticeAddSubscription: Subscription;
   private noticeDeleteSubscription: Subscription;
+  private positionMap: Map<string, number> = new Map<string, number>();
 
   constructor(private websocketService: WebsocketService) {
   }
@@ -24,6 +25,9 @@ export class AppComponent implements OnInit, OnDestroy {
         const symbol = value.symbol;
         if (value.rest.startsWith('POSITION: ')) {
           const position = JSON.parse(value.rest.replace('POSITION: ', ''));
+          if (position.quantity) {
+            this.positionMap.set(symbol, position.quantity);
+          }
           isNewSymbol = this.addSymbolIfNotExist(symbol);
           setTimeout(() => {
             this.websocketService.sendMessageThroughSubject(symbol, { POSITION: position })
@@ -90,9 +94,9 @@ export class AppComponent implements OnInit, OnDestroy {
    * @return true if this is a new symbol
    */
   addSymbolIfNotExist(symbol: string): boolean {
-    if (!this.symbolsEmpty.includes(symbol)) {
-      this.symbolsEmpty.push(symbol);
-      this.symbolsEmpty.sort();
+    if (!this.symbols.includes(symbol)) {
+      this.symbols.push(symbol);
+      this.symbols.sort();
       return true;
     }
     return false;
@@ -122,8 +126,8 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   removeSymbol(symbol: string) {
-    const i = this.symbolsEmpty.findIndex(e => e === symbol);
-    if (i >= 0) this.symbolsEmpty.splice(i, 1);
+    const i = this.symbols.findIndex(e => e === symbol);
+    if (i >= 0) this.symbols.splice(i, 1);
   }
 
   trackByFunction(i: number, symbol: string): string {
@@ -132,6 +136,10 @@ export class AppComponent implements OnInit, OnDestroy {
 
   trackByNoticeFunction(i: number, n: {uuid: string, message: string, level: string}): string {
     return n.uuid;
+  }
+
+  havingShares(symb0l: string): boolean {
+    return this.positionMap.has(symb0l) && this.positionMap.get(symb0l) > 0;
   }
 
   private generateUUID(): string {
