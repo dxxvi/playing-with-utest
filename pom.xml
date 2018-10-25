@@ -168,13 +168,6 @@
             <artifactId>scala-reflect</artifactId>
             <version>${scala.version}</version>
         </dependency>
-<!--
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.2.3</version>
-        </dependency>
--->
         <dependency>
             <groupId>com.lihaoyi</groupId>
             <artifactId>utest_2.12</artifactId>
@@ -195,6 +188,12 @@
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <version>1.4.197</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.11.3</version>
             <scope>test</scope>
         </dependency>
 
