@@ -50,20 +50,16 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
     val today: String = LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)
     val orders: collection.mutable.SortedSet[OrderElement] =
         collection.mutable.SortedSet[OrderElement]()(Ordering.by[OrderElement, String](_.created_at)(Main.timestampOrdering.reverse))
-    /*
-     * This is the meaning of changeFromHigh: lowest_of_day = highest_of_day * changeFromHigh.
-     * We get the average of changeFromHigh's of the last 10 days (remove the highest & lowest days).
-     * If last_trade_price is closer to lowest_of_day, then we guess that the
-     * real lowest_of_day = highest_of_day * changeFromHigh
-     */
-    var changeFromHigh: Double = 0
-    var changeFromLow: Double = 0
+
     var estimatedLow: Double = 0
     var estimatedHigh: Double = Double.MaxValue
     var recentLowest: Double = 0 // this is the lowest in the last couple of days
+    var estimatedDelta: Double = -1
+    var smallestDelta: Double = -1
+    var biggestDelta: Double = -1
     var debug: Boolean = false
-    var thresholdBuy: Double = 9999
-    var thresholdSell: Double = 0
+    var thresholdBuy: Double = -1
+    var thresholdSell: Double = -1
 
     val _receive: Receive = {
         case _fu: Fundamental => if (_fu.low.isDefined && _fu.high.isDefined) {
@@ -94,7 +90,7 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
                 var totalShares: Int = 0
                 val x = lastRoundOrders() // x has (un)confirmed, (partially) filled orders
                 val _lastRoundOrders = assignMatchId(x)
-                if (q.last_trade_price.isDefined && instrument != "" && shouldDoBuySell) {
+                if (q.last_trade_price.isDefined && instrument != "" && thresholdBuy > 0 && thresholdSell > 0 && shouldDoBuySell) {
                     shouldBuySell(_lastRoundOrders, q.last_trade_price.get, debug) foreach { t =>
                         // (action, quantity, price, orderElement)
                         context.actorSelection(s"../../${OrderActor.NAME}") ! OrderActor.BuySell(t._1, symbol, instrument, t._2, t._3)
@@ -129,11 +125,11 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
                 context.actorSelection(s"../../${OrderActor.NAME}") !
                         HistoricalOrders(symbol, instrument, 4, Seq[OrderElement](), None)
             }
-            if (changeFromHigh == 0 && changeFromLow == 0 && (now - lastTimeHistoricalQuotesRequested > T)) {
+            if (estimatedDelta < 0 && (now - lastTimeHistoricalQuotesRequested > T)) {
                 lastTimeHistoricalQuotesRequested = now
                 context.actorSelection(s"../../${QuoteActor.NAME}") ! GetDailyQuote(List(symbol), 0)
             }
-            sendEstimate()
+            if (estimatedDelta > 0) sendEstimate()
         case HistoricalOrders(_, _, _, _orders, _) =>
             gotHistoricalOrders = true
             orders ++= _orders.collect {
@@ -143,23 +139,26 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
             logger.debug(s"Got HistoricalOrders:\n${orders.toList.map(_.toString).mkString("\n")}")
         case DailyQuoteReturn(dQuotes) =>
             val n = dQuotes.size
-            var dailyQuotes = if (n >= 10) dQuotes.drop(n - 10) else Nil
-            // the day when low_price/high_price is smallest
-            val d1 = dailyQuotes.foldLeft(("", Double.MaxValue))((b, dq) =>
-                    if (dq.low_price.get / dq.high_price.get < b._2)
-                        (dq.begins_at.get, dq.low_price.get / dq.high_price.get)
+            val dailyQuotes: List[DailyQuote] = if (n >= 10) dQuotes.drop(n - 10) else Nil
+            // the daily quote when the delta is smallest
+            val dq1: (String, Double) = dailyQuotes.foldLeft(("", Double.MaxValue))((b, dq) =>
+                    if (dq.high_price.get - dq.low_price.get < b._2)
+                        (dq.begins_at.get, dq.high_price.get - dq.low_price.get)
                     else (b._1, b._2)
-            )._1
-            // the day when low_price/high_price is biggest
-            val d2 = dailyQuotes.foldLeft(("", Double.MinValue))((b, dq) =>
-                    if (dq.low_price.get / dq.high_price.get > b._2)
-                        (dq.begins_at.get, dq.low_price.get / dq.high_price.get)
+            )
+            smallestDelta = dq1._2
+            // the daily quote when the delta is biggest
+            val dq2: (String, Double) = dailyQuotes.foldLeft(("", Double.MinValue))((b, dq) =>
+                    if (dq.high_price.get - dq.low_price.get > b._2)
+                        (dq.begins_at.get, dq.high_price.get - dq.low_price.get)
                     else (b._1, b._2)
-            )._1
-            // remove the days where low_price/high_price is smallest or biggest
-            dailyQuotes = dailyQuotes.filter(dq => !dq.begins_at.contains(d1) && !dq.begins_at.contains(d2))
-            changeFromHigh = dailyQuotes.map(dq => dq.low_price.get / dq.high_price.get).sum / dailyQuotes.size
-            changeFromLow  = dailyQuotes.map(dq => dq.high_price.get / dq.low_price.get).sum / dailyQuotes.size
+            )
+            biggestDelta = dq2._2
+            val x = dailyQuotes.filter(!_.begins_at.contains(dq1._1)).collect {
+                case DailyQuote(Some(begins_at), _, _, Some(high_price), Some(low_price)) if begins_at != dq1._1 =>
+                    high_price - low_price
+            }
+            if (x.nonEmpty) estimatedDelta = x.sum / x.size
             recentLowest = dailyQuotes.map(_.low_price.get).min
         case Tick => // Tick means there's a new web socket connection. purpose: send the symbol to the browser
             if (p.quantity.get >= 0) sendPosition else sendFundamental
@@ -319,22 +318,20 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
     }
 
     private def readThresholdBuySell() {
-        if (config.hasPath(s"threshold.$symbol.buy")) thresholdBuy = config.getDouble(s"threshold.$symbol.buy")
-        if (config.hasPath(s"threshold.$symbol.sell")) thresholdSell = config.getDouble(s"threshold.$symbol.sell")
+        thresholdBuy = if (config.hasPath(s"threshold.$symbol.buy")) config.getDouble(s"threshold.$symbol.buy") else 999
+        thresholdSell = if (config.hasPath(s"threshold.$symbol.sell")) config.getDouble(s"threshold.$symbol.sell") else 1
     }
 
     private def sendEstimate() {
-        if (fu.low.exists(_ > 0) && fu.high.exists(_ > 0) && changeFromHigh > 0 && changeFromLow > 0) {
+        if (fu.low.exists(_ > 0) && fu.high.exists(_ > 0) && estimatedDelta > 0) {
             // now we can estimate the low and high prices for today
-            if (q.last_trade_price.get - fu.low.get < fu.high.get - q.last_trade_price.get) { // closer to low
-                estimatedLow = fu.high.get * changeFromHigh
-                estimatedLow = if (estimatedLow < fu.low.get) estimatedLow else fu.low.get
+            if (q.last_trade_price.get - fu.low.get < fu.high.get - q.last_trade_price.get) {
+                estimatedLow = fu.high.get - estimatedDelta
                 estimatedHigh = fu.high.get
             }
             else {
                 estimatedLow = fu.low.get
-                estimatedHigh = fu.low.get * changeFromLow
-                estimatedHigh = if (estimatedHigh > fu.high.get) estimatedHigh else fu.high.get
+                estimatedHigh = fu.low.get + estimatedDelta
             }
             val message = s"""$symbol: ESTIMATE: {"low":$estimatedLow,"high":$estimatedHigh}"""
             val estimateHash = new String(md5Digest.digest(message.getBytes))
@@ -396,7 +393,8 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
             val quantity = (10 / ltp + 1).round.toInt
             if (ltp < 1.01*recentLowest && ltp < .997*estimatedLow && fu.low.exists(ltp < 1.005*_) && (now - lastTimeBuySell > T)) {
                 val buyPrice = (ltp * 100).round.toDouble / 100
-                logger.warn(s"Buy new $quantity $symbol at $buyPrice estimatedLow: $estimatedLow, fundamental low: ${fu.low.get}")
+                logger.warn(s"Buy new $quantity $symbol at $buyPrice estimatedLow: $estimatedLow, fundamental low: " +
+                        s"${fu.low.get}, recent lowest: $recentLowest")
                 Some(("buy", quantity, buyPrice, OrderElement("_", "_", N, N, N, N, "_", N, N, N, N, N)))
             }
             else
@@ -413,17 +411,19 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
                     if !hasSell && isTodayAndMoreThanFromNow(updated_at) && (ltp > 1.007*price) && (now - lastTimeBuySell > T) && (ltp > thresholdSell) =>
                     ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100, oe)
                 case oe @ OrderElement(_, created_at, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
-                    if !hasSell && !isToday(created_at) && (ltp > 1.01*price) && fu.high.exists(ltp > .992*_) && (now - lastTimeBuySell > T) && (ltp > thresholdSell) =>
+                    if !hasSell && !isToday(created_at) && (ltp > 1.01*price) && (ltp > estimatedHigh) && (now - lastTimeBuySell > T) && (ltp > thresholdSell) =>
                     ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100, oe)
                 case oe @ OrderElement(updated_at, _, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
                     if !hasBuy && isTodayAndMoreThanFromNow(updated_at) && (ltp < .993*price) && (ltp < thresholdBuy) &&
-                      (2*ltp < estimatedLow + estimatedHigh) && (now - lastTimeBuySell > T) =>
+                            (2*ltp < estimatedLow + estimatedHigh) && (now - lastTimeBuySell > T) =>
                     ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100, oe)
                 case oe @ OrderElement(_, created_at, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
-                    if !hasBuy && !isToday(created_at) && (ltp < .99*price) && fu.low.exists(ltp < 1.008*_) && (now - lastTimeBuySell > T) && (ltp < thresholdBuy) =>
+                    if !hasBuy && !isToday(created_at) && (ltp < .99*price) && fu.low.exists(ltp < 1.008*_) && (ltp < estimatedLow) &&
+                            (now - lastTimeBuySell > T) && (ltp < thresholdBuy) =>
                     ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100, oe)
                 case oe @ OrderElement(updated_at, _, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, None)
-                    if !hasBuy && isTodayAndMoreThanFromNow(updated_at) && (ltp < .991*price) && (now - lastTimeBuySell > T) && (ltp < thresholdBuy) =>
+                    if !hasBuy && isTodayAndMoreThanFromNow(updated_at) && (ltp < .99*price) && z1(ltp, price) &&
+                            (now - lastTimeBuySell > T) && (ltp < thresholdBuy) =>
                     ("buy", cumulative_quantity + 1, (ltp*100).round.toDouble / 100, oe)
                 case oe @ OrderElement(_, created_at, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, None)
                     if !hasBuy && !isToday(created_at) && (ltp < .985*price) && fu.low.exists(ltp < 1.005*_) &&
@@ -443,6 +443,7 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
             } yield if (d1._1 == "sell") d1 else d2
     }
 
+    // should do buy/sell only when in open hours and already estimated low and high prices
     private def shouldDoBuySell: Boolean = {
         val now = LocalTime.now
         val hour = now.getHour
@@ -450,6 +451,16 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
         isWeekDay && (estimatedLow > 0) && (estimatedHigh < 10000) && (
                 (hour > 9 && hour < 16) || (hour == 9 && minute >= 30)
         )
+    }
+
+    private def z1(ltp: Double /* last_trade_price */, price: Double /* previous buy price */): Boolean = {
+        val r1 = ltp < .99 * price
+        val xOption: Option[Double] = for {
+            fuLow <- fu.low
+            fuHigh <- fu.high
+            if estimatedDelta > 0
+        } yield math.abs((biggestDelta - fuHigh + fuLow) / 4)
+        r1 && xOption.exists(x => ltp < price - x)
     }
 
     readThresholdBuySell()

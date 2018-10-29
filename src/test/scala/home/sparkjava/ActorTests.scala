@@ -73,11 +73,33 @@ object ActorTests extends TestSuite with Util with TestUtil {
             import collection.JavaConverters._
             import org.json4s._
             import org.json4s.native.JsonMethods._
+            import com.softwaremill.sttp._
 
             val config = ConfigFactory.load()
-            val trieMap = TrieMap[String, String]()
-            trieMap ++= config.getConfig("dow").entrySet().asScala.map(e => (e.getKey, e.getValue.unwrapped().asInstanceOf[String]))
-            println(trieMap)
+            implicit val httpBackend: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(config)
+            Main.buildStocksDB(config)
+            val y: Future[Response[List[String]]] = sttp
+                    .header("Authorization", config.getString("Authorization"))
+                    .get(uri"https://api.robinhood.com/watchlists/Default/")
+                    .response(asString.map(s => parse(s).asInstanceOf[JObject].values.get("results").fold(
+                        List[String]()
+                    ) {
+                        case results: List[Map[String, _]] =>
+                            results.map(m => m.get("instrument")).collect { case Some(x) => x.asInstanceOf[String] }
+                        case _ => List[String]()
+                    }))
+                    .send()
+            Await.result(y, 9.seconds).rawErrorBody.fold(
+                _ => println("Error"),
+                _.foreach(i => InstrumentActor.instrument2NameSymbol.get(i) match {
+                    case Some((_, symbol)) => println(
+                        s"""$symbol {
+                           |  buy = 1
+                           |  sell = 500
+                           |}""".stripMargin)
+                    case _ => println(s"strange instrument: $i")
+                })
+            )
         }
 
         "Get all tradeable stocks" - {

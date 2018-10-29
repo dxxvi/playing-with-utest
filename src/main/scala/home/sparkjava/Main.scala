@@ -67,7 +67,7 @@ object Main {
         webSocketListener
     }
 
-    private def buildStocksDB(config: Config) {
+    def buildStocksDB(config: Config) {
         dowStocks ++= config.getConfig("dow").root().keySet().asScala
 
         def f(a: String, b: String): String =

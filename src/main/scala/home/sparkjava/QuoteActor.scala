@@ -94,7 +94,7 @@ class QuoteActor(config: Config) extends Actor with Timers with Util {
                 a => {
                     val n = a.size
                     val quotes = if (n >= 20) a.drop(n - 20) else a
-                    val s = "Date,Open,Low,High,Close,Delta\n" + quotes.collect {
+                    val s = "Date,Open,Close,High,Low,Delta\n" + quotes.collect {
                         case DailyQuote(Some(begins), Some(open), Some(close), Some(high), Some(low)) =>
                             s"${begins.substring(0, 10)},$open,$close,$high,$low,${high-low}"
                     }.mkString("\n")
