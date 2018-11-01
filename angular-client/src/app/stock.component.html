@@ -1,5 +1,5 @@
 <div [ngStyle]="{'background-color': backgroundColor()}" style="padding: .25em .75em;">
-  <div style="position: relative; z-index: 5;">
+  <div style="position: relative;">
     <div class="name">{{name}}</div>
     <table style="width: 100%">
       <tr>
@@ -42,10 +42,11 @@
               [disabled]="buysell.quantity == null || buysell.price == null || buysell.quantity <= 0 || buysell.price <= 0">Bu / Se</button>
     </td>
   </tr></table>
-  <div *ngIf="orders != null && orders.length != 0">
-    <span class="button" title="Export order list to console" (click)="exportOrders()">🍓</span>&nbsp;&nbsp;
-    <span *ngIf="!hideMatches" (click)="hideMatches = !hideMatches" class="button">&#x21D2;</span>
-    <span *ngIf="hideMatches"  (click)="hideMatches = !hideMatches" class="button">&#x21D0;</span>
+  <div>
+    <span *ngIf="orders != null && orders.length != 0" title="Export order list to console" (click)="exportOrders()"
+          class="button">&#x1F353;</span>&nbsp;&nbsp;
+    <span *ngIf="orders != null && orders.length != 0 && !hideMatches" (click)="hideMatches = !hideMatches" class="button">&#x21D2;</span>
+    <span *ngIf="orders != null && orders.length != 0 && hideMatches"  (click)="hideMatches = !hideMatches" class="button">&#x21D0;</span>
   </div>
   <table style="font: .9em monospace; width: 100%">
     <tr *ngFor="let order of orders; trackBy: trackByFunction" [ngClass]="calculateOrderCssClass(order)">

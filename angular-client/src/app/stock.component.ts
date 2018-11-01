@@ -23,6 +23,7 @@ export class StockComponent implements OnInit, OnDestroy {
   buysell: { quantity: number, price: number } = { quantity: null, price: null};
   thresholdBuy = 9999;
   thresholdSell = 0;
+  debug = false;
   private subscription: Subscription;
 
   @Input('_symbol') set _symbol(value: string) {
@@ -205,12 +206,18 @@ export class StockComponent implements OnInit, OnDestroy {
     return '' + x;
   }
 
-  symbolClass(): Array<String> {
-    return WebsocketService.DOW_STOCKS.includes(this.symbol) ? ['dow'] : [];
+  symbolClass(): Array<string> {
+    let a: Array<string> = WebsocketService.DOW_STOCKS.includes(this.symbol) ? ['dow'] : [];
+    if (!this.debug) a.push('button');
+    return a;
   }
 
   trackByFunction(i: number, order: Order): string {
     return order.created_at;
   }
 
+  turnOnDebugging() {
+    this.debug = true;
+    setTimeout(() => this.debug = false, 9999);
+  }
 }

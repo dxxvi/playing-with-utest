@@ -241,6 +241,41 @@ object ActorTests extends TestSuite with Util with TestUtil {
             val _orders = Seq[OrderElement]()
             println(g(_orders))
         }
+
+        "hackerrank" - {
+            import scala.io.StdIn
+            import scala.math._
+            val s = Array("", "1043 770", "551 990", "681 463")
+            val a = (1 to 3).foldLeft(
+                (None /* startPoint */, None /* endPoint */, 0 /* length */): (Option[(Double, Double)], Option[(Double, Double)], Double)
+            )((t, i) => {
+                val p = s(i).split(" ").map(_.toDouble)
+                t match {
+                    case (None, _, _) => (Some(p(0), p(1)), None, 0)
+                    case (Some(sp), None, _) =>
+                        val dx = p(0) - sp._1
+                        val dy = p(1) - sp._2
+                        (Some(sp), Some(p(0), p(1)), sqrt(dx*dx + dy*dy))
+                    case (Some(sp), Some(ep), l) =>
+                        val dx = p(0) - ep._1
+                        val dy = p(1) - ep._2
+                        (Some(sp), Some(p(0), p(1)), l + sqrt(dx*dx + dy*dy))
+                }
+            })
+            val dx = a._1.get._1 - a._2.get._1
+            val dy = a._1.get._2 - a._2.get._2
+            println(a._3 + sqrt(dx*dx + dy*dy))
+        }
+
+        "test" - {
+            /*
+            "ab(c(d)e)"      ->  "d"
+            "[a{{b}c}d(e)]"  ->  "b"
+            "((a)b(cd)ef)"    ->  "a", "cd"
+            "(ab[]c){d{e}}"  ->  "", "e"
+            "Hello, World!"  ->  "Hello, World!"
+             */
+        }
     }
 }
 

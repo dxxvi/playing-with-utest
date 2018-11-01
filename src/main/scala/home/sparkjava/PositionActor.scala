@@ -30,7 +30,7 @@ class PositionActor(config: Config) extends Actor with Timers with Util {
     val authorization: String = if (config.hasPath("Authorization")) config.getString("Authorization") else "No token"
     implicit val httpBackend: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(config)
 
-    timers.startPeriodicTimer(Tick, Tick, 4.seconds)
+    timers.startPeriodicTimer(Tick, Tick, Main.calculateShortDuration())
 
     val _receive: Receive = {
         case Tick =>

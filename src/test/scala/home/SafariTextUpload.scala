@@ -152,7 +152,7 @@ object SafariTextUpload extends TestSuite { val tests: Tests = Tests {
             val outputSettings = new Document.OutputSettings().indentAmount(2).prettyPrint(true).charset("UTF-8")
             // beautify
             val document = Jsoup.parse(s).outputSettings(outputSettings)
-            forPackt(document)
+            // forPackt(document)
 
             val regex = """^([ ]+)<div class="pre" id="([a-z\d]{8}-[a-z\d]{4}-[a-z\d]{4}-[a-z\d]{4}-[a-z\d]{12})"></div>[ ]*$""".r
             // put the <pre's back

@@ -1,5 +1,7 @@
 package home.sparkjava
 
+import java.time.LocalDateTime
+
 import akka.actor.ActorSystem
 import com.typesafe.config.{Config, ConfigFactory}
 import message.Tick
@@ -8,6 +10,7 @@ import spark.{Request, Response, Route, Spark}
 
 import scala.collection.JavaConverters._
 import scala.collection.concurrent.TrieMap
+import scala.concurrent.duration._
 import scala.io.StdIn
 
 object Main {
@@ -25,7 +28,6 @@ object Main {
     })
 
     val dowStocks: collection.mutable.Set[String] = collection.mutable.HashSet[String]()
-    var djia: Double = 0 // from cnbc.com
 
     def main(args: Array[String]): Unit = {
         val config: Config = ConfigFactory.load()
@@ -87,6 +89,11 @@ object Main {
                         conf.getString(s"soi.$symbol.instrument"),
                         (f(conf.getString(s"soi.$symbol.name"), conf.getString(s"soi.$symbol.simple_name")), symbol)
                 ))
+    }
+
+    def calculateShortDuration(): FiniteDuration = {
+        val hour = LocalDateTime.now.getHour
+        if (hour < 9 || hour > 15) 4.seconds else 30.seconds
     }
 }
 

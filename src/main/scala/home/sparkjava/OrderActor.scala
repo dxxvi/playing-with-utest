@@ -44,7 +44,7 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
     implicit val httpBackend: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(config)
     var historicalOrdersCount = 0
 
-    timers.startPeriodicTimer(Tick, Tick, 4.seconds)
+    timers.startPeriodicTimer(Tick, Tick, Main.calculateShortDuration())
 
     val _receive: Receive = {
         case Tick =>
