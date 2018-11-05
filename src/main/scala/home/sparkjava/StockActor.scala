@@ -246,7 +246,8 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
 
     private def auditInfo(): String = s"estimatedLow: $estimatedLow, estimatedHigh: $estimatedHigh, " +
             s"estimatedDelta: $estimatedDelta, recentLowest: $recentLowest, smallestDelta: $smallestDelta, " +
-            s"biggestDelta: $biggestDelta, thresholdBuy: $thresholdBuy, thresholdSell: $thresholdSell"
+            s"biggestDelta: $biggestDelta, thresholdBuy: $thresholdBuy, thresholdSell: $thresholdSell, " +
+            s"fundamental: $fu, position: $p, quote: $q"
 
     private def combineIds(s1: String, s2: String): String = if (s1 < s2) s"$s1-$s2" else s"$s2-$s1"
 

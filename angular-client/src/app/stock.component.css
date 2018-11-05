@@ -6,7 +6,7 @@ div.x-small { font-size: .7em; }
 div.visible { visibility: visible;}
 div.hidden { visibility: hidden; }
 td.none { display: none; }
-div.pointer { cursor: pointer; }
+.pointer { cursor: pointer; }
 div.dow { border-bottom: 2px solid #ccc; }
 
 tr.buy { color: hsl(0, 50%, 40%); }

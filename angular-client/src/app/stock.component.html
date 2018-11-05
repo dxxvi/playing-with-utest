@@ -1,5 +1,5 @@
-<div class="name">{{name}}</div>
-<div [ngStyle]="{'background-color': backgroundColor()}" style="padding: .25em .75em">
+<div [ngStyle]="{'background-color': backgroundColor()}" style="position: relative; padding: .25em .75em">
+  <div class="name">{{name}}</div>
   <div style="position: relative">
     <div style="z-index: 5; width: 100%; display: table">
       <div style="display: table-row">
@@ -28,20 +28,22 @@
       </div>
     </div>
   </div>
-  <table style="width: 100%; margin-left: -.4em; margin-right: -.4em"><tr class="form-group">
-    <td style="padding-right: .4em">
-      <input name="quantity" [(ngModel)]="buysell.quantity" placeholder="quantity" type="number" step="1"
-             class="form-control"  style="width: 6em"/>
-    </td>
-    <td style="padding-right: .4em">
-      <input name="price" [(ngModel)]="buysell.price" placeholder="price" type="number" step=".01"
-             class="form-control" style="width: 4.75em"/>
-    </td>
-    <td>
-      <button (click)="buySell()" class="btn" [ngClass]="calculateBuSeButtonClass()" type="button"
-              [disabled]="buysell.quantity == null || buysell.price == null || buysell.quantity <= 0 || buysell.price <= 0">Bu / Se</button>
-    </td>
-  </tr></table>
+  <div style="display: table; z-index: 5; width: 100%; margin-left: -.4em; margin-right: -.4em">
+    <div style="display: table-row" class="form-group">
+      <div style="display: table-cell; padding-right: .4em">
+        <input name="quantity" [(ngModel)]="buysell.quantity" placeholder="quantity" type="number" step="1"
+               class="form-control"  style="width: 6em"/>
+      </div>
+      <div style="display: table-cell; padding-right: .4em">
+        <input name="price" [(ngModel)]="buysell.price" placeholder="price" type="number" step=".01"
+               class="form-control" style="width: 4.75em"/>
+      </div>
+      <div style="display: table-cell">
+        <button (click)="buySell()" class="btn" [ngClass]="calculateBuSeButtonClass()" type="button"
+                [disabled]="buysell.quantity == null || buysell.price == null || buysell.quantity <= 0 || buysell.price <= 0">Bu / Se</button>
+      </div>
+    </div>
+  </div>
   <div>
     <span *ngIf="orders != null && orders.length != 0" title="Export order list to console" (click)="exportOrders()"
           class="button">&#x23F1;</span>&nbsp;&nbsp;
