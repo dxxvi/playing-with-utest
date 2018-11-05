@@ -1,12 +1,12 @@
 .button { color: #f00; cursor: pointer; }
-td.small { font-size: .9em; }
-td.smaller { font-size: .8em; }
-td.x-small { font-size: .7em; }
-td.mono { font-family: monospace; }
-td.visible { visibility: visible;}
-td.hidden { visibility: hidden; }
+div.small { font-size: .9em; }
+div.smaller { font-size: .8em; }
+div.x-small { font-size: .7em; }
+.mono { font-family: monospace; }
+div.visible { visibility: visible;}
+div.hidden { visibility: hidden; }
 td.none { display: none; }
-td.pointer { cursor: pointer; }
+div.pointer { cursor: pointer; }
 div.dow { border-bottom: 2px solid #ccc; }
 
 tr.buy { color: hsl(0, 50%, 40%); }
@@ -17,7 +17,4 @@ tr.buy.matched { color: hsl(0, 50%, 82%); }
 tr.sell.matched { color: hsl(240, 50%, 82%); }
 tr.matched.hide { display: none; }
 
-div.name {
-  position: absolute; z-index: -3; display: block; top: -.2em; left: 0; bottom: 0; right: 0; opacity: .15;
-  font: 2em sans-serif;
-}
+div.name { position: absolute; top: 0; left: .5em; bottom: 0; right: .5em; font-size: 2em; color: rgba(82,82,82,.19) }

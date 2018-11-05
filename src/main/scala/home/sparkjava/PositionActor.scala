@@ -34,13 +34,11 @@ class PositionActor(config: Config) extends Actor with Timers with Util {
 
     val _receive: Receive = {
         case Tick =>
-            val currentHour = LocalTime.now.getHour
-            if (currentHour >= 9 && currentHour < 16)
-                sttp.header("Authorization", authorization)
-                    .get(uri"${SERVER}positions/")
-                    .response(asString.map(Position.deserialize))
-                    .send()
-                    .map(PositionResponse) pipeTo self
+            sttp.header("Authorization", authorization)
+                .get(uri"${SERVER}positions/")
+                .response(asString.map(Position.deserialize))
+                .send()
+                .map(PositionResponse) pipeTo self
         case PositionResponse(Response(rawErrorBody, code, statusText, _, _)) =>
             rawErrorBody.fold(
                 _ => logger.error(s"Error in getting positions: $code $statusText"),

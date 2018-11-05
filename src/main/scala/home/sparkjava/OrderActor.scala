@@ -48,13 +48,11 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
 
     val _receive: Receive = {
         case Tick =>
-            val currentHour = LocalTime.now.getHour
-            if (currentHour >= 9 && currentHour < 16)
-                sttp.header("Authorization", authorization)
-                        .get(uri"${SERVER}orders/")
-                        .response(asString.map(Orders.deserialize))
-                        .send()
-                        .map(OrdersResponse) pipeTo self
+            sttp.header("Authorization", authorization)
+                    .get(uri"${SERVER}orders/")
+                    .response(asString.map(Orders.deserialize))
+                    .send()
+                    .map(OrdersResponse) pipeTo self
         case OrdersResponse(Response(rawErrorBody, code, statusText, _, _)) => rawErrorBody fold (
                 _ => logger.error(s"Error in getting recent orders $code $statusText"),
                 a => a.results foreach { _.foreach(orderElement =>

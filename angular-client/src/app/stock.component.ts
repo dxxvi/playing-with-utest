@@ -35,7 +35,10 @@ export class StockComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.subscription = this.websocketService.getSubject(this.symbol).asObservable().subscribe(message => {
-      if (message.POSITION) this.po.quantity = message.POSITION.quantity;
+      if (this.debug) console.dir(message);
+      if (message.POSITION) {
+        this.po.quantity = message.POSITION.quantity;
+      }
       else if (message.FUNDAMENTAL) {
         const f = message.FUNDAMENTAL;
         if (f.low && f.low > 0) this.fu.low = f.low;
@@ -90,7 +93,6 @@ export class StockComponent implements OnInit, OnDestroy {
     setTimeout(() => {
       this.buysell.quantity = null;
       this.buysell.price = null;
-      console.log('.');
     }, 3000);
   }
 

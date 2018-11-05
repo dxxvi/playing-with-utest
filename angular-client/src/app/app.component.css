@@ -6,8 +6,9 @@ ol:after { display: block; content: ' '; clear: both; }
 ol { display: flex; flex-wrap: wrap; list-style: none; }
 ol > li.stock-panel {
   border: 1px solid #ccc; border-radius: .3em; margin: 1em; box-shadow: .2em .2em .5em #aaa;
-  background-color: #fff;
+  background-color: #fff; position: relative;
 }
+ol > li.stock-panel::after { display: block; content: ' '; clear: both }
 
 div.notice-container { z-index: 99; position: fixed; top: 0; right: .5em; text-align: right; }
 div.notice {

@@ -93,7 +93,7 @@ object Main {
 
     def calculateShortDuration(): FiniteDuration = {
         val hour = LocalDateTime.now.getHour
-        if (hour < 9 || hour > 15) 4.seconds else 30.seconds
+        if (hour < 9 || hour > 15) 30.seconds else 4.seconds
     }
 }
 
