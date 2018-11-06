@@ -16,5 +16,3 @@ tr.sell.confirmed { font-style: italic; color: hsl(240, 50%, 60%); }
 tr.buy.matched { color: hsl(0, 50%, 82%); }
 tr.sell.matched { color: hsl(240, 50%, 82%); }
 tr.matched.hide { display: none; }
-
-div.name { position: absolute; top: 0; left: .5em; bottom: 0; right: .5em; font-size: 2em; color: rgba(82,82,82,.19) }

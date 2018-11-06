@@ -1,13 +1,12 @@
 <div [ngStyle]="{'background-color': backgroundColor()}" style="position: relative; padding: .25em .75em">
-  <div class="name">{{name}}</div>
   <div style="position: relative">
-    <div style="z-index: 5; width: 100%; display: table">
+    <div style="width: 100%; display: table">
       <div style="display: table-row">
         <div class="small" style="display: table-cell">Today</div>
         <div class="small" style="display: table-cell">Est.</div>
         <div style="display: table-cell"></div>
         <div style="display: table-cell">
-          <div style="float: left" [ngClass]="symbolClass()" (click)="turnOnDebugging()">{{ symbol }}</div>
+          <div style="float: left" [ngClass]="symbolClass()" (click)="turnOnDebugging()" [title]="name">{{ symbol }}</div>
           <div style="float: right" [ngStyle]="{'visibility': po.quantity >= 0 ? 'visible' : 'hidden'}">{{ po.quantity }}</div>
           <div style="clear: both"></div>
         </div>
@@ -28,7 +27,7 @@
       </div>
     </div>
   </div>
-  <div style="display: table; z-index: 5; width: 100%; margin-left: -.4em; margin-right: -.4em">
+  <div style="display: table; width: 100%; margin-left: -.4em; margin-right: -.4em">
     <div style="display: table-row" class="form-group">
       <div style="display: table-cell; padding-right: .4em">
         <input name="quantity" [(ngModel)]="buysell.quantity" placeholder="quantity" type="number" step="1"

@@ -12,7 +12,6 @@ import home.sparkjava.model.Position
 import message.Tick
 
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
 object PositionActor {
     val NAME = "positionActor"

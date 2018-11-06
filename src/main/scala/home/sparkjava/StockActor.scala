@@ -392,7 +392,7 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
                                      ltp: Double     /* last trade price */,
                                      _d: Boolean     /* true means debug */,
                                      T: Long = 99    /* the amount of seconds we need to wait since last time buy/sell*/
-                             ): Option[(String, Int, Double, OrderElement)] = oes match {
+                             ): Option[(String, Int, Double, OrderElement, String)] = oes match {
         // returns (action, quantity, price, orderElement used to give this decision)
         case Nil =>
             val N = None
@@ -400,41 +400,37 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
             val quantity = (10 / ltp + 1).round.toInt
             if (ltp < 1.01*recentLowest && ltp < .997*estimatedLow && fu.low.exists(ltp < 1.005*_) && (now - lastTimeBuySell > T)) {
                 val buyPrice = (ltp * 100).round.toDouble / 100
-                logger.warn(s"Buy new $quantity $symbol at $buyPrice estimatedLow: $estimatedLow, fundamental low: " +
-                        s"${fu.low.get}, recent lowest: $recentLowest")
-                Some(("buy", quantity, buyPrice, OrderElement("_", "_", N, N, N, N, "_", N, N, N, N, N)))
+                Some(("buy", quantity, buyPrice, OrderElement("_", "_", N, N, N, N, "_", N, N, N, N, N), "New buy"))
             }
             else
                 None
         case _ =>
-            if (_d) logger.debug(s"oes: ${oes.map(_.toString).mkString("\n")}")
             val hasBuy  = oes.exists(oe => oe.state.exists(_.contains("confirmed")) && oe.side.contains("buy"))
             val hasSell = oes.exists(oe => oe.state.exists(_.contains("confirmed")) && oe.side.contains("sell"))
-            if (_d) logger.debug(s"hasBuy: $hasBuy, hasSell: $hasSell")
+            if (_d) logger.debug(s"oes: ${oes.map(_.toString).mkString("\n")}\nhasBuy: $hasBuy, hasSell: $hasSell")
 
-            val now = System.currentTimeMillis / 1000
-            val decisionFunction: PartialFunction[OrderElement, (String, Int, Double, OrderElement)] = {
+            val decisionFunction: PartialFunction[OrderElement, (String, Int, Double, OrderElement, String)] = {
                 case oe @ OrderElement(updated_at, _, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
                     if !hasSell && isTodayAndMoreThanFromNow(updated_at) && shouldSellForTodayBuy(ltp, price, T) =>
-                    ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100, oe)
+                    ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100, oe, "Sell a buy today")
                 case oe @ OrderElement(_, created_at, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
                     if !hasSell && !isToday(created_at) && shouldSellForPastBuy(ltp, price, T)  =>
-                    ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100, oe)
+                    ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100, oe, "Sell a buy before")
                 case oe @ OrderElement(updated_at, _, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
                     if !hasBuy && isTodayAndMoreThanFromNow(updated_at) && shouldBuyForTodaySell(ltp, price, T) =>
-                    ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100, oe)
+                    ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100, oe, "Buy a sell today")
                 case oe @ OrderElement(_, created_at, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
                     if !hasBuy && !isToday(created_at) && shouldBuyForPastSell(ltp, price, T) =>
-                    ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100, oe)
+                    ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100, oe, "Buy a sell before")
                 case oe @ OrderElement(updated_at, _, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, None)
                     if !hasBuy && isTodayAndMoreThanFromNow(updated_at) && shouldBuyMoreForToday(ltp, price, T) =>
-                    ("buy", cumulative_quantity + 1, (ltp*100).round.toDouble / 100, oe)
+                    ("buy", cumulative_quantity + 1, (ltp*100).round.toDouble / 100, oe, "Buy again today")
                 case oe @ OrderElement(_, created_at, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, None)
                     if !hasBuy && !isToday(created_at) && shouldBuyMoreForPast(ltp, price, T) =>
-                    ("buy", cumulative_quantity + 1, (ltp*100).round.toDouble / 100, oe)
+                    ("buy", cumulative_quantity + 1, (ltp*100).round.toDouble / 100, oe, "Buy again before")
             }
             val filledOEs = oes.filter(_.state.contains("filled"))
-            val decision1: Option[(String, Int, Double, OrderElement)] = filledOEs.headOption collect decisionFunction
+            val decision1 = filledOEs.headOption collect decisionFunction
             if (_d) logger.debug(s"decision1: $decision1")
             val decision2 = filledOEs.dropWhile(_.matchId.isDefined).headOption collect decisionFunction
             if (_d) logger.debug(s"decision2: $decision2")
