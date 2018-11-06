@@ -94,10 +94,10 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
                 val _lastRoundOrders = assignMatchId(x)
                 if (q.last_trade_price.isDefined && instrument != "" && thresholdBuy > 0 && thresholdSell > 0 && shouldDoBuySell) {
                     shouldBuySell(_lastRoundOrders, q.last_trade_price.get, debug) foreach { t =>
-                        // (action, quantity, price, orderElement)
+                        // (action, quantity, price, orderElement, reason)
                         context.actorSelection(s"../../${OrderActor.NAME}") ! OrderActor.BuySell(t._1, symbol, instrument, t._2, t._3)
                         lastTimeBuySell = System.currentTimeMillis / 1000
-                        logger.warn(s"Just ${t._1.toUpperCase} ${t._2} $symbol $$${t._3} ${t._4} ${auditInfo()}")
+                        logger.warn(s"Just ${t._1.toUpperCase} ${t._2} $symbol $$${t._3} ${t._4} ${t._5} ${auditInfo()}")
                     }
                 }
                 val lastRoundOrdersString = _lastRoundOrders.map(oe => {
