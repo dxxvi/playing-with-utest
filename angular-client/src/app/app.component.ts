@@ -28,7 +28,7 @@ export class AppComponent implements OnInit, OnDestroy {
           if (position.quantity) {
             this.positionMap.set(symbol, position.quantity);
           }
-          isNewSymbol = this.addSymbolIfNotExist(symbol);
+          isNewSymbol = this.addSymbolIfNotExist(symbol, true);
           setTimeout(() => {
             this.websocketService.sendMessageThroughSubject(symbol, { POSITION: position })
           }, isNewSymbol ? 200 : 1);
@@ -93,13 +93,19 @@ export class AppComponent implements OnInit, OnDestroy {
   /**
    * @return true if this is a new symbol
    */
-  addSymbolIfNotExist(symbol: string): boolean {
+  addSymbolIfNotExist(symbol: string, sort = false): boolean {
+    let result = false;
+    let justSorted = false;
     if (!this.symbols.includes(symbol)) {
       this.symbols.push(symbol);
-      this.symbols.sort();
-      return true;
+      this.symbols.sort((s1: string, s2: string) => this.sortSymbol(s1, s2));
+      justSorted = true;
+      result = true;
     }
-    return false;
+    if (sort && !justSorted) {
+      this.symbols.sort((s1: string, s2: string) => this.sortSymbol(s1, s2));
+    }
+    return result;
   }
 
   calculateNoticeClass(level: string) {
@@ -138,14 +144,31 @@ export class AppComponent implements OnInit, OnDestroy {
     return n.uuid;
   }
 
-  havingShares(symb0l: string): boolean {
-    return this.positionMap.has(symb0l) && this.positionMap.get(symb0l) > 0;
-  }
-
   private generateUUID(): string {
     const s = function(): string {
       return Math.floor((1 + Math.random()) * 1679616).toString(36).substring(1);
     };
     return s() + '-' + s();
+  }
+
+  private havingShares(symb0l: string): boolean {
+    return this.positionMap.has(symb0l) && this.positionMap.get(symb0l) > 0;
+  }
+
+  private sortSymbol(s1: string, s2: string) {
+    const havingShares1 = this.havingShares(s1);
+    const havingShares2 = this.havingShares(s2);
+    if (havingShares1 && havingShares2) {
+      return s1 > s2 ? 1 : (s1 < s2 ? -1 : 0);
+    }
+    else if (!havingShares1 && havingShares2) {
+      return 1;
+    }
+    else if (havingShares1 && !havingShares2) {
+      return -1;
+    }
+    else {
+      return s1 > s2 ? 1 : (s1 < s2 ? -1 : 0);
+    }
   }
 }
