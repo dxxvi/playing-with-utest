@@ -88,6 +88,9 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
             sendPosition
             if (p.instrument.nonEmpty) instrument = p.instrument.get
 
+            val T = 19
+            getHistoricalOrders(T)
+
             if (orders.nonEmpty) {
                 var totalShares: Int = 0
                 val x = lastRoundOrders() // x has (un)confirmed, (partially) filled orders
@@ -115,18 +118,14 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
             }
             debug = false
         case _q: Quote => // the QuoteActor is sure that symbol, last_trade_price and instrument are there
-            val T = 4 + Random.nextInt(19)
+            val T = 19
             q = _q
             sendQuote
             instrument = q.instrument.get
-            val now = System.currentTimeMillis / 1000
-            if (p.quantity.exists(_ >= 0) && orders.isEmpty && (now - lastTimeHistoricalOrdersRequested > T)
-                    && !gotHistoricalOrders) {
-                // Use T because we should wait for the OrderActor a bit because we receive quote every 4 seconds
-                lastTimeHistoricalOrdersRequested = now
-                context.actorSelection(s"../../${OrderActor.NAME}") !
-                        HistoricalOrders(symbol, instrument, 4, Seq[OrderElement](), None)
-            }
+
+            getHistoricalOrders(T)
+
+            val now = System.currentTimeMillis() / 1000
             if (estimatedDelta < 0 && (now - lastTimeHistoricalQuotesRequested > T)) {
                 lastTimeHistoricalQuotesRequested = now
                 context.actorSelection(s"../../${QuoteActor.NAME}") ! GetDailyQuote(List(symbol), 0)
@@ -262,14 +261,17 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
         average_price2 <- o2.average_price
         if average_price1 < average_price2
     } yield true
-
-/*
-    private def findFilledBuyNonMatchedOrderBefore(created_at: String, oes: List[OrderElement]): Option[OrderElement] = {
-        import java.time.Instant
-        val instant = Instant.parse(created_at)
-        oes.find()
+    
+    private def getHistoricalOrders(T: Int) {
+        val now = System.currentTimeMillis / 1000
+        if (p.quantity.exists(_ >= 0) && orders.isEmpty && (now - lastTimeHistoricalOrdersRequested > T)
+                && !gotHistoricalOrders) {
+            // Use T because we should wait for the OrderActor a bit because we receive quote every 4 seconds
+            lastTimeHistoricalOrdersRequested = now
+            context.actorSelection(s"../../${OrderActor.NAME}") ! HistoricalOrders(symbol, instrument, 4, Nil, None)
+            println(s"$symbol requests HistoricalOrders at ${LocalTime.now.format(DateTimeFormatter.ISO_LOCAL_TIME)}")
+        }
     }
-*/
 
     private def isAcceptableOrderState(state: String, oe: OrderElement): Boolean =
         state == "filled" || state.contains("confirmed") || (

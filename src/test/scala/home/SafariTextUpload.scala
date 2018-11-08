@@ -108,7 +108,7 @@ object SafariTextUpload extends TestSuite { val tests: Tests = Tests {
         def toOption[T](x: Any): Option[T] = if (x == null) None else Some(x.asInstanceOf[T])
 
         Seq(
-            "/home/ly/nginx-root/mastering-docker/index.html"
+            "/home/ly/nginx-root/mastering-functional-programming/index.html"
         ).foreach(fileName => {
             val bufferedSource = Source.fromFile(fileName)
 
