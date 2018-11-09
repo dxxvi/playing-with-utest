@@ -100,7 +100,8 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
                         // (action, quantity, price, orderElement, reason)
                         context.actorSelection(s"../../${OrderActor.NAME}") ! OrderActor.BuySell(t._1, symbol, instrument, t._2, t._3)
                         lastTimeBuySell = System.currentTimeMillis / 1000
-                        logger.warn(s"Just ${t._1.toUpperCase} ${t._2} $symbol $$${t._3} ${t._4} ${t._5} ${auditInfo()}")
+                        logger.warn(s"Just ${t._1.toUpperCase} ${t._2} $symbol $$${t._3} " +
+                                s"${t._4.copy(instrument = "~")} ${t._5} ${auditInfo()}")
                     }
                 }
                 val lastRoundOrdersString = _lastRoundOrders.map(oe => {
@@ -246,7 +247,7 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
     private def auditInfo(): String = s"estimatedLow: $estimatedLow, estimatedHigh: $estimatedHigh, " +
             s"estimatedDelta: $estimatedDelta, recentLowest: $recentLowest, smallestDelta: $smallestDelta, " +
             s"biggestDelta: $biggestDelta, thresholdBuy: $thresholdBuy, thresholdSell: $thresholdSell, " +
-            s"fundamental: $fu, position: $p, quote: $q"
+            s"fundamental: ${fu.copy(instrument = "~")}, position: ${p.copy(instrument = Some("~"))}, quote: $q"
 
     private def combineIds(s1: String, s2: String): String = if (s1 < s2) s"$s1-$s2" else s"$s2-$s1"
 
@@ -261,7 +262,7 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
         average_price2 <- o2.average_price
         if average_price1 < average_price2
     } yield true
-    
+
     private def getHistoricalOrders(T: Int) {
         val now = System.currentTimeMillis / 1000
         if (p.quantity.exists(_ >= 0) && orders.isEmpty && (now - lastTimeHistoricalOrdersRequested > T)
