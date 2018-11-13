@@ -59,6 +59,7 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
     var estimatedDelta: Double = -1
     var smallestDelta: Double = -1
     var biggestDelta: Double = -1
+    var safeDelta: Double = 99   // if price < fu.high - safeDelta, we can buy new
     var debug: Boolean = false
     var thresholdBuy: Double = -1
     var thresholdSell: Double = -1
@@ -140,28 +141,41 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
             }
             logger.debug(s"Got HistoricalOrders:\n${orders.toList.map(_.toString).mkString("\n")}")
         case DailyQuoteReturn(dQuotes) =>
-            val n = dQuotes.size
-            val dailyQuotes: List[DailyQuote] = if (n >= 10) dQuotes.drop(n - 10) else Nil
+            val N = 120
+            val dailyQuotes: List[DailyQuote] = dQuotes.reverse.take(N)
             // the daily quote when the delta is smallest
-            val dq1: (String, Double) = dailyQuotes.foldLeft(("", Double.MaxValue))((b, dq) =>
+            val dq1: (String, Double) = dailyQuotes.take(10).foldLeft(("", Double.MaxValue))((b, dq) =>
                     if (dq.high_price.get - dq.low_price.get < b._2)
                         (dq.begins_at.get, dq.high_price.get - dq.low_price.get)
                     else (b._1, b._2)
             )
             smallestDelta = dq1._2
             // the daily quote when the delta is biggest
-            val dq2: (String, Double) = dailyQuotes.foldLeft(("", Double.MinValue))((b, dq) =>
+            val dq2: (String, Double) = dailyQuotes.take(10).foldLeft(("", Double.MinValue))((b, dq) =>
                     if (dq.high_price.get - dq.low_price.get > b._2)
                         (dq.begins_at.get, dq.high_price.get - dq.low_price.get)
                     else (b._1, b._2)
             )
             biggestDelta = dq2._2
-            val x = dailyQuotes.filter(!_.begins_at.contains(dq1._1)).collect {
+            val x = dailyQuotes.take(10).filter(!_.begins_at.contains(dq1._1)).collect {
                 case DailyQuote(Some(begins_at), _, _, Some(high_price), Some(low_price)) if begins_at != dq1._1 =>
                     high_price - low_price
             }
             if (x.nonEmpty) estimatedDelta = x.sum / x.size
             recentLowest = dailyQuotes.map(_.low_price.get).min
+            val y = dailyQuotes.sortWith((dq1, dq2) => {
+                val x = for {
+                    dq1h <- dq1.high_price
+                    dq1l <- dq1.low_price
+                    dq2h <- dq2.high_price
+                    dq2l <- dq2.low_price
+                } yield dq2h - dq2l - dq1h + dq1l > 0
+                x.contains(true)
+            })((.82*N).toInt)
+            safeDelta = (for {
+                high <- y.high_price
+                low <- y.low_price
+            } yield high - low).getOrElse(99)
         case Tick => // Tick means there's a new web socket connection. purpose: send the symbol to the browser
             if (p.quantity.get >= 0) sendPosition else sendFundamental
             lastRoundOrdersHash = ""
