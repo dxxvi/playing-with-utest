@@ -1,6 +1,7 @@
 package home.sparkjava
 
 import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 import akka.actor.{Actor, Props, Timers}
 import akka.pattern.pipe
@@ -42,45 +43,62 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
     val authorization: String = if (config.hasPath("Authorization")) config.getString("Authorization") else "No token"
     val account: String = if (config.hasPath("AccountNumber")) config.getString("AccountNumber") else "No account"
     implicit val httpBackend: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(config)
-    var historicalOrdersCount = 0
+    var lastTimeRequest: Long = 0
+    var millisBetweenRequests = 400
 
     timers.startPeriodicTimer(Tick, Tick, Main.calculateShortDuration())
 
     val _receive: Receive = {
         case Tick =>
-            sttp.header("Authorization", authorization)
-                    .get(uri"${SERVER}orders/")
-                    .response(asString.map(Orders.deserialize))
-                    .send()
-                    .map(OrdersResponse) pipeTo self
+            if (System.currentTimeMillis - lastTimeRequest > millisBetweenRequests) {
+                sttp.header("Authorization", authorization)
+                        .get(uri"${SERVER}orders/")
+                        .response(asString.map(Orders.deserialize))
+                        .send()
+                        .map(OrdersResponse) pipeTo self
+                lastTimeRequest = System.currentTimeMillis
+            }
         case OrdersResponse(Response(rawErrorBody, code, statusText, _, _)) => rawErrorBody fold (
-                _ => logger.error(s"Error in getting recent orders $code $statusText"),
-                a => a.results foreach { _.foreach(orderElement =>
-                    Main.instrument2Symbol.get(orderElement.instrument).foreach(symbol =>
-                        context.actorSelection(s"../${MainActor.NAME}/symbol-$symbol") ! orderElement
-                    )
-                )}
+                _ => {
+                    logger.error(s"Error in getting recent orders $code $statusText")
+                    if (code == 429 /* too many request */) millisBetweenRequests = 3000
+                },
+                a => {
+                    a.results foreach {
+                        _.foreach(orderElement =>
+                            Main.instrument2Symbol.get(orderElement.instrument).foreach(symbol =>
+                                context.actorSelection(s"../${MainActor.NAME}/symbol-$symbol") ! orderElement
+                            )
+                        )
+                    }
+                    millisBetweenRequests = math.max(400, millisBetweenRequests - 100)
+                }
         )
-
-        case ho @ HistoricalOrders(_, instrument, _, _, next) =>
-            if (historicalOrdersCount < 5) {
-                val uri = if (next.isDefined) uri"${next.get}"
-                    else uri"${SERVER}orders/".queryFragment(QueryFragment.KeyValue("instrument", instrument, valueEncoding = QueryFragmentEncoding.All))
+        case ho @ HistoricalOrders(symbol, instrument, _, _, next) =>
+            if (System.currentTimeMillis - lastTimeRequest > millisBetweenRequests) {
+                val uri = if (next.isDefined) uri"${next.get}" else {
+                    println(s"Send 1st historical order request for $symbol at ${LocalTime.now.format(DateTimeFormatter.ISO_LOCAL_TIME)}")
+                    uri"${SERVER}orders/".queryFragment(QueryFragment.KeyValue("instrument", instrument, valueEncoding = QueryFragmentEncoding.All))
+                }
                 sttp.header("Authorization", authorization)
                         .get(uri)
                         .response(asString.map(Orders.deserialize))
                         .send()
                         .map(r => HistoricalOrdersResponse(r, ho)) pipeTo self
-                historicalOrdersCount += 1
+                lastTimeRequest = System.currentTimeMillis
             }
+            else self ! ho
         case HistoricalOrdersResponse(Response(rawErrorBody, code, statusText, _, _), HistoricalOrders(symbol, instrument, times, _orders, next)) =>
-            historicalOrdersCount -= 1
             rawErrorBody.fold(
-                a => logger.error(s"Error in getting historical orders $symbol ($code, $statusText $historicalOrdersCount) next $next"),
+                _ => {
+                    logger.error(s"Error in getting historical orders $symbol ($code, $statusText) next $next")
+                    if (code == 429 /* too many request */) millisBetweenRequests = 3000
+                },
                 a => {
                     if (a.results.isDefined && a.results.get.exists(_.cumulative_quantity.isEmpty))
                         logger.error(s"$symbol has some orders with empty cummulative quantity\n${a.results.get.map(_.toString).mkString("\n")}")
                     else {
+                        millisBetweenRequests = math.max(400, millisBetweenRequests - 100)
                         val orders = _orders ++ a.results.getOrElse(List[OrderElement]())
                         val _times = times - 1
                         if (_times == 0 || a.next.isEmpty) {

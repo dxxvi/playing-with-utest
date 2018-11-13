@@ -270,7 +270,6 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
             // Use T because we should wait for the OrderActor a bit because we receive quote every 4 seconds
             lastTimeHistoricalOrdersRequested = now
             context.actorSelection(s"../../${OrderActor.NAME}") ! HistoricalOrders(symbol, instrument, 4, Nil, None)
-            println(s"$symbol requests HistoricalOrders at ${LocalTime.now.format(DateTimeFormatter.ISO_LOCAL_TIME)}")
         }
     }
 
@@ -488,7 +487,7 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
         val hour = now.getHour
         val minute = now.getMinute
         isWeekDay && (estimatedLow > 0) && (estimatedHigh < 10000) && (
-                (hour > 9 && hour < 16) || (hour == 9 && minute >= 30)
+                (hour > 9 && hour < 16) || (hour == 9 && minute > 30)
         )
     }
 

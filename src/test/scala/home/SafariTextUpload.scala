@@ -108,12 +108,21 @@ object SafariTextUpload extends TestSuite { val tests: Tests = Tests {
         def toOption[T](x: Any): Option[T] = if (x == null) None else Some(x.asInstanceOf[T])
 
         Seq(
-            "/home/ly/nginx-root/mastering-functional-programming/index.html"
+            "/dev/shm/index.html"
         ).foreach(fileName => {
             val bufferedSource = Source.fromFile(fileName)
 
+            var wholeFile = bufferedSource.mkString
+            wholeFile = """ data-mfp-src="/library/view/[a-z0-9-]+/[a-z0-9-]+/[a-z0-9-]+/[a-z0-9-]+\.[a-z]{3}"""".r
+                    .replaceAllIn(wholeFile, "")
+            wholeFile = """ style="width:[0-9]+\.[0-9]+em;height:[0-9]+\.[0-9]+em;"""".r.replaceAllIn(wholeFile, "")
+            wholeFile = """ width="[0-9]+"""".r.replaceAllIn(wholeFile, "")
+            wholeFile = """ height="[0-9]+"""".r.replaceAllIn(wholeFile, "")
+            wholeFile = """[ ]*<p>&nbsp;</p>[ ]*\n""".r.replaceAllIn(wholeFile, "")
+            wholeFile = """ class=""""".r.replaceAllIn(wholeFile, "")
+
             // make <pre at the beginning of a line and </pre> at the end of a line
-            var s = """<pre""".r.replaceAllIn(bufferedSource.mkString, "\n<pre")
+            var s = """<pre""".r.replaceAllIn(wholeFile, "\n<pre")
             s = """</pre>""".r.replaceAllIn(s, "</pre>\n")
 
             bufferedSource.close()
