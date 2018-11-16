@@ -53,13 +53,15 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
     val orders: collection.mutable.SortedSet[OrderElement] =
         collection.mutable.SortedSet[OrderElement]()(Ordering.by[OrderElement, String](_.created_at)(Main.timestampOrdering.reverse))
 
+    var openPrice: Double = 0
     var estimatedLow: Double = 0
     var estimatedHigh: Double = Double.MaxValue
-    var recentLowest: Double = 0 // this is the lowest in the last couple of days
+    var recentLowest: Double = 0   // this is the lowest in the last couple of days
     var estimatedDelta: Double = -1
     var smallestDelta: Double = -1
     var biggestDelta: Double = -1
-    var safeDelta: Double = 99   // if price < fu.high - safeDelta, we can buy new
+    var safeDelta: Double = 99     // if price < fu.high - safeDelta, we can buy new
+    var safeOpenDelta: Double = 99 // if price - safeOpenDelta > openPrice,
     var debug: Boolean = false
     var thresholdBuy: Double = -1
     var thresholdSell: Double = -1
@@ -69,6 +71,7 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
             fu = _fu
             if (q.last_trade_price.exists(_ > fu.high.get)) fu = fu.copy(high = q.last_trade_price)
             if (q.last_trade_price.exists(_ < fu.low.get))  fu = fu.copy(low = q.last_trade_price)
+            openPrice = _fu.open.getOrElse(openPrice)
             sendFundamental
             instrument = fu.instrument
         }
@@ -163,7 +166,7 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
             }
             if (x.nonEmpty) estimatedDelta = x.sum / x.size
             recentLowest = dailyQuotes.map(_.low_price.get).min
-            val y = dailyQuotes.sortWith((dq1, dq2) => {
+            var y = dailyQuotes.sortWith((dq1, dq2) => {
                 val x = for {
                     dq1h <- dq1.high_price
                     dq1l <- dq1.low_price
@@ -173,6 +176,20 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
                 x.contains(true)
             })((.82*N).toInt)
             safeDelta = (for {
+                high <- y.high_price
+                low <- y.low_price
+            } yield high - low).getOrElse(99)
+
+            y = dailyQuotes.sortWith((dq1, dq2) => {
+                val x = for {
+                    dq1h <- dq1.high_price
+                    dq1o <- dq1.open_price
+                    dq2h <- dq2.high_price
+                    dq2o <- dq2.open_price
+                } yield dq2h - dq2o - dq1h + dq1o > 0
+                x.contains(true)
+            })((.82*N).toInt)
+            safeOpenDelta = (for {
                 high <- y.high_price
                 low <- y.low_price
             } yield high - low).getOrElse(99)
@@ -414,7 +431,7 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
             val N = None
             val now = System.currentTimeMillis / 1000
             val quantity = (10 / ltp + 1).round.toInt
-            if (ltp < 1.01*recentLowest && ltp < .997*estimatedLow && fu.low.exists(ltp < 1.005*_) && (now - lastTimeBuySell > T)) {
+            if (fu.high.exists(ltp < _ - safeDelta) && ltp < thresholdBuy && now - lastTimeBuySell > T) {
                 val buyPrice = (ltp * 100).round.toDouble / 100
                 Some(("buy", quantity, buyPrice, OrderElement("_", "_", N, N, N, N, "_", N, N, N, N, N), "New buy"))
             }
@@ -463,28 +480,24 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
             fuLow <- fu.low
             fuHigh <- fu.high
         } yield fuHigh - fuLow
-        todayDelta.exists(td => ltp < sellPrice - max(smallestDelta, td)/4) && (ltp < fu.low.get) &&
-                (ltp < estimatedLow) && (System.currentTimeMillis/1000 - lastTimeBuySell > T) && (ltp < thresholdBuy)
+        val cond1 = (ltp < estimatedLow) && fu.low.exists(_ > ltp) && (ltp < sellPrice - .03) &&
+                todayDelta.exists(x => ltp < sellPrice - max(x, smallestDelta)/5)
+        val cond2 = ltp < .8*sellPrice
+        ltp < thresholdBuy && (System.currentTimeMillis/1000 - lastTimeBuySell > T) && (cond1 || cond2)
     }
 
     private def shouldBuyForTodaySell(ltp: Double, sellPrice: Double, T: Long): Boolean = {
         val fum = for {
             fuHigh <- fu.high
             fuLow <- fu.low
-        } yield ((fuHigh + fuLow)/2, fuHigh - fuLow)
+        } yield ((fuHigh + 2*fuLow)/3, fuHigh - fuLow)
         fum.exists(fm => ltp < sellPrice - max(smallestDelta, fm._2)/5) && (2*ltp < estimatedLow + estimatedHigh) &&
-                (ltp < thresholdBuy) && fum.exists(ltp < _._1) && (System.currentTimeMillis/1000 - lastTimeBuySell > T)
+                fum.exists(ltp < _._1) && (ltp < sellPrice - .05) &&
+                (ltp < thresholdBuy) && (System.currentTimeMillis/1000 - lastTimeBuySell > T)
     }
 
-    private def shouldBuyMoreForPast(ltp: Double, buyPrice: Double, T: Long): Boolean = {
-        val x = for {
-            fuLow <- fu.low
-            fuHigh <- fu.high
-        } yield abs((biggestDelta - (fuHigh-fuLow))/4)
-        (estimatedDelta > 0) && (biggestDelta > 0) && (estimatedLow > 0) && (ltp < .99*buyPrice) &&
-                x.exists(ltp < buyPrice - _) && fu.low.exists(ltp <= _) && (ltp <= estimatedLow) &&
-                (System.currentTimeMillis/1000 - lastTimeBuySell > T) && (ltp < thresholdBuy)
-    }
+    private def shouldBuyMoreForPast(ltp: Double, buyPrice: Double, T: Long): Boolean =
+        shouldBuyForPastSell(ltp, buyPrice, T)
 
     private def shouldBuyMoreForToday(ltp: Double, buyPrice: Double, T: Long): Boolean = {
         val x = for {
