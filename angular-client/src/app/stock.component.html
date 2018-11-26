@@ -13,13 +13,13 @@
       </div>
       <div style="display: table-row">
         <div class="small mono" style="display: table-cell"><span [hidden]="fu.high < 0">{{ fu.high.toFixed(2) }}</span></div>
-        <div class="small mono" style="display: table-cell"><span [hidden]="estimate_high < 0">{{ estimate_high.toFixed(2) }}</span></div>
+        <div class="small mono" style="display: table-cell"></div>
         <div class="small mono" style="color: #13f; display: table-cell">{{ showThreshold(thresholdSell) }}</div>
         <div style="display: table-cell"></div>
       </div>
       <div style="display: table-row">
         <div class="small mono" style="display: table-cell"><span [hidden]="fu.low < 0">{{ fu.low.toFixed(2) }}</span></div>
-        <div class="small mono" style="display: table-cell"><span [hidden]="estimate_low < 0">{{ estimate_low.toFixed(2) }}</span></div>
+        <div class="small mono" style="display: table-cell"></div>
         <div class="small mono" style="color: #f00; display: table-cell">{{ showThreshold(thresholdBuy) }}</div>
         <div style="text-align: right; display: table-cell" [ngStyle]="{'visibility': last_trade_price > 0 ? 'visible' : 'hidden'}">
           {{ last_trade_price.toFixed(2) }}

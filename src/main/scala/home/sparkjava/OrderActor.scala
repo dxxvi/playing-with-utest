@@ -74,7 +74,7 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
                     millisBetweenRequests = math.max(400, millisBetweenRequests - 100)
                 }
         )
-        case ho @ HistoricalOrders(symbol, instrument, _, _, next) =>
+        case ho @ HistoricalOrders(symbol, instrument, _, orders, next) =>
             if (System.currentTimeMillis - lastTimeRequest > millisBetweenRequests) {
                 val uri = if (next.isDefined) uri"${next.get}" else {
                     println(s"Send 1st historical order request for $symbol at ${LocalTime.now.format(DateTimeFormatter.ISO_LOCAL_TIME)}")
@@ -87,7 +87,7 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
                         .map(r => HistoricalOrdersResponse(r, ho)) pipeTo self
                 lastTimeRequest = System.currentTimeMillis
             }
-            else self ! ho
+            else if (orders.nonEmpty) self ! ho
         case HistoricalOrdersResponse(Response(rawErrorBody, code, statusText, _, _), HistoricalOrders(symbol, instrument, times, _orders, next)) =>
             rawErrorBody.fold(
                 _ => {

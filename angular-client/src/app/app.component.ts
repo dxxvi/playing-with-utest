@@ -54,15 +54,13 @@ export class AppComponent implements OnInit, OnDestroy {
             this.websocketService.sendMessageThroughSubject(symbol, { ORDERS: orders })
           }, isNewSymbol ? 200 : 1);
         }
-        else if (value.rest.startsWith('ESTIMATE: ')) {
-          const estimate = JSON.parse(value.rest.replace('ESTIMATE: ', ''));
-          isNewSymbol = this.addSymbolIfNotExist(symbol);
-          setTimeout(() => {
-            this.websocketService.sendMessageThroughSubject(symbol, { ESTIMATE: estimate })
-          }, isNewSymbol ? 200 : 1);
-        }
         else {
-          console.log(`Unknown message for ${symbol}: ${value.rest}`)
+          console.log(`Unknown message for ${symbol}: ${value.rest}`);
+          this.notices.push({
+            uuid: this.generateUUID(),
+            message: `Unknown message for ${symbol}: ${value.rest}`,
+            level: 'danger'
+          });
         }
       }
     );

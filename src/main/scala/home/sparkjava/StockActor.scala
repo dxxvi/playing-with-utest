@@ -168,13 +168,14 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
             lastQuoteHash = ""
         case "DEBUG" =>
             debug = true
-            logger.debug(
+            logger.warn(auditInfo())
+            logger.warn(
                 s"""isDow: $isDow, Fundamental: $fu, Position: $p, Quote: $q,
                    | gotHistoricalOrders: $gotHistoricalOrders, instrument: $instrument,
                    | lastTimeHistoricalOrdersRequested: ${new Date(lastTimeHistoricalOrdersRequested * 1000)},
                    | lastTimeHistoricalQuotesRequested: ${new Date(lastTimeHistoricalQuotesRequested * 1000)},
                    | lastTimeBuySell: ${new Date(lastTimeBuySell * 1000)}, lastTimeBuySell: ${new Date(lastTimeBuySell * 1000)},
-                   | orders: ${orders.map(_.toString).mkString("\n")},
+                   | orders: ${orders.map(_.toString).mkString("\n")}
                    | """.stripMargin)
     }
     override def receive: Receive = sideEffect andThen _receive
@@ -240,7 +241,8 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
         f(List[OrderElement](), tbOrders)
     }
 
-    private def auditInfo(): String = s"thresholdBuy: $thresholdBuy, thresholdSell: $thresholdSell, " +
+    private def auditInfo(): String = s"HL49: $HL49, HL31: $HL31, HL10: $HL10, HO49: $HO49, HO10: $HO10, OL49: $OL49, " +
+            s"OL10: $OL10, CL49: $CL49, thresholdBuy: $thresholdBuy, thresholdSell: $thresholdSell, " +
             s"fundamental: ${fu.copy(instrument = "~")}, position: ${p.copy(instrument = Some("~"))}, quote: $q"
 
     private def combineIds(s1: String, s2: String): String = if (s1 < s2) s"$s1-$s2" else s"$s2-$s1"
@@ -259,12 +261,15 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
 
     private def getHistoricalOrders(T: Int) {
         val now = System.currentTimeMillis / 1000
-        if (p.quantity.exists(_ >= 0) && orders.isEmpty && (now - lastTimeHistoricalOrdersRequested > T)
-                && !gotHistoricalOrders) {
+        if (p.quantity.exists(_ >= 0) && orders.isEmpty && now - lastTimeHistoricalOrdersRequested > T &&
+                !gotHistoricalOrders) {
             // Use T because we should wait for the OrderActor a bit because we receive quote every 4 seconds
             lastTimeHistoricalOrdersRequested = now
             context.actorSelection(s"../../${OrderActor.NAME}") ! HistoricalOrders(symbol, instrument, 4, Nil, None)
         }
+        else
+            println(s"$symbol p.quantity: ${p.quantity}, orders.isEmpty: ${orders.isEmpty}, now: $now, lastTime: " +
+                    s"$lastTimeHistoricalOrdersRequested, gotHistoricalOrders: $gotHistoricalOrders")
     }
 
     private def isAcceptableOrderState(state: String, oe: OrderElement): Boolean =

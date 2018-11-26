@@ -15,8 +15,6 @@ export class StockComponent implements OnInit, OnDestroy {
   fu: Fundamental = new Fundamental();
   po: Position = new Position();
   last_trade_price = -.1;
-  estimate_low = -.1;
-  estimate_high = -.1;
   hideMatches = false;
   orders: Array<Order> = [];
   matchId2mId: { [key: string]: string; } = {};
@@ -74,10 +72,6 @@ export class StockComponent implements OnInit, OnDestroy {
             mId: mId
           };
         });
-      else if (message.ESTIMATE) {
-        this.estimate_low = message.ESTIMATE.low;
-        this.estimate_high = message.ESTIMATE.high;
-      }
     });
   }
 

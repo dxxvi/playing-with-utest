@@ -76,6 +76,12 @@ object Main {
             s"Dow future is ${Main.dowFuture}"
         })
 
+        Spark.get("/debug/:symbol", (request: Request, response: Response) => {
+            val symbol = request.params(":symbol")
+            actorSystem.actorSelection(s"$mainActorPath/symbol-$symbol") ! "DEBUG"
+            s"A DEBUG message was sent to $symbol. Check the console/log."
+        })
+
         Spark.init()                   // Needed if no HTTP route is defined after the WebSocket routes
         webSocketListener
     }
@@ -94,7 +100,9 @@ object Main {
                         config.getString(s"dow.$symbol.instrument"),
                         (f(config.getString(s"dow.$symbol.name"), config.getString(s"dow.$symbol.simple_name")), symbol)
                 ))
+        val t1 = System.currentTimeMillis()
         val conf = ConfigFactory.load("stock.conf")
+        println(s"Loading stock.conf took ${System.currentTimeMillis - t1}")
         InstrumentActor.instrument2NameSymbol ++= conf.getConfig("soi").root().keySet().asScala
                 .map(symbol => (
                         conf.getString(s"soi.$symbol.instrument"),
