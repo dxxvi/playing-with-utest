@@ -5,6 +5,8 @@ import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.json4s.native.Serialization
 
+import scala.util.Try
+
 object Quote extends Util {
     /**
       * @param s like in quotes.json
@@ -82,21 +84,31 @@ object DailyQuote extends Util {
     def deserialize2(s: String): List[DailyQuote] = historicalsJValueToDailyQuoteList(parse(s) \ "historicals")
 
     private def historicalsJValueToDailyQuoteList(jValue: JValue): List[DailyQuote] = jValue match {
-        case JArray(_historicals) => _historicals map {_h => DailyQuote(
-            fromStringToOption[String](_h, "begins_at"),
-            fromStringToOption[Double](_h, "open_price"),
-            fromStringToOption[Double](_h, "close_price"),
-            fromStringToOption[Double](_h, "high_price"),
-            fromStringToOption[Double](_h, "low_price")
-        )}
+        case JArray(_historicals) =>
+            _historicals map { _h => Try({
+                val begins_at = (_h \ "begins_at").asInstanceOf[JString]
+                val open_price = (_h \ "open_price").asInstanceOf[JString]
+                val close_price = (_h \ "close_price").asInstanceOf[JString]
+                val high_price = (_h \ "high_price").asInstanceOf[JString]
+                val low_price = (_h \ "low_price").asInstanceOf[JString]
+                DailyQuote(
+                    begins_at.values,
+                    open_price.values.toDouble,
+                    close_price.values.toDouble,
+                    high_price.values.toDouble,
+                    low_price.values.toDouble
+                )
+            }).getOrElse(DailyQuote("", Double.NaN, Double.NaN, Double.NaN, Double.NaN))} filter { dq =>
+                dq.open_price != Double.NaN && dq.close_price != Double.NaN && dq.high_price != Double.NaN && dq.low_price != Double.NaN
+            }
         case _ => List[DailyQuote]()
     }
 }
 
 case class DailyQuote(
-    begins_at: Option[String],
-    open_price: Option[Double],
-    close_price: Option[Double],
-    high_price: Option[Double],
-    low_price: Option[Double]
+    begins_at: String,
+    open_price: Double,
+    close_price: Double,
+    high_price: Double,
+    low_price: Double
 )

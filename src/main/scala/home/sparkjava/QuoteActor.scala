@@ -15,7 +15,6 @@ import home.sparkjava.model.{DailyQuote, Quote}
 import org.apache.logging.log4j.ThreadContext
 
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
 object QuoteActor {
     val NAME = "quoteActor"
@@ -76,8 +75,7 @@ class QuoteActor(config: Config) extends Actor with Timers with Util {
                 _ => logger.error(s"Error in getting daily quotes: $code $statusText"),
                 a => {
                     a foreach(t => {
-                        context.actorSelection(s"../${MainActor.NAME}/symbol-${t._1}") !
-                                DailyQuoteReturn(t._2.filter(dq => dq.begins_at.isDefined && dq.low_price.isDefined && dq.high_price.isDefined))
+                        context.actorSelection(s"../${MainActor.NAME}/symbol-${t._1}") ! DailyQuoteReturn(t._2)
                     })
                 }
         )
@@ -94,7 +92,7 @@ class QuoteActor(config: Config) extends Actor with Timers with Util {
                     val n = a.size
                     val quotes = if (n >= 20) a.drop(n - 20) else a
                     val s = "Date,Open,Close,High,Low,Delta\n" + quotes.collect {
-                        case DailyQuote(Some(begins), Some(open), Some(close), Some(high), Some(low)) =>
+                        case DailyQuote(begins, open, close, high, low) =>
                             s"${begins.substring(0, 10)},$open,$close,$high,$low,${((high-low)*1000).round.toDouble/1000}"
                     }.mkString("\n")
                     Files.write(Paths.get(s"$symbol.csv"), s.getBytes,

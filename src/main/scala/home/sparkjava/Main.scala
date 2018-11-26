@@ -12,8 +12,10 @@ import scala.collection.JavaConverters._
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration._
 import scala.io.StdIn
+import scala.util.Try
 
 object Main {
+    var dowFuture: Int = 0
     val instrument2Symbol: TrieMap[String, String] = TrieMap()
     val clearThreadContextMap: PartialFunction[Any, Any] = { case x => ThreadContext.clearMap(); x }
 
@@ -63,6 +65,15 @@ object Main {
             val symbol = request.params(":symbol")
             actorSystem.actorSelection(s"$mainActorPath/../${QuoteActor.NAME}") ! QuoteActor.Download(symbol)
             s"$symbol.csv was generated."
+        })
+
+        Spark.get("/dow/:dowFuture", (request: Request, response: Response) => {
+            Main.dowFuture = Try(request.params(":dowFuture").toInt).getOrElse(0)
+            s"DOW future is set to ${Main.dowFuture}"
+        })
+
+        Spark.get("/dow", (request: Request, response: Response) => {
+            s"Dow future is ${Main.dowFuture}"
         })
 
         Spark.init()                   // Needed if no HTTP route is defined after the WebSocket routes
