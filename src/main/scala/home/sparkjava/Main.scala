@@ -102,7 +102,6 @@ object Main {
                 ))
         val t1 = System.currentTimeMillis()
         val conf = ConfigFactory.load("stock.conf")
-        println(s"Loading stock.conf took ${System.currentTimeMillis - t1}")
         InstrumentActor.instrument2NameSymbol ++= conf.getConfig("soi").root().keySet().asScala
                 .map(symbol => (
                         conf.getString(s"soi.$symbol.instrument"),
@@ -112,7 +111,7 @@ object Main {
 
     def calculateShortDuration(): FiniteDuration = {
         val hour = LocalDateTime.now.getHour
-        if (hour < 9 || hour > 21) 30.seconds else 4.seconds
+        if (hour < 9 || hour > 15) 4.seconds else 4.seconds
     }
 }
 

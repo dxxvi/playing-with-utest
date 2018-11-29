@@ -250,7 +250,8 @@ object ActorTests extends TestSuite with Util with TestUtil {
             var config = ConfigFactory.load()
             implicit val httpBackend: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(config)
             config = ConfigFactory.load("stock.conf")
-            val goodSymbols = config.getConfig("soi").root().keySet().asScala.filter(symbol => {
+            val symbols = config.getConfig("soi").root().keySet().asScala
+            val goodSymbols = symbols.filter(symbol => {
                 val fundamentals = s"https://api.robinhood.com/fundamentals/$symbol/"
                 val y: Future[Response[JObject]] = sttp
                         .get(uri"$fundamentals")
@@ -258,7 +259,7 @@ object ActorTests extends TestSuite with Util with TestUtil {
                         .send()
                 var result = false
                 Await.result(y, 9.seconds).rawErrorBody.fold(
-                    _ => println("Error"),
+                    _ => println(s"Error for $symbol"),
                     jObject => jObject \ "average_volume_2_weeks" match {
                         case JString(x) if x.toDouble > 1567890 => result = true
                         case _ =>
@@ -266,6 +267,13 @@ object ActorTests extends TestSuite with Util with TestUtil {
                 )
                 result
             })
+            goodSymbols.foreach(symbol => println(
+                s"""  $symbol {
+                   |    instrument = ${config.getString("soi." + symbol + ".instrument")}
+                   |    name = ${config.getString("soi." + symbol + ".name")}
+                   |    simple_name = ${config.getString("soi." + symbol + ".simple_name")}
+                   |  }
+                 """.stripMargin))
         }
     }
 }

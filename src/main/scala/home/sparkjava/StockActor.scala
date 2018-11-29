@@ -16,7 +16,6 @@ import model._
 
 import scala.annotation.tailrec
 import scala.math._
-import scala.util.Random
 
 object StockActor {
     def props(symbol: String, config: Config): Props = Props(new StockActor(symbol, config))
@@ -46,7 +45,7 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
     var gotHistoricalOrders = false
 
     var instrument = ""
-    var lastTimeHistoricalOrdersRequested: Long = 0 // in seconds
+    var canSendHistoricalOrders = false
     var lastTimeHistoricalQuotesRequested: Long = 0
     var lastTimeBuySell: Long = 0 // in seconds
     val today: String = LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)
@@ -136,6 +135,9 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
                 lastTimeHistoricalQuotesRequested = now
                 context.actorSelection(s"../../${QuoteActor.NAME}") ! GetDailyQuote(List(symbol), 0)
             }
+        case MainActor.GoAheadSendHistoricalOrders => canSendHistoricalOrders = true
+            logger.debug(s"$symbol ok to send HistoricalOrders message")
+        case MainActor.DonotSendHistoricalOrders => canSendHistoricalOrders = false
         case HistoricalOrders(_, _, _, _orders, _) =>
             gotHistoricalOrders = true
             orders ++= _orders.collect {
@@ -172,7 +174,6 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
             logger.warn(
                 s"""isDow: $isDow, Fundamental: $fu, Position: $p, Quote: $q,
                    | gotHistoricalOrders: $gotHistoricalOrders, instrument: $instrument,
-                   | lastTimeHistoricalOrdersRequested: ${new Date(lastTimeHistoricalOrdersRequested * 1000)},
                    | lastTimeHistoricalQuotesRequested: ${new Date(lastTimeHistoricalQuotesRequested * 1000)},
                    | lastTimeBuySell: ${new Date(lastTimeBuySell * 1000)}, lastTimeBuySell: ${new Date(lastTimeBuySell * 1000)},
                    | orders: ${orders.map(_.toString).mkString("\n")}
@@ -260,16 +261,14 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
     } yield true
 
     private def getHistoricalOrders(T: Int) {
-        val now = System.currentTimeMillis / 1000
-        if (p.quantity.exists(_ >= 0) && orders.isEmpty && now - lastTimeHistoricalOrdersRequested > T &&
-                !gotHistoricalOrders) {
+        logger.debug(s"position ${p.quantity} orders empty: ${orders.isEmpty} " +
+                s"gotHistoricalOrders: $gotHistoricalOrders, canSendHistoricalOrders: $canSendHistoricalOrders")
+        if (p.quantity.exists(_ >= 0) && orders.isEmpty && !gotHistoricalOrders && canSendHistoricalOrders) {
             // Use T because we should wait for the OrderActor a bit because we receive quote every 4 seconds
-            lastTimeHistoricalOrdersRequested = now
             context.actorSelection(s"../../${OrderActor.NAME}") ! HistoricalOrders(symbol, instrument, 4, Nil, None)
+            canSendHistoricalOrders = false
         }
-        else
-            println(s"$symbol p.quantity: ${p.quantity}, orders.isEmpty: ${orders.isEmpty}, now: $now, lastTime: " +
-                    s"$lastTimeHistoricalOrdersRequested, gotHistoricalOrders: $gotHistoricalOrders")
+        else context.actorSelection(s"../../${MainActor.NAME}") ! MainActor.CanStockActorSendHistoricalOrders
     }
 
     private def isAcceptableOrderState(state: String, oe: OrderElement): Boolean =

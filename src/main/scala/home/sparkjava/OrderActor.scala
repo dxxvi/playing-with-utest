@@ -74,20 +74,16 @@ class OrderActor(config: Config) extends Actor with Timers with Util {
                     millisBetweenRequests = math.max(400, millisBetweenRequests - 100)
                 }
         )
-        case ho @ HistoricalOrders(symbol, instrument, _, orders, next) =>
-            if (System.currentTimeMillis - lastTimeRequest > millisBetweenRequests) {
-                val uri = if (next.isDefined) uri"${next.get}" else {
-                    println(s"Send 1st historical order request for $symbol at ${LocalTime.now.format(DateTimeFormatter.ISO_LOCAL_TIME)}")
-                    uri"${SERVER}orders/".queryFragment(QueryFragment.KeyValue("instrument", instrument, valueEncoding = QueryFragmentEncoding.All))
-                }
-                sttp.header("Authorization", authorization)
-                        .get(uri)
-                        .response(asString.map(Orders.deserialize))
-                        .send()
-                        .map(r => HistoricalOrdersResponse(r, ho)) pipeTo self
-                lastTimeRequest = System.currentTimeMillis
+        case ho @ HistoricalOrders(symbol, instrument, _, _, next) =>
+            val uri = if (next.isDefined) uri"${next.get}" else {
+                println(s"Send 1st historical order request for $symbol at ${LocalTime.now.format(DateTimeFormatter.ISO_LOCAL_TIME)}")
+                uri"${SERVER}orders/".queryFragment(QueryFragment.KeyValue("instrument", instrument, valueEncoding = QueryFragmentEncoding.All))
             }
-            else if (orders.nonEmpty) self ! ho
+            sttp.header("Authorization", authorization)
+                    .get(uri)
+                    .response(asString.map(Orders.deserialize))
+                    .send()
+                    .map(r => HistoricalOrdersResponse(r, ho)) pipeTo self
         case HistoricalOrdersResponse(Response(rawErrorBody, code, statusText, _, _), HistoricalOrders(symbol, instrument, times, _orders, next)) =>
             rawErrorBody.fold(
                 _ => {
