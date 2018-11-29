@@ -100,7 +100,6 @@ object Main {
                         config.getString(s"dow.$symbol.instrument"),
                         (f(config.getString(s"dow.$symbol.name"), config.getString(s"dow.$symbol.simple_name")), symbol)
                 ))
-        val t1 = System.currentTimeMillis()
         val conf = ConfigFactory.load("stock.conf")
         InstrumentActor.instrument2NameSymbol ++= conf.getConfig("soi").root().keySet().asScala
                 .map(symbol => (
@@ -111,7 +110,7 @@ object Main {
 
     def calculateShortDuration(): FiniteDuration = {
         val hour = LocalDateTime.now.getHour
-        if (hour < 9 || hour > 15) 4.seconds else 4.seconds
+        if (hour < 9 || hour > 15) 29.seconds else 4.seconds
     }
 }
 

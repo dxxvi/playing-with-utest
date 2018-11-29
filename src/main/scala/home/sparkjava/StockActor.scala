@@ -92,9 +92,6 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
             sendPosition
             if (p.instrument.nonEmpty) instrument = p.instrument.get
 
-            val T = 19
-            getHistoricalOrders(T)
-
             if (orders.nonEmpty) {
                 var totalShares: Int = 0
                 val x = lastRoundOrders() // x has (un)confirmed, (partially) filled orders
@@ -136,7 +133,7 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
                 context.actorSelection(s"../../${QuoteActor.NAME}") ! GetDailyQuote(List(symbol), 0)
             }
         case MainActor.GoAheadSendHistoricalOrders => canSendHistoricalOrders = true
-            logger.debug(s"$symbol ok to send HistoricalOrders message")
+            logger.debug(s"ok to send HistoricalOrders message")
         case MainActor.DonotSendHistoricalOrders => canSendHistoricalOrders = false
         case HistoricalOrders(_, _, _, _orders, _) =>
             gotHistoricalOrders = true
@@ -264,11 +261,13 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
         logger.debug(s"position ${p.quantity} orders empty: ${orders.isEmpty} " +
                 s"gotHistoricalOrders: $gotHistoricalOrders, canSendHistoricalOrders: $canSendHistoricalOrders")
         if (p.quantity.exists(_ >= 0) && orders.isEmpty && !gotHistoricalOrders && canSendHistoricalOrders) {
-            // Use T because we should wait for the OrderActor a bit because we receive quote every 4 seconds
             context.actorSelection(s"../../${OrderActor.NAME}") ! HistoricalOrders(symbol, instrument, 4, Nil, None)
             canSendHistoricalOrders = false
         }
-        else context.actorSelection(s"../../${MainActor.NAME}") ! MainActor.CanStockActorSendHistoricalOrders
+        else if (!gotHistoricalOrders && !canSendHistoricalOrders) {
+            logger.debug("getting ticket to send HistoricalOrders")
+            context.actorSelection(s"../../${MainActor.NAME}") ! MainActor.CanStockActorSendHistoricalOrders
+        }
     }
 
     private def isAcceptableOrderState(state: String, oe: OrderElement): Boolean =

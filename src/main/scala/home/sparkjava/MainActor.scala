@@ -29,10 +29,12 @@ class MainActor(config: Config) extends Actor with Timers with Util {
       */
     var historicalOrdersTicket: Long = 1
 
-    timers.startPeriodicTimer(Tick, Tick, (Main.calculateShortDuration().toMillis / 6).milliseconds)
+    timers.startPeriodicTimer(Tick, Tick, (Main.calculateShortDuration().toMillis / 4).milliseconds)
 
     val _receive: Receive = {
-        case Tick => historicalOrdersTicket = historicalOrdersTicket + 1
+        case Tick =>
+            historicalOrdersTicket = historicalOrdersTicket + 1
+            if (historicalOrdersTicket > 10) historicalOrdersTicket = 7
         case AddSymbol(symbol) if symbol != "TESTING" =>
             context.actorSelection(s"../$NAME/symbol-$symbol") ! Identify(symbol)
         case ActorIdentity(id, None) =>
