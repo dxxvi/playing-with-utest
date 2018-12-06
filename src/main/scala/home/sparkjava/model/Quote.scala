@@ -99,7 +99,7 @@ object DailyQuote extends Util {
                     low_price.values.toDouble
                 )
             }).getOrElse(DailyQuote("", Double.NaN, Double.NaN, Double.NaN, Double.NaN))} filter { dq =>
-                dq.open_price != Double.NaN && dq.close_price != Double.NaN && dq.high_price != Double.NaN && dq.low_price != Double.NaN
+                !dq.open_price.isNaN && !dq.close_price.isNaN && !dq.high_price.isNaN && !dq.low_price.isNaN
             }
         case _ => List[DailyQuote]()
     }

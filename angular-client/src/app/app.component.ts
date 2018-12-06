@@ -54,6 +54,20 @@ export class AppComponent implements OnInit, OnDestroy {
             this.websocketService.sendMessageThroughSubject(symbol, { ORDERS: orders })
           }, isNewSymbol ? 200 : 1);
         }
+        else if (value.rest.startsWith('HISTORICAL_QUOTES: ')) {
+          const hqs = JSON.parse(value.rest.replace('HISTORICAL_QUOTES: ', ''));
+          isNewSymbol = this.addSymbolIfNotExist(symbol);
+          setTimeout(() => {
+            this.websocketService.sendMessageThroughSubject(symbol, { HISTORICAL_QUOTES: hqs })
+          }, isNewSymbol ? 200 : 1);
+        }
+        else if (value.rest.startsWith('CURRENT_STATUS: ')) {
+          const currentStatus = JSON.parse(value.rest.replace('CURRENT_STATUS: ', ''));
+          isNewSymbol = this.addSymbolIfNotExist(symbol);
+          setTimeout(() => {
+            this.websocketService.sendMessageThroughSubject(symbol, { CURRENT_STATUS: currentStatus })
+          }, isNewSymbol ? 200 : 1);
+        }
         else {
           console.log(`Unknown message for ${symbol}: ${value.rest}`);
           this.notices.push({

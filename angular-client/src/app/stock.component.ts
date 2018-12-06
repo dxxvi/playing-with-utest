@@ -22,6 +22,21 @@ export class StockComponent implements OnInit, OnDestroy {
   thresholdBuy = 9999;
   thresholdSell = 0;
   debug = false;
+  HL49: number = null;
+  HL31: number = null;
+  HL10: number = null;
+  HO49: number = null;
+  HO10: number = null;
+  OL49: number = null;
+  OL10: number = null;
+  CL49: number = null;
+  showStats: boolean = true;
+  currentStats: { hCurrent: string, currentL: string, coooc: string, cooocValue: string} = {
+    hCurrent: null,
+    currentL: null,
+    coooc: null,
+    cooocValue: null
+  };
   private subscription: Subscription;
 
   @Input('_symbol') set _symbol(value: string) {
@@ -72,6 +87,31 @@ export class StockComponent implements OnInit, OnDestroy {
             mId: mId
           };
         });
+      else if (message.HISTORICAL_QUOTES) {
+        this.HL10 = message.HISTORICAL_QUOTES.HL10;
+        this.HL31 = message.HISTORICAL_QUOTES.HL31;
+        this.HL49 = message.HISTORICAL_QUOTES.HL49;
+        this.HO10 = message.HISTORICAL_QUOTES.HO10;
+        this.HO49 = message.HISTORICAL_QUOTES.HO49;
+        this.OL10 = message.HISTORICAL_QUOTES.OL10;
+        this.OL49 = message.HISTORICAL_QUOTES.OL49;
+        this.CL49 = message.HISTORICAL_QUOTES.CL49;
+      }
+      else if (typeof message.SHOW_STASTISTIC_DATA !== 'undefined') {
+        this.showStats = message.SHOW_STASTISTIC_DATA
+      }
+      else if (message.CURRENT_STATUS) {
+        this.currentStats.hCurrent = message.CURRENT_STATUS.HCurrent;
+        this.currentStats.currentL = message.CURRENT_STATUS.CurrentL;
+        if (typeof message.CURRENT_STATUS.CurrentO != 'undefined') {
+          this.currentStats.coooc = 'co';
+          this.currentStats.cooocValue = message.CURRENT_STATUS.CurrentO;
+        }
+        else {
+          this.currentStats.coooc = 'oc';
+          this.currentStats.cooocValue = message.CURRENT_STATUS.OCurrent;
+        }
+      }
     });
   }
 

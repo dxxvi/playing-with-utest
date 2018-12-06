@@ -14,7 +14,7 @@ export class WebsocketService {
     const url = new URL(location.href);
     this.ws = new WebSocket(`ws://${url.hostname}:${url.port}/ws`);
     this.ws.onmessage = (event) => {
-      this.processReceivedString(event.data);
+      this.processReceivedString(event.data, true);
     };
     this.ws.onerror   = (event) => {
       console.log(`websocket error ${event}`);
@@ -31,17 +31,22 @@ export class WebsocketService {
       subject = new Subject<any>();
       this.name2Subject.set(name, subject);
     }
-    return subject;
+    return subject
   }
 
-  processReceivedString(message: string) {
-    console.log(`.`);
+  getSymbolNames(): Array<string> {
+    // there are MULTI_QUOTES, FUNDAMENTAL_REVIEW, DOW_STOCKS, SYMBOL_FOUND, NOTICE_ADD
+    return Array.from(this.name2Subject.keys()).filter(s => !s.includes('_'))
+  }
+
+  processReceivedString(message: string, b: boolean) {
+    if (!b) console.log('.');
     const i = message.indexOf(': ');
     if (i === -1) {
       console.error(`Unknown message ${message}`);
     }
     else if (message.includes('MULTI_QUOTES: ')) {
-      message.replace('MULTI_QUOTES: ', '').split(' | ').forEach(m => this.processReceivedString(m));
+      message.replace('MULTI_QUOTES: ', '').split(' | ').forEach(m => this.processReceivedString(m, false));
     }
     else if (message.includes('FUNDAMENTAL_REVIEW: ')) {
       // the message looks like FUNDAMENTAL_REVIEW: AMD: { fundamental: { ... }, quotes: [...] }

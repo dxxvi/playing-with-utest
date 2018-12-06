@@ -12,6 +12,7 @@ export class ConfigurationComponent implements OnInit, OnDestroy {
   open = false;
   message: string = null;
   symbol: string = null;
+  showStats: boolean = true;
   compound: {
     symbol: string,
     fundamental: {
@@ -153,7 +154,7 @@ export class ConfigurationComponent implements OnInit, OnDestroy {
 
   sendMessageToBrowser() {
     if (this.message != null && this.message.trim() != '') {
-      this.websocketService.processReceivedString(this.message);
+      this.websocketService.processReceivedString(this.message, true);
       setTimeout(() => {
         this.message = null;
       }, 3456)
@@ -177,5 +178,12 @@ export class ConfigurationComponent implements OnInit, OnDestroy {
         this.symbol = null;
       }, 3456);
     }
+  }
+
+  showOrHideStastiticData() {
+    this.showStats = !this.showStats;
+    this.websocketService.getSymbolNames().forEach(symbol => {
+      this.websocketService.sendMessageThroughSubject(symbol, { SHOW_STASTISTIC_DATA: this.showStats })
+    })
   }
 }

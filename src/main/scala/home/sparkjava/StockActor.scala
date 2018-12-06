@@ -26,7 +26,7 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
     val md5Digest: MessageDigest = MessageDigest.getInstance("MD5")
     val isDow: Boolean = isDow(symbol)
     var fu = Fundamental(
-        Some(-.1), Some(-.1), Some(""), Some(-.1), Some(-.1), Some(-.1), Some(-.1), Some(-.1), Some(-.1), Some(-.1), "",
+        Some(-.1), Some(-.1), Some(""), Some(-.1), None, Some(-.1), None, Some(-.1), Some(-.1), Some(-.1), "",
         "", 0, 9999
     )
     var p = Position(
@@ -42,7 +42,9 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
     var lastPositionHash = ""
     var lastFundamentalHash = ""
     var lastQuoteHash = ""
+    var lastCurrentStatusHash = ""
     var gotHistoricalOrders = false
+    var hlSentToBrowser = false  // HL49, HL31, HL10, HO49, HO10, OL49, OL10, CL49 sent to browser
 
     var instrument = ""
     var canSendHistoricalOrders = false
@@ -61,6 +63,12 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
     var OL49: Double = Double.NaN
     var OL10: Double = Double.NaN
     var CL49: Double = Double.NaN
+    var HL: List[DailyQuote] = Nil
+    var HO: List[DailyQuote] = Nil
+    var OL: List[DailyQuote] = Nil
+    var highCurrent: String = ""
+    var currentLow: String = ""
+    var openCurrent: String = ""
 
     var debug: Boolean = false
     var thresholdBuy: Double = -1
@@ -127,13 +135,34 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
 
             getHistoricalOrders(T)
 
-            val now = System.currentTimeMillis()/1000
-            if (HL49 == Double.NaN && (now - lastTimeHistoricalQuotesRequested > T)) {
+            val now = System.currentTimeMillis/1000
+            if (HL49.isNaN && (now - lastTimeHistoricalQuotesRequested > T)) {
                 lastTimeHistoricalQuotesRequested = now
                 context.actorSelection(s"../../${QuoteActor.NAME}") ! GetDailyQuote(List(symbol), 0)
             }
+            if (!HL49.isNaN && !hlSentToBrowser) {
+                hlSentToBrowser = true
+                val map: Map[String, Double] = Map("HL49" -> HL49, "HL31" -> HL31, "HL10" -> HL10, "HO49" -> HO49,
+                    "HO10" -> HO10, "OL49" -> OL49, "OL10" -> OL10, "CL49" -> CL49)
+                val message = s"$symbol: HISTORICAL_QUOTES: ${Serialization.write(map)(DefaultFormats)}"
+                context.actorSelection(s"../../${WebSocketActor.NAME}") ! message
+            }
+            if (!HL49.isNaN && !openPrice.isNaN && fu.high.isDefined && fu.low.isDefined) {
+                val map = collection.mutable.Map[String, String]()
+                map += ("HCurrent" -> ("HL" + HL.takeWhile(dq => dq.high_price - dq.low_price < fu.high.get - q.last_trade_price.get).size))
+                map += ("CurrentL" -> ("HL" + HL.takeWhile(dq => dq.high_price - dq.low_price < q.last_trade_price.get - fu.low.get).size))
+                if (q.last_trade_price.get > openPrice)
+                    map += ("CurrentO" -> ("HO" + HO.takeWhile(dq => dq.high_price - dq.open_price < q.last_trade_price.get - openPrice).size))
+                else
+                    map += ("OCurrent" -> ("OL" + OL.takeWhile(dq => dq.open_price - dq.low_price < openPrice - q.last_trade_price.get).size))
+                val message = s"$symbol: CURRENT_STATUS: ${Serialization.write(map)(DefaultFormats)}"
+                val currentStatusHash = new String(md5Digest.digest(message.getBytes))
+                if (lastCurrentStatusHash != currentStatusHash) {
+                    context.actorSelection(s"../../${WebSocketActor.NAME}") ! message
+                    lastCurrentStatusHash = currentStatusHash
+                }
+            }
         case MainActor.GoAheadSendHistoricalOrders => canSendHistoricalOrders = true
-            logger.debug(s"ok to send HistoricalOrders message")
         case MainActor.DonotSendHistoricalOrders => canSendHistoricalOrders = false
         case HistoricalOrders(_, _, _, _orders, _) =>
             gotHistoricalOrders = true
@@ -146,14 +175,14 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
             val N = 62
             val dailyQuotes: List[DailyQuote] = dQuotes.reverse.take(N)
 
-            val HL = dailyQuotes.sortWith((dq1, dq2) => dq1.high_price - dq1.low_price < dq2.high_price - dq2.low_price)
+            HL = dailyQuotes.sortWith((dq1, dq2) => dq1.high_price - dq1.low_price < dq2.high_price - dq2.low_price)
             HL49 = HL(49).high_price - HL(49).low_price
             HL31 = HL(31).high_price - HL(31).low_price
             HL10 = HL(10).high_price - HL(10).low_price
-            val HO = dailyQuotes.sortWith((dq1, dq2) => dq1.high_price - dq1.open_price < dq2.high_price - dq2.open_price)
+            HO = dailyQuotes.sortWith((dq1, dq2) => dq1.high_price - dq1.open_price < dq2.high_price - dq2.open_price)
             HO49 = HO(49).high_price - HO(49).open_price
             HO10 = HO(10).high_price - HO(10).open_price
-            val OL = dailyQuotes.sortWith((dq1, dq2) => dq1.open_price - dq1.low_price < dq2.open_price - dq2.low_price)
+            OL = dailyQuotes.sortWith((dq1, dq2) => dq1.open_price - dq1.low_price < dq2.open_price - dq2.low_price)
             OL49 = OL(49).open_price - OL(49).low_price
             OL10 = OL(10).open_price - OL(10).low_price
             val CL = dailyQuotes.sortWith((dq1, dq2) => dq1.close_price - dq1.low_price < dq2.close_price - dq2.low_price)
@@ -165,6 +194,8 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
             lastPositionHash = ""
             lastFundamentalHash = ""
             lastQuoteHash = ""
+            lastCurrentStatusHash = ""
+            hlSentToBrowser = false
         case "DEBUG" =>
             debug = true
             logger.warn(auditInfo())
@@ -258,16 +289,12 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
     } yield true
 
     private def getHistoricalOrders(T: Int) {
-        logger.debug(s"position ${p.quantity} orders empty: ${orders.isEmpty} " +
-                s"gotHistoricalOrders: $gotHistoricalOrders, canSendHistoricalOrders: $canSendHistoricalOrders")
         if (p.quantity.exists(_ >= 0) && orders.isEmpty && !gotHistoricalOrders && canSendHistoricalOrders) {
             context.actorSelection(s"../../${OrderActor.NAME}") ! HistoricalOrders(symbol, instrument, 4, Nil, None)
             canSendHistoricalOrders = false
         }
-        else if (!gotHistoricalOrders && !canSendHistoricalOrders) {
-            logger.debug("getting ticket to send HistoricalOrders")
+        else if (!gotHistoricalOrders && !canSendHistoricalOrders)
             context.actorSelection(s"../../${MainActor.NAME}") ! MainActor.CanStockActorSendHistoricalOrders
-        }
     }
 
     private def isAcceptableOrderState(state: String, oe: OrderElement): Boolean =
@@ -377,8 +404,8 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
             val N = None
             val now = System.currentTimeMillis / 1000
             val quantity = (10 / ltp + 1).round.toInt
-            val cond1 = HL49 != Double.NaN && fu.high.exists(ltp <= _ - HL49)
-            val cond2 = OL49 != Double.NaN && ltp <= openPrice - OL49
+            val cond1 = !HL49.isNaN && fu.high.exists(ltp <= _ - HL49)
+            val cond2 = !OL49.isNaN && ltp <= openPrice - OL49
             if ((cond1 || cond2) && ltp < thresholdBuy && now - lastTimeBuySell > T) {
                 val buyPrice = (ltp * 100).round.toDouble / 100
                 Some(("buy", quantity, buyPrice, OrderElement("_", "_", N, N, N, N, "_", N, N, N, N, N), "New buy"))
@@ -428,9 +455,9 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
             fuLow <- fu.low
             fuHigh <- fu.high
         } yield fuHigh - fuLow
-        val cond1 = todayDelta.nonEmpty && HL49 != Double.NaN && ltp <= fu.high.get - HL49 &&
+        val cond1 = todayDelta.nonEmpty && !HL49.isNaN && ltp <= fu.high.get - HL49 &&
                 ltp <= sellPrice - max(.05, todayDelta.get/10)
-        val cond2 = todayDelta.nonEmpty && HL31 != Double.NaN && HL10 != Double.NaN && OL10 != Double.NaN &&
+        val cond2 = todayDelta.nonEmpty && !HL31.isNaN && !HL10.isNaN && !OL10.isNaN &&
                 Main.dowFuture > 100 && ltp < sellPrice - HL31 && (ltp < fu.high.get - HL10 || ltp < openPrice - OL10)
         ltp < thresholdBuy && (System.currentTimeMillis/1000 - lastTimeBuySell > T) && (cond1 || cond2)
     }
@@ -445,14 +472,14 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
     }
 
     private def shouldBuyMoreForPast(ltp: Double, buyPrice: Double, T: Long): Boolean = {
-        val cond1 = fu.high.nonEmpty && HL49 != Double.NaN && ltp <= fu.high.get - HL49
-        val cond2 = OL49 != Double.NaN && ltp <= openPrice - OL49
-        val cond3 = HL31 != Double.NaN && ltp < buyPrice - HL31
+        val cond1 = fu.high.nonEmpty && !HL49.isNaN && ltp <= fu.high.get - HL49
+        val cond2 = !OL49.isNaN && ltp <= openPrice - OL49
+        val cond3 = !HL31.isNaN && ltp < buyPrice - HL31
         (ltp < thresholdBuy) && (System.currentTimeMillis / 1000 - lastTimeBuySell > T) && (cond1 || cond2 || cond3)
     }
 
     private def shouldBuyMoreForToday(ltp: Double, buyPrice: Double, T: Long): Boolean =
-        HL49 != Double.NaN && ltp <= buyPrice - max(.05, HL49/5) &&
+        !HL49.isNaN && ltp <= buyPrice - max(.05, HL49/5) &&
                 (System.currentTimeMillis/1000 - lastTimeBuySell > T) && (ltp < thresholdBuy)
 
     // should do buy/sell only when in open hours and already estimated low and high prices
@@ -470,13 +497,13 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
             fuHigh <- fu.high
             fuLow <- fu.low
         } yield fuHigh - fuLow
-        val cond1 = HO49 != Double.NaN && todayDelta.nonEmpty && ltp >= openPrice + HO49 &&
+        val cond1 = !HO49.isNaN && todayDelta.nonEmpty && ltp >= openPrice + HO49 &&
                 ltp > buyPrice + max(.05, todayDelta.get/15)
-        val cond2 = HL49 != Double.NaN && todayDelta.nonEmpty && ltp >= fu.low.get + HL49 &&
+        val cond2 = !HL49.isNaN && todayDelta.nonEmpty && ltp >= fu.low.get + HL49 &&
                 ltp > buyPrice + max(.05, todayDelta.get/15)
-        val cond3_1 = HL10 != Double.NaN && fu.high.nonEmpty && ltp < fu.high.get - HL10
-        val cond3_2 = OL10 != Double.NaN && ltp < openPrice - OL10
-        val cond3 = HL31 != Double.NaN && ltp > buyPrice + HL31 && (cond3_1 || cond3_2)
+        val cond3_1 = !HL10.isNaN && fu.high.nonEmpty && ltp < fu.high.get - HL10
+        val cond3_2 = !OL10.isNaN && ltp < openPrice - OL10
+        val cond3 = !HL31.isNaN && ltp > buyPrice + HL31 && (cond3_1 || cond3_2)
         (cond1 || cond2 || cond3) && (System.currentTimeMillis / 1000 - lastTimeBuySell > T) && ltp > thresholdSell
     }
 

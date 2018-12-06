@@ -43,7 +43,7 @@ class MainActor(config: Config) extends Actor with Timers with Util {
         case ActorIdentity(_, Some(_)) => // This StockActor already exists.
         case CanStockActorSendHistoricalOrders =>
             if (historicalOrdersTicket > 0) {
-                println(s"$sender() asks if she can send HistoricalOrders message historicalOrdersTicket: $historicalOrdersTicket")
+//                println(s"$sender() asks if she can send HistoricalOrders message historicalOrdersTicket: $historicalOrdersTicket")
                 historicalOrdersTicket = historicalOrdersTicket - 1
                 sender() ! GoAheadSendHistoricalOrders
             }

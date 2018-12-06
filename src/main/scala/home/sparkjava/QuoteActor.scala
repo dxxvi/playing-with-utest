@@ -79,7 +79,8 @@ class QuoteActor(config: Config) extends Actor with Timers with Util {
                     })
                 }
         )
-        case GetDailyQuote(symbols, _) => getDailyQuote = GetDailyQuote(getDailyQuote.symbols ++ symbols, getDailyQuote.ts)
+        case GetDailyQuote(symbols, _) =>
+            getDailyQuote = GetDailyQuote(getDailyQuote.symbols ++ symbols, getDailyQuote.ts)
         case Download(symbol) =>
             sttp
                     .get(uri"${SERVER}quotes/historicals/$symbol/?interval=day&span=year")

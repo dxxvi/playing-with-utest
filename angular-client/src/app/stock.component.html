@@ -1,10 +1,24 @@
 <div [ngStyle]="{'background-color': backgroundColor()}" style="position: relative; padding: .25em .75em">
   <div style="position: relative">
+    <div style="width: 100%; display: table" class="small mono" *ngIf="showStats">
+      <div style="display: table-row">
+        <div style="display: table-cell"><span class="opaque">HL<sub>49</sub>:</span>{{ HL49 == null ? '' : HL49.toFixed(2) }}&nbsp;</div>
+        <div style="display: table-cell"><span class="opaque">HL<sub>31</sub>:</span>{{ HL31 == null ? '' : HL31.toFixed(2) }}&nbsp;</div>
+        <div style="display: table-cell"><span class="opaque">HL<sub>10</sub>:</span>{{ HL10 == null ? '' : HL10.toFixed(2) }}&nbsp;</div>
+        <div style="display: table-cell"><span class="opaque">CL<sub>49</sub>:</span>{{ CL49 == null ? '' : CL49.toFixed(2) }}</div>
+      </div>
+      <div style="display: table-row">
+        <div style="display: table-cell"><span class="opaque">HO<sub>49</sub>:</span>{{ HO49 == null ? '' : HO49.toFixed(2) }}&nbsp;</div>
+        <div style="display: table-cell"><span class="opaque">HO<sub>10</sub>:</span>{{ HO10 == null ? '' : HO10.toFixed(2) }}&nbsp;</div>
+        <div style="display: table-cell"><span class="opaque">OL<sub>49</sub>:</span>{{ OL49 == null ? '' : OL49.toFixed(2) }}&nbsp;</div>
+        <div style="display: table-cell"><span class="opaque">OL<sub>10</sub>:</span>{{ OL10 == null ? '' : OL10.toFixed(2) }}</div>
+      </div>
+    </div>
     <div style="width: 100%; display: table">
       <div style="display: table-row">
         <div class="small" style="display: table-cell">Today</div>
-        <div class="small" style="display: table-cell">Est.</div>
-        <div style="display: table-cell"></div>
+        <div class="x-small mono" style="display: table-cell"><span class="opaque">HCurrent:</span>{{currentStats.hCurrent}}</div>
+        <div style="display: table-cell">&#x2592;</div>
         <div style="display: table-cell">
           <div style="float: left" [ngClass]="symbolClass()" (click)="turnOnDebugging()" [title]="name">{{ symbol }}</div>
           <div style="float: right" [ngStyle]="{'visibility': po.quantity >= 0 ? 'visible' : 'hidden'}">{{ po.quantity }}</div>
@@ -13,13 +27,13 @@
       </div>
       <div style="display: table-row">
         <div class="small mono" style="display: table-cell"><span [hidden]="fu.high < 0">{{ fu.high.toFixed(2) }}</span></div>
-        <div class="small mono" style="display: table-cell"></div>
+        <div class="x-small mono" style="display: table-cell"><span class="opaque">CurrentL:</span>{{currentStats.currentL}}</div>
         <div class="small mono" style="color: #13f; display: table-cell">{{ showThreshold(thresholdSell) }}</div>
         <div style="display: table-cell"></div>
       </div>
       <div style="display: table-row">
         <div class="small mono" style="display: table-cell"><span [hidden]="fu.low < 0">{{ fu.low.toFixed(2) }}</span></div>
-        <div class="small mono" style="display: table-cell"></div>
+        <div class="x-small mono" style="display: table-cell"><span class="opaque">{{currentStats.coooc === 'co' ? 'CurrentO' : 'OCurrent'}}:</span>{{currentStats.cooocValue}}</div>
         <div class="small mono" style="color: #f00; display: table-cell">{{ showThreshold(thresholdBuy) }}</div>
         <div style="text-align: right; display: table-cell" [ngStyle]="{'visibility': last_trade_price > 0 ? 'visible' : 'hidden'}">
           {{ last_trade_price.toFixed(2) }}
