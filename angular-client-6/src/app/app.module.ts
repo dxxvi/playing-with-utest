@@ -7,6 +7,7 @@ import { StockComponent } from './stock.component';
 import { ConfigurationComponent } from './configuration.component';
 import {BrowserAnimationsModule, NoopAnimationsModule} from '@angular/platform-browser/animations';
 import {PipeModule} from './pipe.module';
+import { HighchartsChartModule } from 'highcharts-angular';
 import { NoticeComponent } from './notice/notice.component';
 
 @NgModule({
@@ -18,7 +19,7 @@ import { NoticeComponent } from './notice/notice.component';
   ],
   imports: [
     BrowserModule, FormsModule,
-    BrowserAnimationsModule, PipeModule.forRoot()
+    BrowserAnimationsModule, PipeModule.forRoot(), HighchartsChartModule
   ],
   providers: [],
   bootstrap: [AppComponent]

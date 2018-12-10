@@ -473,8 +473,8 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
 
     private def shouldBuyMoreForPast(ltp: Double, buyPrice: Double, T: Long): Boolean = {
         val cond1 = fu.high.nonEmpty && !HL49.isNaN && ltp <= fu.high.get - HL49
-        val cond2 = !OL49.isNaN && ltp <= openPrice - OL49
-        val cond3 = !HL31.isNaN && ltp < buyPrice - HL31
+        val cond2 = !OL49.isNaN && !openPrice.isNaN && ltp <= openPrice - OL49
+        val cond3 = !HL31.isNaN && fu.high.nonEmpty && ltp < buyPrice - HL31 && ltp < fu.high.get - HL31
         (ltp < thresholdBuy) && (System.currentTimeMillis / 1000 - lastTimeBuySell > T) && (cond1 || cond2 || cond3)
     }
 
