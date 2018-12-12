@@ -442,12 +442,18 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
             if (_d) logger.debug(s"decision1: $decision1")
             val decision2 = filledOEs.dropWhile(_.matchId.isDefined).headOption collect decisionFunction
             if (_d) logger.debug(s"decision2: $decision2")
-            if (decision1.isEmpty) decision2
-            else if (decision2.isEmpty) decision1
-            else for {
-                d1 <- decision1
-                d2 <- decision2
-            } yield if (d1._1 == "sell") d1 else d2
+
+            val decision = if (decision1.isEmpty) decision2
+                    else if (decision2.isEmpty) decision1
+                    else for {
+                        d1 <- decision1
+                        d2 <- decision2
+                    } yield if (d1._1 == "sell") d1 else d2
+            if (decision.nonEmpty && decision.get._1 == "buy" &&
+                    filledOEs.nonEmpty && filledOEs.head.side.contains("sell") &&
+                    filledOEs.head.price.exists(_ < decision.get._3 + .05))
+                None
+            else decision
     }
 
     private def shouldBuyForPastSell(ltp: Double, sellPrice: Double, T: Long): Boolean = {
