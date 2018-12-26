@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<janus:authn-response xmlns:janus="http://www.alibaba.com/janus/xml-namespaces" request-id="1">
-    <janus:blah-blah>blah blah blah</janus:blah-blah>
-    <janus:status-message>Username or password is invalid</janus:status-message>
-</janus:authn-response>
