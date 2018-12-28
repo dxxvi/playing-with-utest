@@ -6,6 +6,7 @@ import com.softwaremill.sttp._
 import home.util.SttpBackends
 
 import scala.concurrent.Future
+import scala.util.{Failure, Success, Try}
 
 object DefaultWatchListActor {
     import akka.actor.Props
@@ -47,7 +48,7 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with SttpB
 
     val receive: Receive = {
         case Tick => defaultWatchListRequest.send().map(ResponseWrapper) pipeTo self
-        case ResponseWrapper(Response(rawErrorBody, code, statusText, headers, history)) =>
+        case ResponseWrapper(Response(rawErrorBody, code, statusText, _, _)) =>
             rawErrorBody.fold(
                 _ => log.error("Error in getting default watch list: {} {}", code, statusText),
                 instrumentLists => println(instrumentLists)
@@ -58,7 +59,8 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with SttpB
         import org.json4s._
         import org.json4s.native.JsonMethods._
 
-        (parse(s).asInstanceOf[JObject] \ "results").toOption
+        Try(
+            (parse(s).asInstanceOf[JObject] \ "results").toOption
                 .map(jv => jv.asInstanceOf[JArray].arr)
                 .map(jvList => jvList
                             .map(jv => (jv \ "instrument").toOption)
@@ -67,6 +69,12 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with SttpB
                             }
                 )
                 .getOrElse(List[String]())
+        ) match {
+            case x: Success[List[String]] => x.get
+            case Failure(ex) =>
+                log.error(ex, "Check this default watch list response: {}", s)
+                List[String]()
+        }
     }
 
 }
