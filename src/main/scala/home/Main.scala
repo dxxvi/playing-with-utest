@@ -10,12 +10,14 @@ object Main {
         val config: Config = ConfigFactory.load()
 
         val actorSystem = ActorSystem("R")
-        actorSystem.actorOf(DefaultWatchListActor.props(config), DefaultWatchListActor.NAME)
+        val defaultWatchListActor =
+            actorSystem.actorOf(DefaultWatchListActor.props(config), DefaultWatchListActor.NAME)
         val amdActor = actorSystem.actorOf(StockActor.props("amd"), "AMD")
         val axpActor = actorSystem.actorOf(StockActor.props("axp"), "American-Express")
 
         amdActor ! "I send a string to amd"
         axpActor ! "I send another string to AXP"
+        defaultWatchListActor ! DefaultWatchListActor.Tick
 
         StdIn.readLine()
         actorSystem.terminate()
