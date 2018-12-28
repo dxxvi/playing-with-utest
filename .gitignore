@@ -35,4 +35,4 @@
 **/target
 **/package-lock.json
 src/main/resources/static/
-src/main/resources/reference.conf
+
