@@ -13,7 +13,7 @@ class MDCManipulatingFilter extends ThresholdFilter {
         if (!(mdc eq null) && !mdc.isEmpty && mdc.containsKey("sourceThread")) {
             val sourceThread = mdc.get("sourceThread")
             val i = sourceThread.lastIndexOf('-', sourceThread.length - 5)
-            if (i > -1) mdc.put("sourceThread", sourceThread.substring(i + 1))
+            if (i > -1) mdc.put("sourceThread", String.format("%-13s", sourceThread.substring(i + 1)))
         }
         super.decide(event)
     }

@@ -20,7 +20,10 @@ class StockActor(symbol: String) extends Actor {
     }
     val log: LoggingAdapter = Logging(context.system, this)
 
+    var ltp: Double = Double.NaN                 // last trade price
+
     override def receive: Receive = {
-        case s: String => log.debug(s)
+        case Quote(lastTradePrice) =>
+            ltp = lastTradePrice
     }
 }

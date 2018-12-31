@@ -1,9 +1,14 @@
 package home
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
+import akka.http.scaladsl.server.Directives._
+import akka.stream.ActorMaterializer
 import com.typesafe.config.{Config, ConfigFactory}
 import home.util.StockDatabase
 
+import scala.concurrent.ExecutionContextExecutor
 import scala.io.StdIn
 
 object Main {
@@ -12,18 +17,33 @@ object Main {
 
         addStocksToDatabase(config)
 
-        val actorSystem = ActorSystem("R")
+        implicit val actorSystem: ActorSystem = ActorSystem("R")
+        implicit val actorMaterializer: ActorMaterializer = ActorMaterializer()
+        implicit val executionContext: ExecutionContextExecutor = actorSystem.dispatcher
+
         val defaultWatchListActor =
             actorSystem.actorOf(DefaultWatchListActor.props(config), DefaultWatchListActor.NAME)
-        val amdActor = actorSystem.actorOf(StockActor.props("amd"), "AMD")
-        val axpActor = actorSystem.actorOf(StockActor.props("axp"), "American-Express")
+        actorSystem.actorOf(QuoteActor.props(config), QuoteActor.NAME)
 
-        amdActor ! "I send a string to amd"
-        axpActor ! "I send another string to AXP"
-        defaultWatchListActor ! DefaultWatchListActor.Tick
+//        defaultWatchListActor ! DefaultWatchListActor.Tick
 
+        val route =
+            path("ws") {
+                complete(HttpEntity(ContentTypes.`text/plain(UTF-8)`, "// TODO this path for websocket"))
+            } ~
+            get {
+                path("ws-like") {
+                    complete(HttpEntity(ContentTypes.`text/plain(UTF-8)`, "Returns exactly like the websocket"))
+                } ~
+                path("set/quote" / symbol / lastTradePrice) {
+
+                }
+
+            }
+
+        val bindingFuture = Http().bindAndHandle(route, "localhost", 8080)
         StdIn.readLine()
-        actorSystem.terminate()
+        bindingFuture.flatMap(_.unbind()).onComplete(_ => actorSystem.terminate())
     }
 
 /*

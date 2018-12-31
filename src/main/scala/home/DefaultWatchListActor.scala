@@ -45,7 +45,7 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with SttpB
     val SERVER: String = config.getString("server")
     val authorization: String = if (config.hasPath(AUTHORIZATION)) config.getString(AUTHORIZATION) else "No-token"
     val defaultWatchListRequest: RequestT[Id, List[String], Nothing] = sttp
-            .header("Authorization", authorization)
+            .header(AUTHORIZATION, authorization)
             .get(uri"$SERVER/watchlists/Default/")
             .response(asString.map(extractInstruments))
 
@@ -56,23 +56,13 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with SttpB
         case ResponseWrapper(Response(rawErrorBody, code, statusText, _, _)) =>
             rawErrorBody.fold(
                 _ => {
-                    log.error("Error in getting default watch list: {} {}. Will try again in 4s.",
-                        code, statusText)
-                    timers.startSingleTimer(Tick, Tick, 4.seconds)
+                    log.error("Error in getting default watch list: {} {}. Will try again in 4s.", code, statusText)
+                    timers.startSingleTimer(Tick, Tick, 4019.millis)
                 },
                 instrumentLists => {
                     val symbolList: List[String] = instrumentLists
                             .map(i => (i, StockDatabase.getInstrumentFromInstrument(i)))
-                            .collect {
-                                case Tuple2(_, Some(Instrument(symbol, _, _, _, _))) => Some(symbol)
-                                case Tuple2(i, None) =>
-                                    Try(Util.getSymbolFromInstrumentHttpURLConnection(i, config)) match {
-                                        case Success(symbol) =>
-                                            log.error("The default watch list has a bad stock {}", symbol)
-                                        case Failure(ex) => log.error(ex, "Error for {}", i)
-                                    }
-                                    None
-                            }
+                            .collect(collectAndWriteLogMessagesKnownSymbols)
                             .collect {
                                 case Some(symbol) => symbol
                             }
@@ -104,5 +94,14 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with SttpB
         }
     }
 
-    private def
+    private val collectAndWriteLogMessagesKnownSymbols: PartialFunction[(String, Option[Instrument]), Option[String]] = {
+        case Tuple2(_, Some(Instrument(symbol, _, _, _, _))) => Some(symbol)
+        case Tuple2(i, None) =>
+            Try(Util.getSymbolFromInstrumentHttpURLConnection(i, config)) match {
+                case Success(symbol) =>
+                    log.error("The default watch list has a bad stock {}", symbol)
+                case Failure(ex) => log.error(ex, "Error for {}", i)
+            }
+            None
+    }
 }
