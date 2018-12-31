@@ -14,6 +14,10 @@ object DefaultWatchListActor {
     val NAME = "defaultWatchList"
     val AUTHORIZATION = "Authorization"
 
+    private var _commaSeparatedSymbolString: String = ""
+
+    def commaSeparatedSymbolString: String = _commaSeparatedSymbolString
+
     sealed trait DefaultWatchListSealedTrait
     case object Tick extends DefaultWatchListSealedTrait
     case class ResponseWrapper(r: Response[List[String]]) extends DefaultWatchListSealedTrait
@@ -29,13 +33,14 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with SttpB
     import akka.pattern.pipe
     import akka.stream.scaladsl.Source
     import akka.util.ByteString
+    import home.model.Instrument
+    import home.util.StockDatabase
+    import home.util.Util
 
     implicit val logSource: LogSource[AnyRef] = new LogSource[AnyRef] {
         override def genString(t: AnyRef): String = NAME // this function return value is the akkaSource in the MDC
     }
     val log: LoggingAdapter = Logging(context.system, this)
-
-    implicit val backend: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(config)
 
     val SERVER: String = config.getString("server")
     val authorization: String = if (config.hasPath(AUTHORIZATION)) config.getString(AUTHORIZATION) else "No-token"
@@ -44,14 +49,36 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with SttpB
             .get(uri"$SERVER/watchlists/Default/")
             .response(asString.map(extractInstruments))
 
-    timers.startPeriodicTimer(Tick, Tick, 60.seconds)
-
-    val receive: Receive = {
-        case Tick => defaultWatchListRequest.send().map(ResponseWrapper) pipeTo self
+    override def receive: Receive = {
+        case Tick =>
+            implicit val backend: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(config)
+            defaultWatchListRequest.send().map(ResponseWrapper) pipeTo self
         case ResponseWrapper(Response(rawErrorBody, code, statusText, _, _)) =>
             rawErrorBody.fold(
-                _ => log.error("Error in getting default watch list: {} {}", code, statusText),
-                instrumentLists => println(instrumentLists)
+                _ => {
+                    log.error("Error in getting default watch list: {} {}. Will try again in 4s.",
+                        code, statusText)
+                    timers.startSingleTimer(Tick, Tick, 4.seconds)
+                },
+                instrumentLists => {
+                    val symbolList: List[String] = instrumentLists
+                            .map(i => (i, StockDatabase.getInstrumentFromInstrument(i)))
+                            .collect {
+                                case Tuple2(_, Some(Instrument(symbol, _, _, _, _))) => Some(symbol)
+                                case Tuple2(i, None) =>
+                                    Try(Util.getSymbolFromInstrumentHttpURLConnection(i, config)) match {
+                                        case Success(symbol) =>
+                                            log.error("The default watch list has a bad stock {}", symbol)
+                                        case Failure(ex) => log.error(ex, "Error for {}", i)
+                                    }
+                                    None
+                            }
+                            .collect {
+                                case Some(symbol) => symbol
+                            }
+                    symbolList.foreach(symbol => context.actorOf(StockActor.props(symbol), symbol))
+                    _commaSeparatedSymbolString = symbolList.mkString(",")
+                }
             )
     }
 
@@ -77,4 +104,5 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with SttpB
         }
     }
 
+    private def
 }
