@@ -17,8 +17,10 @@ object StockActor {
                     price: Double,
                     quantity: Double,
                     side: String,
-                    state: String
+                    state: String,
+                    updatedAt: String
                     ) extends StockSealedTrait
+    case class Position(quantity: Double) extends StockSealedTrait
 
     def props(symbol: String): Props = Props(new StockActor(symbol))
 }
@@ -28,14 +30,14 @@ class StockActor(symbol: String) extends Actor with Timers {
     import scala.concurrent.duration._
     import akka.event._
 
-    implicit val logSource: LogSource[AnyRef] = (t: AnyRef) => symbol
+    implicit val logSource: LogSource[AnyRef] = (_: AnyRef) => symbol
     val log: LoggingAdapter = Logging(context.system, this)
 
     var ltp: Double = Double.NaN                 // last trade price
     var openPrice: Double = Double.NaN
     var todayHigh: Double = Double.NaN
     var todayLow:  Double = Double.NaN
-    
+
     var HL: List[QuoteActor.DailyQuote] = Nil
     var HL49: Double = Double.NaN
     var HL31: Double = Double.NaN
@@ -48,7 +50,7 @@ class StockActor(symbol: String) extends Actor with Timers {
     var OL: List[QuoteActor.DailyQuote] = Nil
     var OL49: Double = Double.NaN
     var OL10: Double = Double.NaN
-    
+
     var CL49: Double = Double.NaN
 
     var L:  List[QuoteActor.DailyQuote] = Nil
@@ -59,9 +61,9 @@ class StockActor(symbol: String) extends Actor with Timers {
     var position: Double = Double.NaN            // also called quantity
 
     timers.startPeriodicTimer(Tick, Tick, 4019.millis)
-    
+
     override def receive: Receive = {
-        case Quote(lastTradePrice, _) => 
+        case Quote(lastTradePrice, _) =>
             ltp = lastTradePrice
             todayHigh = if (todayHigh.isNaN) ltp else math.max(ltp, todayHigh)
             todayLow  = if (todayLow.isNaN)  ltp else math.min(ltp, todayLow)
@@ -72,6 +74,10 @@ class StockActor(symbol: String) extends Actor with Timers {
 
         case Tick if HL.isEmpty && System.currentTimeMillis - dailyQuoteRequestTime > 20000 =>
             context.actorSelection(s"../${QuoteActor.NAME}") ! QuoteActor.DailyQuoteRequest(symbol)
+
+        case o: Order =>                         // TODO
+
+        case Position(quantity) => position = quantity
     }
 
     /**
@@ -86,19 +92,15 @@ class StockActor(symbol: String) extends Actor with Timers {
         HO = list.sortWith((dq1, dq2) => dq1.highPrice - dq1.openPrice < dq2.highPrice - dq2.openPrice)
         HO49 = HO(49).highPrice - HO(49).openPrice
         HO10 = HO(10).highPrice - HO(10).openPrice
-        
+
         OL = list.sortWith((dq1, dq2) => dq1.openPrice - dq1.lowPrice < dq2.openPrice - dq2.lowPrice)
         OL49 = OL(49).openPrice - OL(49).lowPrice
         OL10 = OL(10).openPrice - OL(10).lowPrice
-        
+
         val CL = list.sortWith((dq1, dq2) => dq1.closePrice - dq1.lowPrice < dq2.closePrice - dq2.lowPrice)
         CL49 = CL(49).closePrice - CL(49).lowPrice
-        
+
         L = list.take(10).sortWith((dq1, dq2) => dq1.lowPrice < dq2.lowPrice)
         L3 = L(2).lowPrice
-    }
-
-    private def debug() {
-
     }
 }

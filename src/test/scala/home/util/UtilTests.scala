@@ -28,7 +28,7 @@ class UtilTests {
     }
 
     @Test
-    def testGetDailyQuoteHttpURLConnection(): Unit = {
+    def testGetDailyQuoteHttpURLConnection() {
         import home.QuoteActor.DailyQuote
 
         val config = ConfigFactory.load()
@@ -43,5 +43,27 @@ class UtilTests {
         val tslaOption: Option[(String, List[DailyQuote])] = list.find(_._1 == "TSLA")
         assertTrue(tslaOption.nonEmpty)
         assertTrue("Not enough TSLA daily quotes", tslaOption.get._2.size > 241)
+    }
+
+    @Test
+    def testExtractSymbolAndOrder() {
+        import com.softwaremill.sttp._
+
+        val config = ConfigFactory.load()
+        implicit val backend: SttpBackend[Id, Nothing] = Util.configureCoreJavaHttpBackend(config)
+        val SERVER = config.getString("server")
+        val AUTHORIZATION = "Authorization"
+        val authorization: String = if (config.hasPath(AUTHORIZATION)) config.getString(AUTHORIZATION) else "No-token"
+
+        home.Main.addStocksToDatabase(config)
+
+        sttp.header(AUTHORIZATION, authorization).get(uri"$SERVER/orders/").send().body match {
+            case Right(js) =>
+                val list: List[(String, home.StockActor.Order)] = Util.extractSymbolAndOrder(js)
+                assertEquals("Should get 100 orders", 100, list.size)
+                assertTrue("No order should have average_price or price of Double.NaN",
+                    !list.exists(t => t._2.averagePrice.isNaN || t._2.price.isNaN))
+            case Left(s) => throw new RuntimeException(s)
+        }
     }
 }

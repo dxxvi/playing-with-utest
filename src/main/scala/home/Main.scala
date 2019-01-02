@@ -77,9 +77,10 @@ object Main {
     }
 
     /**
+      * This method is public for UtilTests.testExtractSymbolAndOrder (and maybe other test methods) to use.
       * @param config has DOW stocks only
       */
-    private def addStocksToDatabase(config: Config) {
+    def addStocksToDatabase(config: Config) {
         import scala.collection.JavaConverters._
         import scala.collection.mutable
         import com.typesafe.config.ConfigValue
