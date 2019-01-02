@@ -8,11 +8,21 @@ import home.util.SttpBackends
 object QuoteActor {
     import akka.actor.Props
 
-    val NAME = "quote"
+    val NAME: String = "quote"
+
+    case class Quote(symbol: String, lastTradePrice: Double, updatedAt: String)
+    case class DailyQuote(
+                                 beginsAt: String,
+                                 openPrice: Double,
+                                 closePrice: Double,
+                                 highPrice: Double,
+                                 lowPrice: Double
+                         )
 
     sealed trait QuoteSealedTrait
     case object Tick extends QuoteSealedTrait
-    case class ResponseWrapper(r: Response[List[(String, Double)]]) extends QuoteSealedTrait
+    case class ResponseWrapper(r: Response[List[Quote]]) extends QuoteSealedTrait
+    case class DailyQuoteRequest(symbol: String) extends QuoteSealedTrait
 
     def props(config: Config): Props = Props(new QuoteActor(config))
 }
@@ -22,6 +32,9 @@ class QuoteActor(config: Config) extends Actor with Timers with SttpBackends {
     import context.dispatcher
     import scala.concurrent.Future
     import scala.concurrent.duration._
+    import scala.util.Failure
+    import scala.util.Success
+    import scala.util.Try
     import akka.event._
     import akka.pattern.pipe
     import akka.stream.scaladsl.Source
@@ -30,33 +43,55 @@ class QuoteActor(config: Config) extends Actor with Timers with SttpBackends {
     import org.json4s.native.JsonMethods._
     import home.util.Util
 
-    implicit val logSource: LogSource[AnyRef] = new LogSource[AnyRef] {
-        override def genString(t: AnyRef): String = NAME
-    }
+    implicit val logSource: LogSource[AnyRef] = (t: AnyRef) => NAME
     val log: LoggingAdapter = Logging(context.system, this)
 
     val SERVER: String = config.getString("server")
-    implicit val backend: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(config)
+    val symbolsNeedDailyQuote: collection.mutable.Set[String] = collection.mutable.Set.empty[String]
+    var useAkkaHttp: Boolean = true
 
     timers.startPeriodicTimer(Tick, Tick, 94019.millis)
 
     override def receive: Receive = {
         case Tick if DefaultWatchListActor.commaSeparatedSymbolString.nonEmpty =>
-            sttp
-                    .get(uri"$SERVER/quotes/?symbols=${DefaultWatchListActor.commaSeparatedSymbolString}")
-                    .response(asString.map(extractLastTradePriceAndSymbol))
-                    .send()
-                    .map(ResponseWrapper) pipeTo self
+            fetchAllQuotes() pipeTo self
+            fetchDailyQuotes()
+
         case Tick if DefaultWatchListActor.commaSeparatedSymbolString.isEmpty =>
-            log.info("Do nothing because the DefaultWatchListActor is not done yet.")
+            log.info("Skip because the DefaultWatchListActor is not done yet.")
+
         case ResponseWrapper(Response(rawErrorBody, code, statusText, _, _)) => rawErrorBody.fold(
             _ => log.error("Error in getting quotes: {} {}", code, statusText),
-            symbolQuoteList => symbolQuoteList.foreach(tuple => {
-                val stockActor = context.actorSelection(s"../${DefaultWatchListActor.NAME}/${tuple._1}")
-                stockActor ! StockActor.Quote(tuple._2)
+            quoteList => quoteList.foreach(q => {
+                val stockActor = context.actorSelection(s"../${DefaultWatchListActor.NAME}/${q.symbol}")
+                stockActor ! StockActor.Quote(q.lastTradePrice, q.updatedAt)
             })
         )
 
+        case DailyQuoteRequest(symbol) => symbolsNeedDailyQuote += symbol
+    }
+
+    private def fetchAllQuotes(): Future[ResponseWrapper] = {
+        implicit val backend: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(config)
+        sttp
+                .get(uri"$SERVER/quotes/?symbols=${DefaultWatchListActor.commaSeparatedSymbolString}")
+                .response(asString.map(extractLastTradePriceAndSymbol))
+                .send()
+                .map(ResponseWrapper)
+    }
+
+    private def fetchDailyQuotes() {
+        implicit val backend: SttpBackend[Id, Nothing] = configureCoreJavaHttpBackend(config)
+        if (symbolsNeedDailyQuote.nonEmpty)
+            symbolsNeedDailyQuote.grouped(75).foreach(symbols => {
+                Try(Util.getDailyQuoteHttpURLConnection(symbols, config)) match {
+                    case Success(list) => list.foreach(tuple => {
+                        val stockActor = context.actorSelection(s"../${DefaultWatchListActor.NAME}/${tuple._1}")
+                        stockActor ! StockActor.DailyQuoteListWrapper(tuple._2)
+                    })
+                    case Failure(ex) => log.error("Error in getting daily quotes", ex)
+                }
+            })
     }
 
     /**
@@ -118,14 +153,15 @@ class QuoteActor(config: Config) extends Actor with Timers with SttpBackends {
       *           }
       * @return
       */
-    private def extractLastTradePriceAndSymbol(js: String): List[(String, Double)] = {
-        val optionList: List[Option[(String, Double)]] = (parse(js) \ "results").asInstanceOf[JArray].arr
+    private def extractLastTradePriceAndSymbol(js: String): List[Quote] = {
+        val optionList: List[Option[Quote]] = (parse(js) \ "results").asInstanceOf[JArray].arr
                 .map(jv => for {
                     symbol <- Util.fromJValueToOption[String](jv \ "symbol")
                     lastTradePrice <- Util.fromJValueToOption[Double](jv \ "last_trade_price")
-                } yield (symbol, lastTradePrice))
+                    updatedAt <- Util.fromJValueToOption[String](jv \ "updated_at")
+                } yield Quote(symbol, lastTradePrice, updatedAt))
         optionList.collect {
-            case Some(tuple) => tuple
+            case Some(q) => q
         }
     }
 }

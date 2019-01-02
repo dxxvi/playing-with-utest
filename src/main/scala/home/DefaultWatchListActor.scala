@@ -11,8 +11,8 @@ import scala.util.{Failure, Success, Try}
 object DefaultWatchListActor {
     import akka.actor.Props
 
-    val NAME = "defaultWatchList"
-    val AUTHORIZATION = "Authorization"
+    val NAME: String = "defaultWatchList"
+    val AUTHORIZATION: String = "Authorization"
 
     private var _commaSeparatedSymbolString: String = ""
 
@@ -37,9 +37,7 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with SttpB
     import home.util.StockDatabase
     import home.util.Util
 
-    implicit val logSource: LogSource[AnyRef] = new LogSource[AnyRef] {
-        override def genString(t: AnyRef): String = NAME // this function return value is the akkaSource in the MDC
-    }
+    implicit val logSource: LogSource[AnyRef] = (t: AnyRef) => NAME
     val log: LoggingAdapter = Logging(context.system, this)
 
     val SERVER: String = config.getString("server")

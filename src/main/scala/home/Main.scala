@@ -2,14 +2,16 @@ package home
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
 import com.typesafe.config.{Config, ConfigFactory}
 import home.util.StockDatabase
+import spark.Spark
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.io.StdIn
+import scala.util.{Failure, Success, Try}
 
 object Main {
     def main(args: Array[String]) {
@@ -19,14 +21,16 @@ object Main {
 
         implicit val actorSystem: ActorSystem = ActorSystem("R")
         implicit val actorMaterializer: ActorMaterializer = ActorMaterializer()
-        implicit val executionContext: ExecutionContextExecutor = actorSystem.dispatcher
+
+        val websocketListener: WebsocketListener = initializeSpark(actorSystem)
 
         val defaultWatchListActor =
             actorSystem.actorOf(DefaultWatchListActor.props(config), DefaultWatchListActor.NAME)
         actorSystem.actorOf(QuoteActor.props(config), QuoteActor.NAME)
 
-//        defaultWatchListActor ! DefaultWatchListActor.Tick
+        defaultWatchListActor ! DefaultWatchListActor.Tick
 
+/*
         val route =
             path("ws") {
                 complete(HttpEntity(ContentTypes.`text/plain(UTF-8)`, "// TODO this path for websocket"))
@@ -35,8 +39,14 @@ object Main {
                 path("ws-like") {
                     complete(HttpEntity(ContentTypes.`text/plain(UTF-8)`, "Returns exactly like the websocket"))
                 } ~
-                path("set/quote" / symbol / lastTradePrice) {
-
+                path("set" / "quote" / Segment / Segment) { (symbol, lastTradePriceString) =>
+                        if (!Set("AMD", "TSLA").contains(symbol))
+                            complete(HttpResponse(status = StatusCodes.BadRequest, entity = HttpEntity(ContentTypes.`text/plain(UTF-8)`, "Invalid symbol: " + symbol)))
+                        else
+                            Try(lastTradePriceString.toDouble) match {
+                                case Failure(ex) => complete(HttpResponse(status = StatusCodes.BadRequest, entity = HttpEntity(ContentTypes.`text/plain(UTF-8)`, lastTradePriceString + " is not a number")))
+                                case Success(lastTradePrice) => complete(HttpEntity(ContentTypes.`text/plain(UTF-8)`, s"Set last trade price of $symbol to $lastTradePrice"))
+                            }
                 }
 
             }
@@ -44,6 +54,7 @@ object Main {
         val bindingFuture = Http().bindAndHandle(route, "localhost", 8080)
         StdIn.readLine()
         bindingFuture.flatMap(_.unbind()).onComplete(_ => actorSystem.terminate())
+*/
     }
 
 /*
@@ -51,6 +62,19 @@ object Main {
         addStocksToDatabase(ConfigFactory.load())
     }
 */
+
+    private def initializeSpark(actorSystem: ActorSystem): WebsocketListener = {
+        val webSocketListener = new WebsocketListener(actorSystem)
+        Spark.staticFiles.location("/static")
+        Spark.webSocket("/ws", webSocketListener)
+
+        Spark.get("/debug/:symbol", (request: spark.Request, response: spark.Response) => {
+            val symbol = request.params(":symbol")
+            "Hello World!"
+        })
+
+        webSocketListener
+    }
 
     /**
       * @param config has DOW stocks only

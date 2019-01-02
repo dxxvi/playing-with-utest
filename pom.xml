@@ -18,10 +18,44 @@
     <akka.version>2.5.19</akka.version>
     <akka.http.version>10.1.6</akka.http.version>
     <sttp.version>1.5.2</sttp.version>
+    <jetty.version>9.4.14.v20181114</jetty.version>
     <junit.version>4.12</junit.version>
   </properties>
 
   <dependencies>
+    <dependency>
+      <groupId>com.sparkjava</groupId>
+      <artifactId>spark-core</artifactId>
+      <version>2.7.2</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>jetty-server</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>jetty-webapp</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty.websocket</groupId>
+          <artifactId>websocket-server</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty.websocket</groupId>
+          <artifactId>websocket-servlet</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty.websocket</groupId>
+      <artifactId>websocket-server</artifactId>
+      <version>${jetty.version}</version>
+    </dependency>
+
     <dependency>
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-reflect</artifactId>
