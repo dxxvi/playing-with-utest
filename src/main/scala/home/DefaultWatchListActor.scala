@@ -55,7 +55,7 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with SttpB
             rawErrorBody.fold(
                 _ => {
                     log.error("Error in getting default watch list: {} {}. Will try again in 4s.", code, statusText)
-                    timers.startSingleTimer(Tick, Tick, 4019.millis)
+                    // timers.startSingleTimer(Tick, Tick, 4019.millis)
                 },
                 instrumentLists => {
                     val symbolList: List[String] = instrumentLists

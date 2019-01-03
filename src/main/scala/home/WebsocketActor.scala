@@ -27,7 +27,7 @@ class WebsocketActor(websocketListener: WebsocketListener) extends Actor with Ti
 
     val messages: ListBuffer[String] = ListBuffer.empty[String]
 
-    timers.startPeriodicTimer(Tick, Tick, 2200.millis)
+    // timers.startPeriodicTimer(Tick, Tick, 2200.millis)
 
     override def receive: Receive = {
         case Tick => if (messages.nonEmpty) websocketListener.send(compact(render(JArray(

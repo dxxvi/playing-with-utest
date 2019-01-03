@@ -60,7 +60,7 @@ class StockActor(symbol: String) extends Actor with Timers {
 
     var position: Double = Double.NaN            // also called quantity
 
-    timers.startPeriodicTimer(Tick, Tick, 4019.millis)
+    // timers.startPeriodicTimer(Tick, Tick, 4019.millis)
 
     override def receive: Receive = {
         case Quote(lastTradePrice, _) =>

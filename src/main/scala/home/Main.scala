@@ -1,5 +1,8 @@
 package home
 
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
@@ -26,10 +29,27 @@ object Main {
 
         val defaultWatchListActor =
             actorSystem.actorOf(DefaultWatchListActor.props(config), DefaultWatchListActor.NAME)
-        actorSystem.actorOf(QuoteActor.props(config), QuoteActor.NAME)
+        val quoteActor = actorSystem.actorOf(QuoteActor.props(config), QuoteActor.NAME)
+        val orderActor = actorSystem.actorOf(OrderActor.props(config), OrderActor.NAME)
+        val websocketActor = actorSystem.actorOf(WebsocketActor.props(websocketListener), WebsocketActor.NAME)
 
-        defaultWatchListActor ! DefaultWatchListActor.Tick
-
+        Spark.get("/:actor/tick", (req: spark.Request, res: spark.Response) => {
+            val now = LocalDateTime.now.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            req.params(":actor") match {
+                case DefaultWatchListActor.NAME =>
+                    defaultWatchListActor ! DefaultWatchListActor.Tick
+                    s"Sent ${DefaultWatchListActor.NAME} a Tick at $now"
+                case OrderActor.NAME =>
+                    orderActor ! OrderActor.Tick
+                    s"Sent ${OrderActor.NAME} a Tick at $now"
+                case QuoteActor.NAME =>
+                    quoteActor ! QuoteActor.Tick
+                    s"Sent ${QuoteActor.NAME} a Tick at $now"
+                case WebsocketActor.NAME =>
+                    websocketActor ! WebsocketActor.Tick
+                    s"Sent ${WebsocketActor.NAME} a Tick at $now"
+            }
+        })
 /*
         val route =
             path("ws") {

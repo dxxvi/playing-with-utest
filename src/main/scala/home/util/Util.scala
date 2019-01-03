@@ -163,6 +163,7 @@ object Util extends SttpBackends {
         }
         case _ => None
     }
+
     /**
       * This method is here for easy testing.
       * @param s is like

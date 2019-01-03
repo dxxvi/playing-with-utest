@@ -49,7 +49,7 @@ class QuoteActor(config: Config) extends Actor with Timers with SttpBackends {
     val SERVER: String = config.getString("server")
     val symbolsNeedDailyQuote: collection.mutable.Set[String] = collection.mutable.Set.empty[String]
 
-    timers.startPeriodicTimer(Tick, Tick, 94019.millis)
+    // timers.startPeriodicTimer(Tick, Tick, 94019.millis)
 
     override def receive: Receive = {
         case Tick if DefaultWatchListActor.commaSeparatedSymbolString.nonEmpty =>
