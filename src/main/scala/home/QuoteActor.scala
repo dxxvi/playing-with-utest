@@ -48,7 +48,6 @@ class QuoteActor(config: Config) extends Actor with Timers with SttpBackends {
 
     val SERVER: String = config.getString("server")
     val symbolsNeedDailyQuote: collection.mutable.Set[String] = collection.mutable.Set.empty[String]
-    var useAkkaHttp: Boolean = true
 
     timers.startPeriodicTimer(Tick, Tick, 94019.millis)
 
@@ -63,7 +62,8 @@ class QuoteActor(config: Config) extends Actor with Timers with SttpBackends {
         case ResponseWrapper(Response(rawErrorBody, code, statusText, _, _)) => rawErrorBody.fold(
             _ => log.error("Error in getting quotes: {} {}", code, statusText),
             quoteList => quoteList.foreach(q => {
-                val stockActor = context.actorSelection(s"../${DefaultWatchListActor.NAME}/${q.symbol}")
+                val stockActor =
+                    context.actorSelection(s"../${DefaultWatchListActor.NAME}/${q.symbol}")
                 stockActor ! StockActor.Quote(q.lastTradePrice, q.updatedAt)
             })
         )
@@ -86,7 +86,8 @@ class QuoteActor(config: Config) extends Actor with Timers with SttpBackends {
             symbolsNeedDailyQuote.grouped(75).foreach(symbols => {
                 Try(Util.getDailyQuoteHttpURLConnection(symbols, config)) match {
                     case Success(list) => list.foreach(tuple => {
-                        val stockActor = context.actorSelection(s"../${DefaultWatchListActor.NAME}/${tuple._1}")
+                        val stockActor =
+                            context.actorSelection(s"../${DefaultWatchListActor.NAME}/${tuple._1}")
                         stockActor ! StockActor.DailyQuoteListWrapper(tuple._2)
                     })
                     case Failure(ex) => log.error("Error in getting daily quotes", ex)
