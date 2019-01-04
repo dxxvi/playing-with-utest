@@ -10,6 +10,7 @@ object WebsocketActor {
     sealed trait WebsocketSealedTrait
     case object Tick extends WebsocketSealedTrait
     case class Message(s: String) extends WebsocketSealedTrait
+    case object Debug extends WebsocketSealedTrait
 
     def props(websocketListener: WebsocketListener): Props = Props(new WebsocketActor(websocketListener))
 }
@@ -22,7 +23,7 @@ class WebsocketActor(websocketListener: WebsocketListener) extends Actor with Ti
     import org.json4s._
     import org.json4s.native.JsonMethods._
 
-    implicit val logSource: LogSource[AnyRef] = (t: AnyRef) => NAME
+    implicit val logSource: LogSource[AnyRef] = (_: AnyRef) => NAME
     val log: LoggingAdapter = Logging(context.system, this)
 
     val messages: ListBuffer[String] = ListBuffer.empty[String]
@@ -35,5 +36,15 @@ class WebsocketActor(websocketListener: WebsocketListener) extends Actor with Ti
         ))))
 
         case Message(s) => s +=: messages
+
+        case Debug => debug()
+    }
+
+    private def debug() {
+        val s = s"""
+               |${WebsocketActor.NAME} debug information:
+               |  messages: $messages
+             """.stripMargin
+        log.info(s)
     }
 }

@@ -23,6 +23,7 @@ object QuoteActor {
     case object Tick extends QuoteSealedTrait
     case class ResponseWrapper(r: Response[List[Quote]]) extends QuoteSealedTrait
     case class DailyQuoteRequest(symbol: String) extends QuoteSealedTrait
+    case object Debug extends QuoteSealedTrait
 
     def props(config: Config): Props = Props(new QuoteActor(config))
 }
@@ -49,12 +50,15 @@ class QuoteActor(config: Config) extends Actor with Timers with SttpBackends {
     val SERVER: String = config.getString("server")
     val symbolsNeedDailyQuote: collection.mutable.Set[String] = collection.mutable.Set.empty[String]
 
-    // timers.startPeriodicTimer(Tick, Tick, 94019.millis)
+    // timers.startPeriodicTimer(Tick, Tick, 4019.millis)
 
     override def receive: Receive = {
         case Tick if DefaultWatchListActor.commaSeparatedSymbolString.nonEmpty =>
             fetchAllQuotes() pipeTo self
-            fetchDailyQuotes()
+            if (symbolsNeedDailyQuote.nonEmpty) {
+                fetchDailyQuotes()
+                symbolsNeedDailyQuote.clear()
+            }
 
         case Tick if DefaultWatchListActor.commaSeparatedSymbolString.isEmpty =>
             log.info("Skip because the DefaultWatchListActor is not done yet.")
@@ -69,8 +73,13 @@ class QuoteActor(config: Config) extends Actor with Timers with SttpBackends {
         )
 
         case DailyQuoteRequest(symbol) => symbolsNeedDailyQuote += symbol
+
+        case Debug => debug()
     }
 
+    /**
+      * Fetch the last trade prices of all stocks, send them to the stock actors.
+      */
     private def fetchAllQuotes(): Future[ResponseWrapper] = {
         implicit val backend: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(config)
         sttp
@@ -82,17 +91,17 @@ class QuoteActor(config: Config) extends Actor with Timers with SttpBackends {
 
     private def fetchDailyQuotes() {
         implicit val backend: SttpBackend[Id, Nothing] = configureCoreJavaHttpBackend(config)
-        if (symbolsNeedDailyQuote.nonEmpty)
-            symbolsNeedDailyQuote.grouped(75).foreach(symbols => {
-                Try(Util.getDailyQuoteHttpURLConnection(symbols, config)) match {
-                    case Success(list) => list.foreach(tuple => {
-                        val stockActor =
-                            context.actorSelection(s"../${DefaultWatchListActor.NAME}/${tuple._1}")
-                        stockActor ! StockActor.DailyQuoteListWrapper(tuple._2)
-                    })
-                    case Failure(ex) => log.error("Error in getting daily quotes", ex)
-                }
-            })
+
+        symbolsNeedDailyQuote.grouped(75).foreach(symbols => {
+            Try(Util.getDailyQuoteHttpURLConnection(symbols, config)) match {
+                case Success(list) => list.foreach(tuple => {
+                    val stockActor =
+                        context.actorSelection(s"../${DefaultWatchListActor.NAME}/${tuple._1}")
+                    stockActor ! StockActor.DailyQuoteListWrapper(tuple._2)
+                })
+                case Failure(ex) => log.error("Error in getting daily quotes", ex)
+            }
+        })
     }
 
     /**
@@ -164,5 +173,13 @@ class QuoteActor(config: Config) extends Actor with Timers with SttpBackends {
         optionList.collect {
             case Some(q) => q
         }
+    }
+
+    private def debug() {
+        var s = s"""
+               |${QuoteActor.NAME} debug information:
+               |  symbolsNeedDailyQuote: $symbolsNeedDailyQuote
+             """.stripMargin
+        log.info(s)
     }
 }

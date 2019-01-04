@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Tools</title>
+  <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <style type="text/css">
+    html { font-size: 14px }
+    #tickResponse { border: 1px solid #ccc; padding: .5em; min-height: 1.5em; margin-bottom: .5em }
+    #symbol { width: auto; display: inline; margin-bottom: .5em }
+  </style>
+</head>
+<body style="margin: .25em; color: #444">
+<div id="tickResponse"></div>
+<p>
+  <button type="button" class="btn btn-link" onclick="tick('defaultWatchList')">Tick DefaultWatchListActor</button>
+  <button type="button" class="btn btn-link" onclick="tick('order')">Tick OrderActor</button>
+  <button type="button" class="btn btn-link" onclick="tick('quote')">Tick QuoteActor</button>
+  <button type="button" class="btn btn-link" onclick="tick('websocket')">Tick WebsocketActor</button>
+</p>
+<p>
+  <input type="text" placeholder="a symbol" size="10" class="form-control" id="symbol">
+  <button type="button" class="btn btn-link" onclick="tickSymbol()">Tick StockActor</button>
+  <button type="button" class="btn btn-link" onclick="debugSymbol()">Debug StockActor</button>
+  <br>
+  <button type="button" class="btn btn-link" onclick="debug('defaultWatchList')">Debug DefaultWatchList</button>
+  <button type="button" class="btn btn-link" onclick="debug('order')">Debug OrderActor</button>
+  <button type="button" class="btn btn-link" onclick="debug('quote')">Debug QuoteActor</button>
+  <button type="button" class="btn btn-link" onclick="debug('websocket')">Debug WebsocketActor</button>
+</p>
+<ol>
+  <li>Tick DefaultWatchListActor: to get the default watch list, create Stock actors.</li>
+  <li>Debug DefaultWatchList: commaSeparatedSymbolString shown.</li>
+  <li>Debug StockActor: it must show something like NaN and empty lists.</li>
+  <li>Debug QuoteActor: symbolsNeedDailyQuote is empty.</li>
+  <li>Tick QuoteActor: to fetch all quotes.</li>
+  <li>Debug StockActor: last trade price, todayHigh and todayLow must show something.</li>
+  <li>Tick StockActor: to request daily quotes, but order history is not requested because of no position.</li>
+  <li>Tick QuoteActor: to fetch all quotes and daily quotes for the stocks we stick right before this step.</li>
+  <li>Debug StockActor: last trade price and HL, HO, OL, CL shown.</li>
+  <li>Tick OrderActor: to get recent orders and positions.</li>
+  <li>Debug StockActor: last trade price, HL, HO, OL, CL and position shown.</li>
+</ol>
+<script type="text/javascript">
+  'use strict';
+
+  function tick(actorName) {
+      fetch(`${window.location.origin}/${actorName}/tick`)
+          .then(response => response.text())
+          .then(text => {
+              document.querySelectorAll('#tickResponse').forEach(div => div.innerHTML = text);
+          });
+  }
+
+  function tickSymbol() {
+      fetch(`${window.location.origin}/${document.getElementById('symbol').value.trim()}/tick`)
+  }
+
+  function debugSymbol() {
+      fetch(`${window.location.origin}/${document.getElementById('symbol').value.trim()}/debug`)
+  }
+
+  function debug(actorName) {
+      fetch(`${window.location.origin}/${actorName}/debug`);
+  }
+</script>
+</body>
+</html>

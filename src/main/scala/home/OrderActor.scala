@@ -13,6 +13,7 @@ object OrderActor {
 
     sealed trait OrderSealedTrait
     case object Tick extends OrderSealedTrait
+    case object Debug extends OrderSealedTrait
     case class OrderHistoryRequest(symbol: String) extends OrderSealedTrait
     private case class TempOrderHistoryRequest(
         symbol: String,
@@ -127,6 +128,8 @@ class OrderActor(config: Config) extends Actor with Timers with SttpBackends {
                 _ => log.error("Error in getting order history (no url information): {} {}", code, statusText),
                 (t: (List[Order], Option[String])) => sendOrdersToStockActor_CreateNextRequest(t, symbol, times)
             )
+
+        case Debug => debug()
     }
 
     private def sendOrdersToStockActor_CreateNextRequest(t: (List[Order], Option[String]), symbol: String, times: Int) {
@@ -272,5 +275,9 @@ class OrderActor(config: Config) extends Actor with Timers with SttpBackends {
                         uri"$SERVER/orders/".queryFragment(queryFragment)
                     })
         case Some(url) => Some(uri"$url")
+    }
+
+    private def debug() {
+        log.info(s"$NAME debug information:")
     }
 }

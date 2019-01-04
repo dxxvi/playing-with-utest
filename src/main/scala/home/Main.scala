@@ -33,7 +33,7 @@ object Main {
         val orderActor = actorSystem.actorOf(OrderActor.props(config), OrderActor.NAME)
         val websocketActor = actorSystem.actorOf(WebsocketActor.props(websocketListener), WebsocketActor.NAME)
 
-        Spark.get("/:actor/tick", (req: spark.Request, res: spark.Response) => {
+        Spark.get("/:actor/tick", (req: spark.Request, _: spark.Response) => {
             val now = LocalDateTime.now.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
             req.params(":actor") match {
                 case DefaultWatchListActor.NAME =>
@@ -48,7 +48,24 @@ object Main {
                 case WebsocketActor.NAME =>
                     websocketActor ! WebsocketActor.Tick
                     s"Sent ${WebsocketActor.NAME} a Tick at $now"
+                case symbol: String =>
+                    actorSystem.actorSelection(s"${defaultWatchListActor.path}/$symbol") ! StockActor.Tick
+                    s"Sent StockActor $symbol a Tick at $now"
             }
+        })
+
+        Spark.get("/:symbol/debug", (req: spark.Request, _: spark.Response) => {
+            val now = LocalDateTime.now.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+            val s = req.params(":symbol")
+            s match {
+                case "defaultWatchList" => defaultWatchListActor ! DefaultWatchListActor.Debug
+                case "order" => orderActor ! OrderActor.Debug
+                case "quote" => quoteActor ! QuoteActor.Debug
+                case "websocket" => websocketActor ! WebsocketActor.Debug
+                case symbol: String =>
+                    actorSystem.actorSelection(s"${defaultWatchListActor.path}/$symbol") ! StockActor.Debug
+            }
+            s"Sent a Debug message to $s at $now"
         })
 /*
         val route =
@@ -85,6 +102,7 @@ object Main {
 
     private def initializeSpark(actorSystem: ActorSystem): WebsocketListener = {
         val webSocketListener = new WebsocketListener(actorSystem)
+        Spark.staticFiles.location("/html")
         Spark.staticFiles.location("/static")
         Spark.webSocket("/ws", webSocketListener)
 

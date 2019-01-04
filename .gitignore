@@ -35,4 +35,6 @@
 **/target
 **/package-lock.json
 src/main/resources/static/
+src/main/resources/html/bootstrap/css
+src/main/resources/html/bootstrap/js
 src/main/resources/reference.conf

@@ -21,6 +21,7 @@ object DefaultWatchListActor {
     sealed trait DefaultWatchListSealedTrait
     case object Tick extends DefaultWatchListSealedTrait
     case class ResponseWrapper(r: Response[List[String]]) extends DefaultWatchListSealedTrait
+    case object Debug extends DefaultWatchListSealedTrait
 
     def props(config: Config): Props = Props(new DefaultWatchListActor(config))
 }
@@ -51,6 +52,7 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with SttpB
         case Tick =>
             implicit val backend: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(config)
             defaultWatchListRequest.send().map(ResponseWrapper) pipeTo self
+
         case ResponseWrapper(Response(rawErrorBody, code, statusText, _, _)) =>
             rawErrorBody.fold(
                 _ => {
@@ -68,6 +70,8 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with SttpB
                     _commaSeparatedSymbolString = symbolList.mkString(",")
                 }
             )
+
+        case Debug => debug()
     }
 
     private def extractInstruments(s: String): List[String] = {
@@ -101,5 +105,13 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with SttpB
                 case Failure(ex) => log.error(ex, "Error for {}", i)
             }
             None
+    }
+
+    private def debug() {
+        val s = s"""
+               |${DefaultWatchListActor.NAME} debug information:
+               |  commaSeparatedSymbolString: ${commaSeparatedSymbolString}
+             """.stripMargin
+        log.info(s)
     }
 }

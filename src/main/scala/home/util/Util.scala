@@ -1,5 +1,7 @@
 package home.util
 
+import home.DefaultWatchListActor
+
 object Util extends SttpBackends {
     import scala.reflect.runtime.universe._
     import scala.util.Success
@@ -372,12 +374,15 @@ object Util extends SttpBackends {
         import org.json4s._
         import org.json4s.native.JsonMethods._
 
+        val commaSeparatedSymbolString = "," + DefaultWatchListActor.commaSeparatedSymbolString + ","
+
         (parse(js) \ "results").asInstanceOf[JArray].arr
                 .map(jv => for {
                     instrument <- fromJValueToOption[String](jv \ "instrument")
                     symbol <- StockDatabase.getInstrumentFromInstrument(instrument).map(_.symbol)
                     quantity <- fromJValueToOption[Double](jv \ "quantity")
                     if !quantity.isNaN
+                    if commaSeparatedSymbolString contains ("," + symbol + ",")
                 } yield (symbol, quantity))
                 .collect {
                     case Some(tuple) => tuple
