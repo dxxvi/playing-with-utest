@@ -265,7 +265,7 @@ class OrderActor(config: Config) extends Actor with Timers with SttpBackends {
       *         uri of the nextUrl content if nextUrl contains something
       */
     private def buildUriOptionFromNextUrlOption(symbol: String, nextUrl: Option[String]): Option[Uri] = nextUrl match {
-        case Some("") =>
+        case Some("") | None =>
             import com.softwaremill.sttp.Uri._
             StockDatabase.getInstrumentFromSymbol(symbol)
                     .map(_.instrument)

@@ -1,8 +1,8 @@
 package home.util
 
 import com.typesafe.config.ConfigFactory
-import org.junit.Assert._
-import org.junit.Test
+import org.junit.jupiter.api.Assertions._
+import org.junit.jupiter.api.Test
 
 import scala.util.{Failure, Success, Try}
 
@@ -38,11 +38,11 @@ class UtilTests {
 
         val amdOption: Option[(String, List[DailyQuote])] = list.find(_._1 == "AMD")
         assertTrue(amdOption.nonEmpty)
-        assertTrue("Not enough AMD daily quotes", amdOption.get._2.size > 241)
+        assertTrue(amdOption.get._2.size > 241, "Not enough AMD daily quotes")
 
         val tslaOption: Option[(String, List[DailyQuote])] = list.find(_._1 == "TSLA")
         assertTrue(tslaOption.nonEmpty)
-        assertTrue("Not enough TSLA daily quotes", tslaOption.get._2.size > 241)
+        assertTrue(tslaOption.get._2.size > 241, "Not enough TSLA daily quotes")
     }
 
     @Test
@@ -60,9 +60,9 @@ class UtilTests {
         sttp.header(AUTHORIZATION, authorization).get(uri"$SERVER/orders/").send().body match {
             case Right(js) =>
                 val list: List[(String, home.StockActor.Order)] = Util.extractSymbolAndOrder(js)
-                assertEquals("Should get 100 orders", 100, list.size)
-                assertTrue("No order should have average_price or price of Double.NaN",
-                    !list.exists(t => t._2.averagePrice.isNaN || t._2.price.isNaN))
+                assertEquals(100, list.size, "Should get 100 orders")
+                assertTrue(!list.exists(t => t._2.averagePrice.isNaN || t._2.price.isNaN),
+                    "No order should have average_price or price of Double.NaN")
             case Left(s) => throw new RuntimeException(s)
         }
     }

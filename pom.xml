@@ -16,10 +16,10 @@
     <scala.version.minor>8</scala.version.minor>
     <scala.version>${scala.version.major}.${scala.version.minor}</scala.version>
     <akka.version>2.5.19</akka.version>
-    <akka.http.version>10.1.6</akka.http.version>
-    <sttp.version>1.5.2</sttp.version>
+    <akka.http.version>10.1.7</akka.http.version>
+    <sttp.version>1.5.4</sttp.version>
     <jetty.version>9.4.14.v20181114</jetty.version>
-    <junit.version>4.12</junit.version>
+    <junit.version>5.3.2</junit.version>
   </properties>
 
   <dependencies>
@@ -100,8 +100,8 @@
     </dependency>
 
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
       <version>${junit.version}</version>
       <scope>test</scope>
     </dependency>
