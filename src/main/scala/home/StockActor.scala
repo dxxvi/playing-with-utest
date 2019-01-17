@@ -21,7 +21,26 @@ object StockActor {
                     side: String,
                     state: String,
                     updatedAt: String
-                    ) extends StockSealedTrait
+                    ) extends StockSealedTrait {
+        override def hashCode(): Int = id.hashCode
+
+        override def equals(obj: Any): Boolean = obj match {
+            case o: Order => this.id == o.id
+            case _ => false
+        }
+    }
+    case class OrderX(
+                     override val averagePrice: Double,
+                     createdAt: String,
+                     cumulativeQuantity: Double,
+                     id: String,
+                     price: Double,
+                     quantity: Double,
+                     side: String,
+                     state: String,
+                     updatedAt: String,
+                     matchId: String
+                     ) extends Order(averagePrice, createdAt, cumulativeQuantity, id, price, quantity, side, state, updatedAt)
     case class Position(quantity: Double) extends StockSealedTrait
     case object Debug extends StockSealedTrait
 
@@ -95,6 +114,7 @@ class StockActor(symbol: String) extends Actor with Timers {
             if (shouldRequestDailyQuote)
                 context.actorSelection(s"../../${QuoteActor.NAME}") ! QuoteActor.DailyQuoteRequest(symbol)
             if (shouldRequestOrderHistory) {
+                log.info("{} sends OrderActor a OrderHistoryRequest", symbol)
                 orderHistoryRequestTime = System.currentTimeMillis
                 context.actorSelection(s"../../${OrderActor.NAME}") ! OrderActor.OrderHistoryRequest(symbol)
                 sentOrderHistoryRequest = true

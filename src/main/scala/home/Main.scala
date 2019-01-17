@@ -9,7 +9,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
 import com.typesafe.config.{Config, ConfigFactory}
-import home.util.StockDatabase
+import home.util.{StockDatabase, Util}
 import spark.Spark
 
 import scala.concurrent.ExecutionContextExecutor
@@ -17,10 +17,19 @@ import scala.io.StdIn
 import scala.util.{Failure, Success, Try}
 
 object Main {
+    var accessToken: String = "_"
+
     def main(args: Array[String]) {
         val config: Config = ConfigFactory.load()
 
         addStocksToDatabase(config)
+
+        Util.retrieveAccessToken(config) match {
+            case Right(x) => accessToken = x
+            case Left(errorMessage) =>
+                println(errorMessage)
+                System.exit(-1)
+        }
 
         implicit val actorSystem: ActorSystem = ActorSystem("R")
         implicit val actorMaterializer: ActorMaterializer = ActorMaterializer()
@@ -29,6 +38,7 @@ object Main {
 
         val defaultWatchListActor =
             actorSystem.actorOf(DefaultWatchListActor.props(config), DefaultWatchListActor.NAME)
+//        defaultWatchListActor ! DefaultWatchListActor.Tick
         val quoteActor = actorSystem.actorOf(QuoteActor.props(config), QuoteActor.NAME)
         val orderActor = actorSystem.actorOf(OrderActor.props(config), OrderActor.NAME)
         val websocketActor = actorSystem.actorOf(WebsocketActor.props(websocketListener), WebsocketActor.NAME)
@@ -171,7 +181,7 @@ object Main {
                 StockDatabase.addRegularStock(symbol, t3._1, t3._2, t3._3)
             }
 
-        def addStocksInConfigToDatabase(c: Config, f: Function2[String, JavaMapEntryScalaSet, Unit]) {
+        def addStocksInConfigToDatabase(c: Config, f: (String, JavaMapEntryScalaSet) => Unit) {
             c.entrySet().asScala
                     .groupBy(e => e.getKey.takeWhile(_ != '.'))
                     .foreach(tuple => f(tuple._1, tuple._2))

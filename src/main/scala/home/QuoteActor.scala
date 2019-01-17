@@ -83,6 +83,7 @@ class QuoteActor(config: Config) extends Actor with Timers with SttpBackends {
     private def fetchAllQuotes(): Future[ResponseWrapper] = {
         implicit val backend: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(config)
         sttp
+                .auth.bearer(Main.accessToken)
                 .get(uri"$SERVER/quotes/?symbols=${DefaultWatchListActor.commaSeparatedSymbolString}")
                 .response(asString.map(extractLastTradePriceAndSymbol))
                 .send()

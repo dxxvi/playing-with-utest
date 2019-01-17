@@ -2,6 +2,8 @@ package home.util
 
 import home.DefaultWatchListActor
 
+import scala.util.Failure
+
 object Util extends SttpBackends {
     import scala.reflect.runtime.universe._
     import scala.util.Success
@@ -10,15 +12,21 @@ object Util extends SttpBackends {
     import org.json4s._
     import home.QuoteActor.DailyQuote
 
-    def getSymbolFromInstrumentHttpURLConnection(url: String, config: Config): String = {
+    private val AUTHORIZATION: String = "Authorization"
+
+    def getSymbolFromInstrumentHttpURLConnection(url: String, config: Config): Try[String] = {
         import com.softwaremill.sttp._
         import org.json4s.native.JsonMethods._
 
         implicit val backend: SttpBackend[Id, Nothing] = configureCoreJavaHttpBackend(config)
-        sttp.get(uri"$url").send().body match {
-            case Right(jString) => (parse(jString) \ "symbol").asInstanceOf[JString].values
-            case Left(s) => throw new RuntimeException(s)
-        }
+        sttp
+                .header(AUTHORIZATION, "Bearer " + home.Main.accessToken)
+                .get(uri"$url")
+                .send()
+                .body match {
+                    case Right(jString) => Success((parse(jString) \ "symbol").asInstanceOf[JString].values)
+                    case Left(s) => Failure(new RuntimeException(s))
+                }
     }
 
     def getDailyQuoteHttpURLConnection(symbols: collection.Set[String], config: Config): List[(String, List[DailyQuote])] = {
@@ -107,7 +115,9 @@ object Util extends SttpBackends {
                     case Some(dailyQuote) => dailyQuote
                 }
 
-        sttp.get(uri"$SERVER/quotes/historicals/?interval=day&span=year&symbols=${symbols.mkString(",")}")
+        sttp
+                .header(AUTHORIZATION, "Bearer " + home.Main.accessToken, true)
+                .get(uri"$SERVER/quotes/historicals/?interval=day&span=year&symbols=${symbols.mkString(",")}")
                 .send()
                 .body match {
                     case Right(js) =>
@@ -387,5 +397,38 @@ object Util extends SttpBackends {
                 .collect {
                     case Some(tuple) => tuple
                 }
+    }
+
+    def retrieveAccessToken(config: Config): Either[String, String] = {
+        import com.softwaremill.sttp._
+        import org.json4s._
+        import org.json4s.JsonAST.{JObject, JString}
+        import org.json4s.native.Serialization
+        import org.json4s.native.JsonMethods._
+
+        Encryption.decrypt(Encryption.getKey(config), config.getString("authorization.encryptedPassword")) match {
+            case Success(password) =>
+                val body = Serialization.write(JObject(
+                    "username" -> JString(config.getString("authorization.username")),
+                    "password" -> JString(password),
+                    "grant_type" -> JString("password"),
+                    "client_id" -> JString("c82SH0WZOsabOXGP2sxqcj34FxkvfnWRZBKlBjFS")
+                ))(DefaultFormats)
+
+                implicit val backend: SttpBackend[Id, Nothing] = configureCoreJavaHttpBackend(config)
+                sttp
+                        .headers(HeaderNames.ContentType -> MediaTypes.Json)
+                        .body(body)
+                        .post(uri"https://api.robinhood.com/oauth2/token/")
+                        .send()
+                        .body match {
+                    case Right(jString) => fromJValueToOption[String](parse(jString) \ "access_token") match {
+                        case Some(accessToken) => Right(accessToken)
+                        case _ => Left(s"No access_token field in $jString")
+                    }
+                    case x => x
+                }
+            case Failure(ex) => Left(ex.getMessage)
+        }
     }
 }

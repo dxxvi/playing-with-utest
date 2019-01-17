@@ -59,7 +59,7 @@ class OrderActor(config: Config) extends Actor with Timers with SttpBackends {
     val log: LoggingAdapter = Logging(context.system, this)
 
     val SERVER: String = config.getString("server")
-    val authorization: String = if (config.hasPath(AUTHORIZATION)) config.getString(AUTHORIZATION) else "No-token"
+    val authorization: String = "Bearer " + Main.accessToken
 
     val recentOrdersRequest: RequestT[Id, List[(String, StockActor.Order)], Nothing] = sttp
             .header(AUTHORIZATION, authorization)
