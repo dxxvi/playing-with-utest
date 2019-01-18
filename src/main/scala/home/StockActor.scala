@@ -12,15 +12,16 @@ object StockActor {
     case class Quote(lastTradePrice: Double, updatedAt: String) extends StockSealedTrait
     case class DailyQuoteListWrapper(list: List[QuoteActor.DailyQuote]) extends StockSealedTrait
     case class Order(
-                    averagePrice: Double,
+                    var averagePrice: Double,
                     createdAt: String,
-                    cumulativeQuantity: Double,
+                    var cumulativeQuantity: Double,
                     id: String,
-                    price: Double,
-                    quantity: Double,
+                    var price: Double,
+                    var quantity: Double,
                     side: String,
-                    state: String,
-                    updatedAt: String
+                    var state: String,
+                    var updatedAt: String,
+                    var matchId: Option[String] = None
                     ) extends StockSealedTrait {
         override def hashCode(): Int = id.hashCode
 
@@ -29,20 +30,12 @@ object StockActor {
             case _ => false
         }
     }
-    case class OrderX(
-                     override val averagePrice: Double,
-                     createdAt: String,
-                     cumulativeQuantity: Double,
-                     id: String,
-                     price: Double,
-                     quantity: Double,
-                     side: String,
-                     state: String,
-                     updatedAt: String,
-                     matchId: String
-                     ) extends Order(averagePrice, createdAt, cumulativeQuantity, id, price, quantity, side, state, updatedAt)
     case class Position(quantity: Double) extends StockSealedTrait
     case object Debug extends StockSealedTrait
+
+    object OrderState extends Enumeration {
+        val CONFIRM /* including confirmed and unconfirmed */, CANCEL, QUEUE, PARTIAL, FILL = Value
+    }
 
     object CreatedAtOrderingForOrders extends Ordering[Order] {
         import java.time.LocalDateTime
@@ -120,18 +113,26 @@ class StockActor(symbol: String) extends Actor with Timers {
                 sentOrderHistoryRequest = true
             }
 
-        case o: Order =>                         // TODO
+        case o: Order => updateOrders(o)
 
         case Position(quantity) => position = quantity
 
         case Debug => debug()
     }
 
-    private def shouldRequestDailyQuote: Boolean = HL.isEmpty &&
-            System.currentTimeMillis - dailyQuoteRequestTime > 20000
-
-    private def shouldRequestOrderHistory: Boolean = !sentOrderHistoryRequest && !position.isNaN && position != 0 &&
-            System.currentTimeMillis - orderHistoryRequestTime > 20000
+    private def debug() {
+        val s = s"""
+                   |$symbol debug information:
+                   |  ltp (last trade price): $ltp
+                   |  openPrice: $openPrice - todayHigh: $todayHigh - todayLow: $todayLow
+                   |  HL49: $HL49 - HL31: $HL31 - HL10: $HL10
+                   |  H049: $HO49 - H010: $HO10
+                   |  OL49: $OL49 - OL10: $OL10 - CL49: $CL49
+                   |  Lowest of last 10 days: ${L.map(_.lowPrice)}
+                   |  Position: $position - sentOrderHistoryRequest: $sentOrderHistoryRequest
+            """.stripMargin
+        log.info(s)
+    }
 
     /**
       * @param list the last N days
@@ -157,17 +158,44 @@ class StockActor(symbol: String) extends Actor with Timers {
         L3 = f"${L(2).lowPrice}%4.4f".toDouble
     }
 
-    private def debug() {
-        val s = s"""
-              |$symbol debug information:
-              |  ltp (last trade price): $ltp
-              |  openPrice: $openPrice - todayHigh: $todayHigh - todayLow: $todayLow
-              |  HL49: $HL49 - HL31: $HL31 - HL10: $HL10
-              |  H049: $HO49 - H010: $HO10
-              |  OL49: $OL49 - OL10: $OL10 - CL49: $CL49
-              |  Lowest of last 10 days: ${L.map(_.lowPrice)}
-              |  Position: $position - sentOrderHistoryRequest: $sentOrderHistoryRequest
-            """.stripMargin
-        log.info(s)
+    private def shouldRequestDailyQuote: Boolean = HL.isEmpty &&
+            System.currentTimeMillis - dailyQuoteRequestTime > 20000
+
+    private def shouldRequestOrderHistory: Boolean = !sentOrderHistoryRequest && !position.isNaN && position != 0 &&
+            System.currentTimeMillis - orderHistoryRequestTime > 20000
+
+    private def state(o: Order): OrderState.Value =
+        if (o.state.contains("confirmed")) OrderState.CONFIRM
+        else if (o.state.contains("cancel")) OrderState.CANCEL
+        else if (o.state.contains("queue")) OrderState.QUEUE
+        else if (o.state.contains("partial")) OrderState.PARTIAL
+        else if (o.state.contains("fill")) OrderState.FILL
+        else {
+            log.error("This {} has an unknown state.", o)
+            OrderState.CONFIRM
+        }
+
+    private def updateOrders(o: Order) {
+        import OrderState._
+
+        def copy(from: Order, to: Order) {
+            to.averagePrice = from.averagePrice
+            to.cumulativeQuantity = from.cumulativeQuantity
+            to.price = from.price
+            to.quantity = from.quantity
+            to.state = from.state
+            to.updatedAt = from.updatedAt
+        }
+
+        val orderO: Option[Order] = orders.find(_.id == o.id)
+        val _state = state(o)
+
+        if (_state == CANCEL) orderO.foreach(orders -= _)
+        else if (orderO.isEmpty) orders += o
+        else if (Array(CONFIRM, QUEUE, PARTIAL) contains _state) copy(o, orderO.get)
+        else /* _state is FILL */ if (_state != FILL) {
+            copy(o, orderO.get)
+            // TODO re-calculate the matchId
+        }
     }
 }
