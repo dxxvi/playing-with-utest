@@ -1,0 +1,15 @@
+<configuration scan="true" scanPeriod="6 seconds">
+  <timestamp key="byDate" datePattern="yyyyMMdd"/>
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} %-5level %-36logger{36}: %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <logger name="org.eclipse.jetty" level="INFO" additivity="false"/>
+
+  <root level="DEBUG">
+    <appender-ref ref="STDOUT"/>
+  </root>
+</configuration>
