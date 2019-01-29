@@ -2,7 +2,8 @@ package home
 
 import java.time.format.DateTimeFormatter
 
-import akka.actor.{Actor, Timers}
+import akka.actor.Actor
+import home.util.TimersX
 
 object StockActor {
     import akka.actor.Props
@@ -11,6 +12,7 @@ object StockActor {
     case object Tick extends StockSealedTrait
     case class Quote(lastTradePrice: Double, updatedAt: String) extends StockSealedTrait
     case class DailyQuoteListWrapper(list: List[QuoteActor.DailyQuote]) extends StockSealedTrait
+    case class OpenLowHigh(o: Double, l: Double, h: Double) extends StockSealedTrait
     case class Order(
                     var averagePrice: Double,
                     createdAt: String,
@@ -23,9 +25,9 @@ object StockActor {
                     var updatedAt: String,
                     var matchId: Option[String] = None
                     ) extends StockSealedTrait {
-        override def hashCode(): Int = id.hashCode
+        override def hashCode(): Int = id.hashCode           // the hashCode
 
-        override def equals(obj: Any): Boolean = obj match {
+        override def equals(obj: Any): Boolean = obj match { // and equals methods seem not used
             case o: Order => this.id == o.id
             case _ => false
         }
@@ -45,13 +47,13 @@ object StockActor {
             LocalDateTime.parse(regex.replaceAllIn(utcDateTime, ""), DateTimeFormatter.ISO_LOCAL_DATE_TIME)
 
         override def compare(x: Order, y: Order): Int =
-            utcDateTimeToLocalDateTime(x.createdAt) compareTo utcDateTimeToLocalDateTime(y.createdAt)
+            utcDateTimeToLocalDateTime(y.createdAt) compareTo utcDateTimeToLocalDateTime(x.createdAt)
     }
 
     def props(symbol: String): Props = Props(new StockActor(symbol))
 }
 
-class StockActor(symbol: String) extends Actor with Timers {
+class StockActor(symbol: String) extends Actor with TimersX {
     import StockActor._
     import scala.concurrent.duration._
     import akka.event._
@@ -84,6 +86,7 @@ class StockActor(symbol: String) extends Actor with Timers {
 
     var dailyQuoteRequestTime:   Long = System.currentTimeMillis - 20000
     var orderHistoryRequestTime: Long = System.currentTimeMillis - 20000
+    var todayQuotesRequestTime:  Long = System.currentTimeMillis - 20000
 
     var position: Double = Double.NaN            // also called quantity
 
@@ -91,9 +94,16 @@ class StockActor(symbol: String) extends Actor with Timers {
 
     val orders: collection.mutable.SortedSet[Order] = collection.mutable.SortedSet[Order]()(CreatedAtOrderingForOrders)
 
-    // timers.startPeriodicTimer(Tick, Tick, 4019.millis)
+    timersx.startPeriodicTimer(Tick, Tick, 4019.millis)
 
     override def receive: Receive = {
+        case OpenLowHigh(open, low, high) =>
+            if (openPrice.isNaN) openPrice = open
+            if (todayLow.isNaN) todayLow = low
+            else if (!low.isNaN) todayLow = math.min(todayLow, low)
+            if (todayHigh.isNaN) todayHigh = high
+            else if (!high.isNaN) todayHigh = math.max(todayHigh, high)
+
         case Quote(lastTradePrice, _) =>
             ltp = lastTradePrice
             todayHigh = if (todayHigh.isNaN) ltp else math.max(ltp, todayHigh)
@@ -104,23 +114,25 @@ class StockActor(symbol: String) extends Actor with Timers {
             setStats(_list.reverse take N)
 
         case Tick =>
-            if (shouldRequestDailyQuote)
-                context.actorSelection(s"../../${QuoteActor.NAME}") ! QuoteActor.DailyQuoteRequest(symbol)
+            val quoteActorRefSelection = context.actorSelection(s"../../${QuoteActor.NAME}")
+            if (shouldRequestDailyQuote) quoteActorRefSelection ! QuoteActor.DailyQuoteRequest(symbol)
             if (shouldRequestOrderHistory) {
-                log.info("{} sends OrderActor a OrderHistoryRequest", symbol)
                 orderHistoryRequestTime = System.currentTimeMillis
                 context.actorSelection(s"../../${OrderActor.NAME}") ! OrderActor.OrderHistoryRequest(symbol)
                 sentOrderHistoryRequest = true
             }
+            if (shouldRequestTodayQuotes) quoteActorRefSelection ! QuoteActor.TodayQuotesRequest(symbol)
 
         case o: Order => updateOrders(o)
 
         case Position(quantity) => position = quantity
 
-        case Debug => debug()
+        case Debug =>
+            val map = debug()
+            sender() ! map
     }
 
-    private def debug() {
+    private def debug(): Map[String, String] = {
         val s = s"""
                    |$symbol debug information:
                    |  ltp (last trade price): $ltp
@@ -128,10 +140,29 @@ class StockActor(symbol: String) extends Actor with Timers {
                    |  HL49: $HL49 - HL31: $HL31 - HL10: $HL10
                    |  H049: $HO49 - H010: $HO10
                    |  OL49: $OL49 - OL10: $OL10 - CL49: $CL49
-                   |  Lowest of last 10 days: ${L.map(_.lowPrice)}
-                   |  Position: $position - sentOrderHistoryRequest: $sentOrderHistoryRequest
+                   |  Lowests of last 20 days: ${L.map(_.lowPrice)}
+                   |  Position: $position
+                   |  sentOrderHistoryRequest: $sentOrderHistoryRequest
             """.stripMargin
         log.info(s)
+        Map(
+            "ltp" -> (if (ltp.isNaN) "NaN" else ltp.toString),
+            "openPrice" -> (if (openPrice.isNaN) "NaN" else openPrice.toString),
+            "todayHigh" -> (if (todayHigh.isNaN) "NaN" else todayHigh.toString),
+            "todayLow"  -> (if (todayLow.isNaN) "NaN" else todayLow.toString),
+            "CL49"      -> (if (CL49.isNaN) "NaN" else CL49.toString),
+            "HL49"      -> (if (HL49.isNaN) "NaN" else HL49.toString),
+            "OL49"      -> (if (OL49.isNaN) "NaN" else OL49.toString),
+            "L3"        -> (if (L3.isNaN) "NaN" else L3.toString),
+            "position"  -> (if (position.isNaN) "NaN" else position.toString),
+            "HL" -> HL.mkString(","),
+            "HO" -> HO.mkString(","),
+            "OL" -> OL.mkString(","),
+            "L"  -> L.mkString(","),
+            "sentOrderHistoryRequest" -> sentOrderHistoryRequest.toString,
+            // we need to convert orders into list before mapping so that we can keep the order of elements
+            "orders" -> orders.toList.map(_.toString).mkString("\n")
+        )
     }
 
     /**
@@ -154,15 +185,33 @@ class StockActor(symbol: String) extends Actor with Timers {
         val CL = list.sortWith((dq1, dq2) => dq1.closePrice - dq1.lowPrice < dq2.closePrice - dq2.lowPrice)
         CL49 = f"${CL(49).closePrice - CL(49).lowPrice}%4.4f".toDouble
 
-        L = list.take(10).sortWith((dq1, dq2) => dq1.lowPrice < dq2.lowPrice)
+        L = list.take(20).sortWith((dq1, dq2) => dq1.lowPrice < dq2.lowPrice)
         L3 = f"${L(2).lowPrice}%4.4f".toDouble
     }
 
     private def shouldRequestDailyQuote: Boolean = HL.isEmpty &&
             System.currentTimeMillis - dailyQuoteRequestTime > 20000
 
-    private def shouldRequestOrderHistory: Boolean = !sentOrderHistoryRequest && !position.isNaN && position != 0 &&
+    private def shouldRequestOrderHistory: Boolean =
+        // TODO this logic is very confusing
+        if (System.currentTimeMillis - orderHistoryRequestTime > 20000 && !position.isNaN && position != 0) {
+            if (sentOrderHistoryRequest) {
+                if (orders.isEmpty) {
+                    sentOrderHistoryRequest = false
+                    true
+                }
+                else false
+            }
+            else true
+        }
+        else false
+/*
+        !sentOrderHistoryRequest && !position.isNaN && position != 0 &&
             System.currentTimeMillis - orderHistoryRequestTime > 20000
+*/
+
+    private def shouldRequestTodayQuotes: Boolean = openPrice.isNaN &&
+            System.currentTimeMillis - todayQuotesRequestTime > 20000
 
     private def state(o: Order): OrderState.Value =
         if (o.state.contains("confirmed")) OrderState.CONFIRM
@@ -187,14 +236,14 @@ class StockActor(symbol: String) extends Actor with Timers {
             to.updatedAt = from.updatedAt
         }
 
-        val orderO: Option[Order] = orders.find(_.id == o.id)
+        val orderOption: Option[Order] = orders.find(_.id == o.id) // existing order in orders
         val _state = state(o)
 
-        if (_state == CANCEL) orderO.foreach(orders -= _)
-        else if (orderO.isEmpty) orders += o
-        else if (Array(CONFIRM, QUEUE, PARTIAL) contains _state) copy(o, orderO.get)
-        else /* _state is FILL */ if (_state != FILL) {
-            copy(o, orderO.get)
+        if (_state == CANCEL) orderOption.foreach(orders -= _)
+        else if (orderOption.isEmpty) orders += o                  // from here, orderOption is defined
+        else if (Array(CONFIRM, QUEUE, PARTIAL) contains _state) copy(o, orderOption.get)
+        else /* _state is FILL */ if (state(orderOption.get) != FILL) {
+            copy(o, orderOption.get)
             // TODO re-calculate the matchId
         }
     }

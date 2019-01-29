@@ -12,8 +12,8 @@ class StockActorTests {
 
         val order1 = Order(1, "2019-07-02T10:18:04.328826Z", 1, "O1", 1, 1, "", "", "")
         orders += order1
-        orders += Order(1, "2019-10-02T10:18:04.328Z",    1, "O2", 1, 1, "", "", "")
-        orders += Order(1, "2019-01-02T10:18:04",         1, "O3", 1, 1, "", "", "")
+        orders += Order(1, "2019-10-02T10:18:04.328Z", 1, "O2", 1, 1, "", "", "")
+        orders += Order(1, "2019-01-02T10:18:04",      1, "O3", 1, 1, "", "", "")
 
         val orderArray = orders.toArray
         assertEquals("O3", orderArray(0).id)

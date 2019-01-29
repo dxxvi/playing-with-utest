@@ -1,7 +1,9 @@
 package home.util
 
+
 import home.DefaultWatchListActor
 
+import scala.concurrent.Future
 import scala.util.Failure
 
 object Util extends SttpBackends {
@@ -19,14 +21,16 @@ object Util extends SttpBackends {
         import org.json4s.native.JsonMethods._
 
         implicit val backend: SttpBackend[Id, Nothing] = configureCoreJavaHttpBackend(config)
-        sttp
-                .header(AUTHORIZATION, "Bearer " + home.Main.accessToken)
+        Try(
+            sttp
+                .auth.bearer(home.Main.accessToken)
                 .get(uri"$url")
                 .send()
                 .body match {
-                    case Right(jString) => Success((parse(jString) \ "symbol").asInstanceOf[JString].values)
-                    case Left(s) => Failure(new RuntimeException(s))
+                    case Right(jString) => (parse(jString) \ "symbol").asInstanceOf[JString].values
+                    case Left(s) => throw new RuntimeException(s)
                 }
+        )
     }
 
     def getDailyQuoteHttpURLConnection(symbols: collection.Set[String], config: Config): List[(String, List[DailyQuote])] = {
@@ -103,20 +107,8 @@ object Util extends SttpBackends {
          *   ]
          * }
          */
-        def getDailyQuotesFromJArray(ja: JArray): List[DailyQuote] = ja.arr
-                .map(jv => for {
-                    beginsAt <- fromJValueToOption[String](jv \ "begins_at")
-                    openPrice <- fromJValueToOption[Double](jv \ "open_price")
-                    closePrice <- fromJValueToOption[Double](jv \ "close_price")
-                    highPrice <- fromJValueToOption[Double](jv \ "high_price")
-                    lowPrice <- fromJValueToOption[Double](jv \ "low_price")
-                } yield DailyQuote(beginsAt, openPrice, closePrice, highPrice, lowPrice))
-                .collect {
-                    case Some(dailyQuote) => dailyQuote
-                }
-
         sttp
-                .header(AUTHORIZATION, "Bearer " + home.Main.accessToken, true)
+                .auth.bearer(home.Main.accessToken)
                 .get(uri"$SERVER/quotes/historicals/?interval=day&span=year&symbols=${symbols.mkString(",")}")
                 .send()
                 .body match {
@@ -124,8 +116,9 @@ object Util extends SttpBackends {
                         (parse(js) \ "results").asInstanceOf[JArray].arr
                                 .map(jv => for {
                                     symbol <- fromJValueToOption[String](jv \ "symbol")
-                                    dailyQuoteList = getDailyQuotesFromJArray((jv \ "historicals").asInstanceOf[JArray])
-                                } yield (symbol, dailyQuoteList))
+                                    dailyQuoteList = getIntervalQuotesFromJArray((jv \ "historicals").asInstanceOf[JArray])
+                                } yield (symbol, dailyQuoteList)
+                                )
                                 .collect {
                                     case Some(tuple) => tuple
                                 }
@@ -177,7 +170,7 @@ object Util extends SttpBackends {
     }
 
     /**
-      * This method is here for easy testing.
+      * This method is here for easy testing. The StockDatabase must be populated first.
       * @param s is like
       * {
       *   "previous": null,
@@ -307,7 +300,8 @@ object Util extends SttpBackends {
         import org.json4s._
         import org.json4s.native.JsonMethods._
 
-        (parse(s) \ "results").asInstanceOf[JArray].arr.map(jv => for {
+        val jvalueList = (parse(s) \ "results").asInstanceOf[JArray].arr
+        jvalueList.map(jv => for {
             instrument <- Util.fromJValueToOption[String](jv \ "instrument")
             symbol <- StockDatabase.getInstrumentFromInstrument(instrument).map(_.symbol)
             averagePrice <- Util.fromJValueToOption[Double](jv \ "average_price")
@@ -417,7 +411,7 @@ object Util extends SttpBackends {
 
                 implicit val backend: SttpBackend[Id, Nothing] = configureCoreJavaHttpBackend(config)
                 sttp
-                        .headers(HeaderNames.ContentType -> MediaTypes.Json)
+                        .header(HeaderNames.ContentType, MediaTypes.Json)
                         .body(body)
                         .post(uri"https://api.robinhood.com/oauth2/token/")
                         .send()
@@ -431,4 +425,148 @@ object Util extends SttpBackends {
             case Failure(ex) => Left(ex.getMessage)
         }
     }
+
+    /**
+      * @param s looks like this
+      * {
+      *   "results": [
+      *     {
+      *       "bounds": "regular",
+      *       "historicals": [
+      *         {
+      *           "begins_at": "2019-01-28T14:30:00Z",
+      *           "close_price": "20.360000",
+      *           "high_price": "20.720000",
+      *           "interpolated": false,
+      *           "low_price": "20.142500",
+      *           "open_price": "20.320000",
+      *           "session": "reg",
+      *           "volume": 4958447
+      *         },
+      *         {
+      *           "begins_at": "2019-01-28T16:10:00Z",
+      *           "close_price": "20.890000",
+      *           "high_price": "20.940000",
+      *           "interpolated": false,
+      *           "low_price": "20.830000",
+      *           "open_price": "20.860000",
+      *           "session": "reg",
+      *           "volume": 833146
+      *         }
+      *       ],
+      *       "instrument": "https://api.robinhood.com/instruments/940fc3f5-1db5-4fed-b452-f3a2e4562b5f/",
+      *       "interval": "5minute",
+      *       "open_price": "20.320000",
+      *       "open_time": "2019-01-28T14:30:00Z",
+      *       "previous_close_price": "21.930000",
+      *       "previous_close_time": "2019-01-25T21:00:00Z",
+      *       "quote": "https://api.robinhood.com/quotes/940fc3f5-1db5-4fed-b452-f3a2e4562b5f/",
+      *       "span": "day",
+      *       "symbol": "AMD"
+      *     },
+      *     {
+      *       "bounds": "regular",
+      *       "historicals": [
+      *         {
+      *           "begins_at": "2019-01-28T14:30:00Z",
+      *           "close_price": "19.505000",
+      *           "high_price": "19.560000",
+      *           "interpolated": false,
+      *           "low_price": "19.200000",
+      *           "open_price": "19.200000",
+      *           "session": "reg",
+      *           "volume": 228090
+      *         },
+      *         {
+      *           "begins_at": "2019-01-28T16:10:00Z",
+      *           "close_price": "19.835000",
+      *           "high_price": "19.865000",
+      *           "interpolated": false,
+      *           "low_price": "19.800000",
+      *           "open_price": "19.820000",
+      *           "session": "reg",
+      *           "volume": 22993
+      *         }
+      *       ],
+      *       "instrument": "https://api.robinhood.com/instruments/dad8fa2c-1e8d-4cb9-b354-1f0b91a4193e/",
+      *       "interval": "5minute",
+      *       "open_price": "19.200000",
+      *       "open_time": "2019-01-28T14:30:00Z",
+      *       "previous_close_price": "20.120000",
+      *       "previous_close_time": "2019-01-25T21:00:00Z",
+      *       "quote": "https://api.robinhood.com/quotes/dad8fa2c-1e8d-4cb9-b354-1f0b91a4193e/",
+      *       "span": "day",
+      *       "symbol": "ON"
+      *     }
+      *   ]
+      * }
+      */
+    def extractSymbolOpenLowHighPrices(s: String): List[(
+            String /* symbol */, Double /* open */, Double /* low */, Double /* high */
+            )] = {
+        import org.json4s.native.JsonMethods._
+
+
+        def extractOpenLowHighPrices(l: List[home.QuoteActor.DailyQuote]): (
+                Double /* open */, Double /* low */, Double /* high */) = {
+            val openPrice =
+                if (l.nonEmpty && l.head.beginsAt.endsWith(":30:00Z")) l.head.openPrice else Double.NaN
+            l.foldLeft((openPrice, Double.NaN, Double.NaN))((t, dq) => {
+                val low = if (t._2.isNaN && dq.lowPrice.isNaN) Double.NaN
+                    else if (t._2.isNaN) dq.lowPrice
+                    else if (dq.lowPrice.isNaN) t._2
+                    else math.min(t._2, dq.lowPrice)
+                val high = if (t._3.isNaN && dq.highPrice.isNaN) Double.NaN
+                    else if (t._3.isNaN) dq.highPrice
+                    else if (dq.highPrice.isNaN) t._3
+                    else math.min(t._3, dq.highPrice)
+                (t._1, low, high)
+            })
+        }
+
+        (parse(s) \ "results").asInstanceOf[JArray].arr
+                .map(jv => for {
+                    symbol <- fromJValueToOption[String](jv \ "symbol")
+                    dailyQuoteList = getIntervalQuotesFromJArray((jv \ "historicals").asInstanceOf[JArray])
+                    openLowHigh = extractOpenLowHighPrices(dailyQuoteList)
+                } yield (symbol, openLowHigh._1, openLowHigh._2, openLowHigh._3)
+                )
+                .collect { case Some(tuple) => tuple }
+    }
+
+    /**
+      * @param ja looks like this:
+      *       [
+      *         {
+      *           "begins_at": "2019-01-28T14:30:00Z",
+      *           "close_price": "19.505000",
+      *           "high_price": "19.560000",
+      *           "interpolated": false,
+      *           "low_price": "19.200000",
+      *           "open_price": "19.200000",
+      *           "session": "reg",
+      *           "volume": 228090
+      *         },
+      *         {
+      *           "begins_at": "2019-01-28T16:10:00Z",
+      *           "close_price": "19.835000",
+      *           "high_price": "19.865000",
+      *           "interpolated": false,
+      *           "low_price": "19.800000",
+      *           "open_price": "19.820000",
+      *           "session": "reg",
+      *           "volume": 22993
+      *         }
+      *       ]
+      */
+    private def getIntervalQuotesFromJArray(ja: JArray): List[home.QuoteActor.DailyQuote] = ja.arr
+            .map(jv => for {
+                beginsAt   <- fromJValueToOption[String](jv \ "begins_at")
+                openPrice  <- fromJValueToOption[Double](jv \ "open_price")
+                closePrice <- fromJValueToOption[Double](jv \ "close_price")
+                highPrice  <- fromJValueToOption[Double](jv \ "high_price")
+                lowPrice   <- fromJValueToOption[Double](jv \ "low_price")
+            } yield DailyQuote(beginsAt, openPrice, closePrice, highPrice, lowPrice))
+            .collect { case Some(dailyQuote) => dailyQuote }
+
 }

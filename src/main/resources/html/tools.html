@@ -49,20 +49,32 @@
       fetch(`${window.location.origin}/${actorName}/tick`)
           .then(response => response.text())
           .then(text => {
-              document.querySelectorAll('#tickResponse').forEach(div => div.innerHTML = text);
+              document.querySelectorAll('#tickResponse').forEach(div => div.innerHTML = text)
           });
   }
 
   function tickSymbol() {
       fetch(`${window.location.origin}/${document.getElementById('symbol').value.trim()}/tick`)
+          .then(response => response.text())
+          .then(text => {
+              console.log(text)
+          });
   }
 
   function debugSymbol() {
       fetch(`${window.location.origin}/${document.getElementById('symbol').value.trim()}/debug`)
+          .then(response => response.text())
+          .then(text => {
+              console.log(text)
+          });
   }
 
   function debug(actorName) {
-      fetch(`${window.location.origin}/${actorName}/debug`);
+      fetch(`${window.location.origin}/${actorName}/debug`)
+          .then(response => response.text())
+          .then(text => {
+              console.log(text)
+          });
   }
 </script>
 </body>

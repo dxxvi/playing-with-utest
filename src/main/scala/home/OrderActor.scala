@@ -1,15 +1,14 @@
 package home
 
-import akka.actor.{Actor, Timers}
+import akka.actor.Actor
 import com.softwaremill.sttp._
 import com.typesafe.config.Config
-import home.util.{StockDatabase, SttpBackends}
+import home.util.{StockDatabase, SttpBackends, TimersX}
 
 object OrderActor {
     import akka.actor.Props
 
     val NAME: String = "order"
-    val AUTHORIZATION: String = "Authorization"
 
     sealed trait OrderSealedTrait
     case object Tick extends OrderSealedTrait
@@ -43,7 +42,7 @@ object OrderActor {
     def props(config: Config): Props = Props(new OrderActor(config))
 }
 
-class OrderActor(config: Config) extends Actor with Timers with SttpBackends {
+class OrderActor(config: Config) extends Actor with TimersX with SttpBackends {
     import OrderActor._
     import context.dispatcher
     import concurrent.Future
@@ -59,20 +58,19 @@ class OrderActor(config: Config) extends Actor with Timers with SttpBackends {
     val log: LoggingAdapter = Logging(context.system, this)
 
     val SERVER: String = config.getString("server")
-    val authorization: String = "Bearer " + Main.accessToken
 
     val recentOrdersRequest: RequestT[Id, List[(String, StockActor.Order)], Nothing] = sttp
-            .header(AUTHORIZATION, authorization)
-            .get(uri"${SERVER}orders/")
+            .auth.bearer(Main.accessToken)
+            .get(uri"$SERVER/orders/")
             .response(asString.map(Util.extractSymbolAndOrder))
 
     val positionRequest: Request[String, Nothing] = sttp
-            .header(AUTHORIZATION, authorization)
+            .auth.bearer(Main.accessToken)
             .get(uri"$SERVER/positions/")
 
     var useAkkaHttp: Boolean = true
 
-    // timers.startPeriodicTimer(Tick, Tick, 4019.millis)
+    timersx.startPeriodicTimer(Tick, Tick, 4019.millis)
 
     override def receive: Receive = {
         case Tick =>
@@ -105,7 +103,7 @@ class OrderActor(config: Config) extends Actor with Timers with SttpBackends {
                     useAkkaHttp = false
                     implicit val be: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(config)
                     sttp
-                            .header(AUTHORIZATION, authorization)
+                            .auth.bearer(Main.accessToken)
                             .get(uri)
                             .response(asString.map(extractOrdersAndNextUrl))
                             .send()
@@ -114,7 +112,7 @@ class OrderActor(config: Config) extends Actor with Timers with SttpBackends {
                 case Some(uri) if !useAkkaHttp =>
                     useAkkaHttp = true
                     implicit val be: SttpBackend[Id, Nothing] = configureCoreJavaHttpBackend(config)
-                    sttp.header(AUTHORIZATION, authorization).get(uri).send().body match {
+                    sttp.auth.bearer(Main.accessToken).get(uri).send().body match {
                         case Right(js) =>
                             val t: (List[Order], Option[String]) = extractOrdersAndNextUrl(js)
                             sendOrdersToStockActor_CreateNextRequest(t, symbol, times - 1)
@@ -129,7 +127,9 @@ class OrderActor(config: Config) extends Actor with Timers with SttpBackends {
                 (t: (List[Order], Option[String])) => sendOrdersToStockActor_CreateNextRequest(t, symbol, times)
             )
 
-        case Debug => debug()
+        case Debug =>
+            val map = debug()
+            sender() ! map
     }
 
     private def sendOrdersToStockActor_CreateNextRequest(t: (List[Order], Option[String]), symbol: String, times: Int) {
@@ -277,7 +277,8 @@ class OrderActor(config: Config) extends Actor with Timers with SttpBackends {
         case Some(url) => Some(uri"$url")
     }
 
-    private def debug() {
+    private def debug(): Map[String, String] = {
         log.info(s"$NAME debug information:")
+        Map("message" -> "Nothing in OrderActor to show")
     }
 }

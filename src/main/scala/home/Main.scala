@@ -3,21 +3,50 @@ package home
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, TimerScheduler}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
+import akka.pattern.ask
 import akka.stream.ActorMaterializer
 import com.typesafe.config.{Config, ConfigFactory}
 import home.util.{StockDatabase, Util}
 import spark.Spark
 
 import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.duration.FiniteDuration
 import scala.io.StdIn
 import scala.util.{Failure, Success, Try}
 
+/**
+  * To run this class, -Dauthorization.username, -Dauthorization.encryptedPassword are needed.
+  * The environment variable 'key' is needed.
+  */
 object Main {
     var accessToken: String = "_"
+
+    val timerScheduler: TimerScheduler = new TimerScheduler {
+        private val MESSAGE: String = "This is TimersX doing nothing"
+        private var lastAccessTime: Long = 0
+
+        override def startPeriodicTimer(key: Any, msg: Any, interval: FiniteDuration): Unit = print()
+
+        override def startSingleTimer(key: Any, msg: Any, timeout: FiniteDuration): Unit = print()
+
+        override def isTimerActive(key: Any): Boolean = true
+
+        override def cancel(key: Any): Unit = print()
+
+        override def cancelAll(): Unit = print()
+
+        private def print(): Unit = {
+            val now = System.currentTimeMillis
+            if (now - lastAccessTime > 19482) {
+                println(s"$MESSAGE now: $now lastAccessTime: $lastAccessTime")
+                lastAccessTime = now
+            }
+        }
+    }
 
     def main(args: Array[String]) {
         val config: Config = ConfigFactory.load()
@@ -27,7 +56,7 @@ object Main {
         Util.retrieveAccessToken(config) match {
             case Right(x) => accessToken = x
             case Left(errorMessage) =>
-                println(errorMessage)
+                println(s"Error: $errorMessage")
                 System.exit(-1)
         }
 
@@ -43,7 +72,8 @@ object Main {
         val orderActor = actorSystem.actorOf(OrderActor.props(config), OrderActor.NAME)
         val websocketActor = actorSystem.actorOf(WebsocketActor.props(websocketListener), WebsocketActor.NAME)
 
-        Spark.get("/:actor/tick", (req: spark.Request, _: spark.Response) => {
+        Spark.get("/:actor/tick", (req: spark.Request, res: spark.Response) => {
+            res.`type`("application/json")
             val now = LocalDateTime.now.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
             req.params(":actor") match {
                 case DefaultWatchListActor.NAME =>
@@ -64,19 +94,47 @@ object Main {
             }
         })
 
-        Spark.get("/:symbol/debug", (req: spark.Request, _: spark.Response) => {
+        Spark.get("/:symbol/debug", (req: spark.Request, res: spark.Response) => {
+            import concurrent.{Await, Future}
+            import concurrent.duration._
+            import akka.util.Timeout
+            implicit val timeout: Timeout = Timeout(5.seconds)
+
+            res.`type`("application/json")
+
             val now = LocalDateTime.now.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
             val s = req.params(":symbol")
             s match {
-                case "defaultWatchList" => defaultWatchListActor ! DefaultWatchListActor.Debug
-                case "order" => orderActor ! OrderActor.Debug
-                case "quote" => quoteActor ! QuoteActor.Debug
-                case "websocket" => websocketActor ! WebsocketActor.Debug
+                case "defaultWatchList" =>
+                    val mapFuture: Future[Any] = defaultWatchListActor ? DefaultWatchListActor.Debug
+                    mapFuture match {
+                        case x: Future[_] => toJson(Await.result(x, 3.seconds).asInstanceOf[Map[String, String]])
+                        case _ => toJson(Map("error" -> "Hm... Wed Jan 23 00:51"))
+                    }
+                case "order" =>
+                    orderActor ! OrderActor.Debug
+                    toJson(Map("message" -> s"Sent a Debug message to $s at $now"))
+                case "quote" =>
+                    quoteActor ! QuoteActor.Debug
+                    val mapFuture: Future[Any] = quoteActor ? QuoteActor.Debug
+                    mapFuture match {
+                        case x: Future[_] => toJson(Await.result(x, 3.seconds).asInstanceOf[Map[String, String]])
+                        case _ => toJson(Map("error" -> "Hm... Sun Jan 27 01:18"))
+                    }
+                case "websocket" =>
+                    websocketActor ! WebsocketActor.Debug
+                    toJson(Map("message" -> s"Sent a Debug message to $s at $now"))
                 case symbol: String =>
-                    actorSystem.actorSelection(s"${defaultWatchListActor.path}/$symbol") ! StockActor.Debug
+                    val mapFuture: Future[Any] =
+                        actorSystem.actorSelection(s"${defaultWatchListActor.path}/$symbol") ? StockActor.Debug
+                    mapFuture match {
+                        case x: Future[_] => toJson(Await.result(x, 3.seconds).asInstanceOf[Map[String, String]])
+                        case _ => toJson(Map("error" -> "Hm... Sat Jan 26 23:42"))
+                    }
             }
-            s"Sent a Debug message to $s at $now"
         })
+
+        Spark.get("/accessToken", (_: spark.Request, _: spark.Response) => accessToken)
 /*
         val route =
             path("ws") {
@@ -104,12 +162,6 @@ object Main {
 */
     }
 
-/*
-    def main(args: Array[String]) {
-        addStocksToDatabase(ConfigFactory.load())
-    }
-*/
-
     private def initializeSpark(actorSystem: ActorSystem): WebsocketListener = {
         val webSocketListener = new WebsocketListener(actorSystem)
         Spark.staticFiles.location("/html")
@@ -122,6 +174,14 @@ object Main {
         })
 
         webSocketListener
+    }
+
+    private def toJson(map: Map[String, String]): String = {
+        import org.json4s.DefaultFormats
+        import org.json4s.JsonAST.{JField, JObject, JString}
+        import org.json4s.native.Serialization
+        val jFields: List[JField] = map.map(t => (t._1, JString(t._2))).toList
+        Serialization.write(JObject(jFields))(DefaultFormats)
     }
 
     /**
@@ -149,8 +209,7 @@ object Main {
             "TSLA", "TXN", "TMUS", "ULTA", "VOD", "VRTX", "WBA", "WDC", "WDAY", "VRSK", "WYNN", "XEL", "XLNX")
         val dow = Set("AXP", "AAPL", "BA", "CAT", "CSCO", "CVX", "DWDP", "XOM", "GS", "HD", "IBM", "INTC",
             "JNJ", "KO", "JPM", "MCD", "MMM", "MRK", "MSFT", "NKE", "PFE", "PG", "TRV", "UNH", "UTX", "VZ", "V", "WBA",
-            "WMT", "DIS"
-        )
+            "WMT", "DIS")
 
         def getStringValueForKey(key: String, set: JavaMapEntryScalaSet): String = set
                 .find(e => e.getKey == key)

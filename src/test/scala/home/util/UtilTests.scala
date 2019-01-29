@@ -1,9 +1,11 @@
 package home.util
 
 import com.typesafe.config.{Config, ConfigFactory}
+import home.Main
 import org.junit.jupiter.api.Assertions._
 import org.junit.jupiter.api.{Disabled, Test}
 
+import scala.io.Source
 import scala.util.{Failure, Success, Try}
 
 /*
@@ -12,17 +14,10 @@ import scala.util.{Failure, Success, Try}
         "key=x is specified in the Environment variables")
 */
 class UtilTests {
-    private def retrieveAccessToken(config: Config) {
-        Util.retrieveAccessToken(config) match {
-            case Right(x) => home.Main.accessToken = x
-            case Left(errorMessage) => fail(errorMessage)
-        }
-    }
-
     @Test
     def testGetSymbolFromInstrumentHttpURLConnection() {
         val config = ConfigFactory.load()
-        retrieveAccessToken(config)
+        if (Main.accessToken.length < 9) testRetrieveAccessToken()
 
         val goodInstrumentUrl = "https://api.robinhood.com/instruments/dad8fa2c-1e8d-4cb9-b354-1f0b91a4193e/"
         Util.getSymbolFromInstrumentHttpURLConnection(goodInstrumentUrl, config) match {
@@ -48,7 +43,7 @@ class UtilTests {
         import home.QuoteActor.DailyQuote
 
         val config = ConfigFactory.load()
-        retrieveAccessToken(config)
+        if (Main.accessToken.length < 9) testRetrieveAccessToken()
         val list = Util.getDailyQuoteHttpURLConnection(Set("AMD", "TSLA"), config)
 
         assertEquals(2, list.size)
@@ -67,15 +62,13 @@ class UtilTests {
         import com.softwaremill.sttp._
 
         val config = ConfigFactory.load()
-        retrieveAccessToken(config)
+        if (Main.accessToken.length < 9) testRetrieveAccessToken()
         implicit val backend: SttpBackend[Id, Nothing] = Util.configureCoreJavaHttpBackend(config)
         val SERVER = config.getString("server")
-        val AUTHORIZATION = "Authorization"
-        val authorization: String = "Bearer " + home.Main.accessToken
 
         home.Main.addStocksToDatabase(config)
 
-        sttp.header(AUTHORIZATION, authorization).get(uri"$SERVER/orders/").send().body match {
+        sttp.auth.bearer(Main.accessToken).get(uri"$SERVER/orders/").send().body match {
             case Right(js) =>
                 val list: List[(String, home.StockActor.Order)] = Util.extractSymbolAndOrder(js)
                 assertEquals(100, list.size, "Should get 100 orders")
@@ -89,7 +82,9 @@ class UtilTests {
     def testRetrieveAccessToken() {
         val config = ConfigFactory.load()
         Util.retrieveAccessToken(config) match {
-            case Right(accessToken) => println(accessToken)
+            case Right(accessToken) =>
+                Main.accessToken = accessToken
+                println(accessToken)
             case Left(s) => fail(s)
         }
     }

@@ -1,9 +1,9 @@
 package home
 
-import akka.actor.{Actor, Timers}
+import akka.actor.Actor
 import com.softwaremill.sttp._
 import com.typesafe.config.Config
-import home.util.SttpBackends
+import home.util.{SttpBackends, TimersX}
 
 object QuoteActor {
     import akka.actor.Props
@@ -21,14 +21,16 @@ object QuoteActor {
 
     sealed trait QuoteSealedTrait
     case object Tick extends QuoteSealedTrait
-    case class ResponseWrapper(r: Response[List[Quote]]) extends QuoteSealedTrait
+    case class ResponseWrapper1(r: Response[List[Quote]]) extends QuoteSealedTrait
+    case class ResponseWrapper2(r: Response[List[(String, Double, Double, Double)]]) extends QuoteSealedTrait
     case class DailyQuoteRequest(symbol: String) extends QuoteSealedTrait
+    case class TodayQuotesRequest(symbol: String) extends QuoteSealedTrait
     case object Debug extends QuoteSealedTrait
 
     def props(config: Config): Props = Props(new QuoteActor(config))
 }
 
-class QuoteActor(config: Config) extends Actor with Timers with SttpBackends {
+class QuoteActor(config: Config) extends Actor with TimersX with SttpBackends {
     import QuoteActor._
     import context.dispatcher
     import scala.concurrent.Future
@@ -49,12 +51,17 @@ class QuoteActor(config: Config) extends Actor with Timers with SttpBackends {
 
     val SERVER: String = config.getString("server")
     val symbolsNeedDailyQuote: collection.mutable.Set[String] = collection.mutable.Set.empty[String]
+    val symbolsNeedTodayQuote: collection.mutable.Set[String] = collection.mutable.Set.empty[String]
 
-    // timers.startPeriodicTimer(Tick, Tick, 4019.millis)
+    timersx.startPeriodicTimer(Tick, Tick, 4019.millis)
 
     override def receive: Receive = {
         case Tick if DefaultWatchListActor.commaSeparatedSymbolString.nonEmpty =>
             fetchAllQuotes() pipeTo self
+            if (symbolsNeedTodayQuote.nonEmpty) {
+                fetchTodayQuotes() foreach { responseWrapper2Future => responseWrapper2Future pipeTo self }
+                symbolsNeedTodayQuote.clear()
+            }
             if (symbolsNeedDailyQuote.nonEmpty) {
                 fetchDailyQuotes()
                 symbolsNeedDailyQuote.clear()
@@ -63,7 +70,7 @@ class QuoteActor(config: Config) extends Actor with Timers with SttpBackends {
         case Tick if DefaultWatchListActor.commaSeparatedSymbolString.isEmpty =>
             log.info("Skip because the DefaultWatchListActor is not done yet.")
 
-        case ResponseWrapper(Response(rawErrorBody, code, statusText, _, _)) => rawErrorBody.fold(
+        case ResponseWrapper1(Response(rawErrorBody, code, statusText, _, _)) => rawErrorBody.fold(
             _ => log.error("Error in getting quotes: {} {}", code, statusText),
             quoteList => quoteList.foreach(q => {
                 val stockActor =
@@ -72,22 +79,34 @@ class QuoteActor(config: Config) extends Actor with Timers with SttpBackends {
             })
         )
 
+        case ResponseWrapper2(Response(rawErrorBody, code, statusText, _, _)) => rawErrorBody.fold(
+            _ => log.error("Error in getting today quotes: {} {}", code, statusText),
+            tupleList => tupleList.foreach(t => {
+                val stockActor = context.actorSelection(s"../${DefaultWatchListActor.NAME}/${t._1}")
+                stockActor ! StockActor.OpenLowHigh(t._2, t._3, t._4)
+            })
+        )
+
         case DailyQuoteRequest(symbol) => symbolsNeedDailyQuote += symbol
 
-        case Debug => debug()
+        case TodayQuotesRequest(symbol) => symbolsNeedTodayQuote += symbol
+
+        case Debug =>
+            val map = debug()
+            sender() ! map
     }
 
     /**
       * Fetch the last trade prices of all stocks, send them to the stock actors.
       */
-    private def fetchAllQuotes(): Future[ResponseWrapper] = {
+    private def fetchAllQuotes(): Future[ResponseWrapper1] = {
         implicit val backend: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(config)
         sttp
                 .auth.bearer(Main.accessToken)
                 .get(uri"$SERVER/quotes/?symbols=${DefaultWatchListActor.commaSeparatedSymbolString}")
                 .response(asString.map(extractLastTradePriceAndSymbol))
                 .send()
-                .map(ResponseWrapper)
+                .map(ResponseWrapper1)
     }
 
     private def fetchDailyQuotes() {
@@ -102,6 +121,95 @@ class QuoteActor(config: Config) extends Actor with Timers with SttpBackends {
                 })
                 case Failure(ex) => log.error("Error in getting daily quotes", ex)
             }
+        })
+    }
+
+    private def fetchTodayQuotes(): Iterator[Future[ResponseWrapper2]] = {
+        import akka.stream.scaladsl.Source
+        import akka.util.ByteString
+
+        implicit val backend: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(config)
+
+        symbolsNeedTodayQuote.grouped(75).map(symbols => {
+            /* {
+             *   "results": [
+             *     {
+             *       "bounds": "regular",
+             *       "historicals": [
+             *         {
+             *           "begins_at": "2019-01-28T14:30:00Z",
+             *           "close_price": "20.360000",
+             *           "high_price": "20.720000",
+             *           "interpolated": false,
+             *           "low_price": "20.142500",
+             *           "open_price": "20.320000",
+             *           "session": "reg",
+             *           "volume": 4958447
+             *         },
+             *         {
+             *           "begins_at": "2019-01-28T16:10:00Z",
+             *           "close_price": "20.890000",
+             *           "high_price": "20.940000",
+             *           "interpolated": false,
+             *           "low_price": "20.830000",
+             *           "open_price": "20.860000",
+             *           "session": "reg",
+             *           "volume": 833146
+             *         }
+             *       ],
+             *       "instrument": "https://api.robinhood.com/instruments/940fc3f5-1db5-4fed-b452-f3a2e4562b5f/",
+             *       "interval": "5minute",
+             *       "open_price": "20.320000",
+             *       "open_time": "2019-01-28T14:30:00Z",
+             *       "previous_close_price": "21.930000",
+             *       "previous_close_time": "2019-01-25T21:00:00Z",
+             *       "quote": "https://api.robinhood.com/quotes/940fc3f5-1db5-4fed-b452-f3a2e4562b5f/",
+             *       "span": "day",
+             *       "symbol": "AMD"
+             *     },
+             *     {
+             *       "bounds": "regular",
+             *       "historicals": [
+             *         {
+             *           "begins_at": "2019-01-28T14:30:00Z",
+             *           "close_price": "19.505000",
+             *           "high_price": "19.560000",
+             *           "interpolated": false,
+             *           "low_price": "19.200000",
+             *           "open_price": "19.200000",
+             *           "session": "reg",
+             *           "volume": 228090
+             *         },
+             *         {
+             *           "begins_at": "2019-01-28T16:10:00Z",
+             *           "close_price": "19.835000",
+             *           "high_price": "19.865000",
+             *           "interpolated": false,
+             *           "low_price": "19.800000",
+             *           "open_price": "19.820000",
+             *           "session": "reg",
+             *           "volume": 22993
+             *         }
+             *       ],
+             *       "instrument": "https://api.robinhood.com/instruments/dad8fa2c-1e8d-4cb9-b354-1f0b91a4193e/",
+             *       "interval": "5minute",
+             *       "open_price": "19.200000",
+             *       "open_time": "2019-01-28T14:30:00Z",
+             *       "previous_close_price": "20.120000",
+             *       "previous_close_time": "2019-01-25T21:00:00Z",
+             *       "quote": "https://api.robinhood.com/quotes/dad8fa2c-1e8d-4cb9-b354-1f0b91a4193e/",
+             *       "span": "day",
+             *       "symbol": "ON"
+             *     }
+             *   ]
+             * }
+             */
+            sttp
+                    .auth.bearer(home.Main.accessToken)
+                    .get(uri"$SERVER/quotes/historicals/?interval=5minute&span=day&symbols=${symbols.mkString(",")}")
+                    .response(asString.map(Util.extractSymbolOpenLowHighPrices))
+                    .send
+                    .map(ResponseWrapper2)
         })
     }
 
@@ -176,11 +284,16 @@ class QuoteActor(config: Config) extends Actor with Timers with SttpBackends {
         }
     }
 
-    private def debug() {
+    private def debug(): Map[String, String] = {
         var s = s"""
                |${QuoteActor.NAME} debug information:
                |  symbolsNeedDailyQuote: $symbolsNeedDailyQuote
+               |  symbolsNeedTodayQuote: $symbolsNeedTodayQuote
              """.stripMargin
         log.info(s)
+        Map(
+            "symbolsNeedDailyQuote" -> symbolsNeedDailyQuote.mkString(","),
+            "symbolsNeedTodayQuote" -> symbolsNeedTodayQuote.mkString(",")
+        )
     }
 }

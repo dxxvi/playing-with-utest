@@ -1,11 +1,10 @@
 package home
 
-import akka.actor.{Actor, Timers}
+import akka.actor.Actor
 import com.typesafe.config.Config
 import com.softwaremill.sttp._
-import home.util.SttpBackends
+import home.util.{SttpBackends, TimersX}
 
-import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
 object DefaultWatchListActor {
@@ -25,7 +24,7 @@ object DefaultWatchListActor {
     def props(config: Config): Props = Props(new DefaultWatchListActor(config))
 }
 
-class DefaultWatchListActor(config: Config) extends Actor with Timers with SttpBackends {
+class DefaultWatchListActor(config: Config) extends Actor with TimersX with SttpBackends {
     import DefaultWatchListActor._
     import concurrent.duration._
     import akka.event._
@@ -37,7 +36,6 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with SttpB
     val log: LoggingAdapter = Logging(context.system, this)
 
     val SERVER: String = config.getString("server")
-    val authorization: String = "Bearer " + Main.accessToken
     val defaultWatchListRequest: Request[String, Nothing] = sttp
             .auth.bearer(Main.accessToken)
             .get(uri"$SERVER/watchlists/Default/")
@@ -54,14 +52,20 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with SttpB
                                     .collect {
                                         case Some(symbol) => symbol
                                     }
-                            symbolList.foreach(symbol => context.actorOf(StockActor.props(symbol), symbol))
+                            log.debug("self is: {}", self)
+                            symbolList.foreach(symbol => {
+                                val actorRef = context.actorOf(StockActor.props(symbol), symbol)
+                                log.debug("Create actor {}", actorRef)
+                            })
                             _commaSeparatedSymbolString = symbolList.mkString(",")
                         case Left(s) =>
                             log.error("Error in getting default watch list: {}. Will try again in 4s.", s)
-                            // timers.startSingleTimer(Tick, Tick, 4019.millis)
+                            timersx.startSingleTimer(Tick, Tick, 4019.millis)
                     }
 
-        case Debug => debug()
+        case Debug =>
+            val map = debug()
+            sender() ! map
     }
 
     private def extractInstruments(s: String): List[String] = {
@@ -96,11 +100,12 @@ class DefaultWatchListActor(config: Config) extends Actor with Timers with SttpB
             None
     }
 
-    private def debug() {
+    private def debug(): Map[String, String] = {
         val s = s"""
                |${DefaultWatchListActor.NAME} debug information:
                |  commaSeparatedSymbolString: $commaSeparatedSymbolString
              """.stripMargin
         log.info(s)
+        Map("commaSeparatedSymbolString" -> commaSeparatedSymbolString)
     }
 }
