@@ -10,11 +10,11 @@ import akka.http.scaladsl.server.Directives._
 import akka.pattern.ask
 import akka.stream.ActorMaterializer
 import com.typesafe.config.{Config, ConfigFactory}
-import home.util.{StockDatabase, Util}
+import home.util.{StockDatabase, SttpBackends, Util}
 import spark.Spark
 
-import scala.concurrent.ExecutionContextExecutor
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor}
+import scala.concurrent.duration._
 import scala.io.StdIn
 import scala.util.{Failure, Success, Try}
 
@@ -22,8 +22,9 @@ import scala.util.{Failure, Success, Try}
   * To run this class, -Dauthorization.username, -Dauthorization.encryptedPassword are needed.
   * The environment variable 'key' is needed.
   */
-object Main {
+object Main extends SttpBackends {
     var accessToken: String = "_"
+    var watchedSymbols: List[String] = Nil
 
     val timerScheduler: TimerScheduler = new TimerScheduler {
         private val MESSAGE: String = "This is TimersX doing nothing"
@@ -62,12 +63,87 @@ object Main {
 
         implicit val actorSystem: ActorSystem = ActorSystem("R")
         implicit val actorMaterializer: ActorMaterializer = ActorMaterializer()
+        implicit val ec: ExecutionContext = actorSystem.dispatcher
+
+        watchedSymbols = Util.retrieveWatchedSymbols(config)
 
         val websocketListener: WebsocketListener = initializeSpark(actorSystem)
 
-        val defaultWatchListActor =
-            actorSystem.actorOf(DefaultWatchListActor.props(config), DefaultWatchListActor.NAME)
-//        defaultWatchListActor ! DefaultWatchListActor.Tick
+        if (config.hasPath("akkaTimers")) {
+            Util.writeOrderHistoryToFile(config)
+            println(s"Everything is good. Run this app again without -DakkaTimers")
+            System.exit(0)
+        }
+        /*
+         * The orderHistory has filled and confirmed orders only. All cancelled orders with cumulative_quantity > 0 are
+         * converted to filled orders with the quantity adjusted.
+         */
+        val symbol2OrderHistory: Map[String, List[StockActor.Order]] = Util.readOrderHistory(config).map(t =>
+            StockDatabase.getInstrumentFromInstrument(t._1) match {
+                case Some(instrument) => (instrument.symbol, t._2)
+                case _ =>
+                    println(s"""...  {
+                           |    instrument = ${t._1}
+                           |    name = "..."
+                           |    simple_name = "to make Util.readOrderHistory happy"
+                           |  }""".stripMargin)
+                    System.exit(-1)
+                    ("to make the compiler happy", t._2)
+            }
+        )
+
+        val r: OrderActor.Responses = Await.result(Util.retrievePositionAndRecentOrdersResponseFuture(config), 3.seconds)
+        val either: Either[Array[Byte], (String, String)] = for {
+            a <- r.recentOrdersResponse.rawErrorBody
+            b <- r.positionResponse.rawErrorBody
+        } yield (a, b)
+        val positionAndRecentOrderTuple: (Map[String, List[StockActor.Order]], Map[String, Double]) = either match {
+            case Left(_) =>
+                println(s"Error: recent order response: ${r.recentOrdersResponse.statusText}, " +
+                        s"position response: ${r.positionResponse.statusText}")
+                System.exit(-1)
+                (Map.empty[String, List[StockActor.Order]], Map.empty[String, Double]) // to make the compiler happy
+            case Right((recentOrdersJString, positionJString)) =>
+                val symbol2OrderList: Map[String, List[StockActor.Order]] = Util.extractSymbolAndOrder(recentOrdersJString)
+                // only symbols in the default watch list are here
+                val symbol2Position: Map[String, Double] = Util.extractSymbolAndPosition(positionJString)
+                (symbol2OrderList, symbol2Position)
+        }
+
+        val jString = Await.result(Util.getLastTradePrices(config), 3.seconds)
+        if (jString startsWith "~~~") {
+            println(s"Error: $jString")
+            System.exit(-1)
+        }
+        val symbol2LastTradePrice: Map[String, Double] = Util.getLastTradePrices(jString)
+
+        val dailyQuoteStrings: (String, String) = Await.result(Util.getDailyQuotes(config), 3.seconds)
+        val symbol2DailyQuoteList: Map[String, List[QuoteActor.DailyQuote]] =
+            Util.getIntervalQuotes(dailyQuoteStrings._1, dailyQuoteStrings._2)
+
+        watchedSymbols.foreach(symbol => {
+            val orderHistory = symbol2OrderHistory.get(symbol) match {
+                case Some(x) => x
+                case _ => List.empty[StockActor.Order]
+            }
+            actorSystem.actorOf(
+                StockActor.props(
+                    symbol,
+                    orderHistory,
+                    positionAndRecentOrderTuple._1.getOrElse(symbol, List.empty[StockActor.Order]),
+                    // it's correct to not find position for some watched symbols. It's because we never bought them.
+                    positionAndRecentOrderTuple._2.getOrElse(symbol, 0),
+                    symbol2LastTradePrice.getOrElse(symbol, Double.NaN),
+                    symbol2DailyQuoteList.getOrElse(symbol, {
+                        println(s"Error: unable to find the daily quotes for $symbol")
+                        System.exit(-1)
+                        Nil
+                    })
+                ),
+                symbol
+            ) // create all StockActor's
+        })
+
         val quoteActor = actorSystem.actorOf(QuoteActor.props(config), QuoteActor.NAME)
         val orderActor = actorSystem.actorOf(OrderActor.props(config), OrderActor.NAME)
         val websocketActor = actorSystem.actorOf(WebsocketActor.props(websocketListener), WebsocketActor.NAME)
@@ -76,9 +152,6 @@ object Main {
             res.`type`("application/json")
             val now = LocalDateTime.now.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
             req.params(":actor") match {
-                case DefaultWatchListActor.NAME =>
-                    defaultWatchListActor ! DefaultWatchListActor.Tick
-                    s"Sent ${DefaultWatchListActor.NAME} a Tick at $now"
                 case OrderActor.NAME =>
                     orderActor ! OrderActor.Tick
                     s"Sent ${OrderActor.NAME} a Tick at $now"
@@ -89,7 +162,7 @@ object Main {
                     websocketActor ! WebsocketActor.Tick
                     s"Sent ${WebsocketActor.NAME} a Tick at $now"
                 case symbol: String =>
-                    actorSystem.actorSelection(s"${defaultWatchListActor.path}/$symbol") ! StockActor.Tick
+                    actorSystem.actorSelection(s"/user/$symbol") ! StockActor.Tick
                     s"Sent StockActor $symbol a Tick at $now"
             }
         })
@@ -105,17 +178,13 @@ object Main {
             val now = LocalDateTime.now.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
             val s = req.params(":symbol")
             s match {
-                case "defaultWatchList" =>
-                    val mapFuture: Future[Any] = defaultWatchListActor ? DefaultWatchListActor.Debug
+                case "order" =>
+                    val mapFuture: Future[Any] = orderActor ? OrderActor.Debug
                     mapFuture match {
                         case x: Future[_] => toJson(Await.result(x, 3.seconds).asInstanceOf[Map[String, String]])
-                        case _ => toJson(Map("error" -> "Hm... Wed Jan 23 00:51"))
+                        case _ => toJson(Map("error" -> "Hm... Tue Jan 29 14:32"))
                     }
-                case "order" =>
-                    orderActor ! OrderActor.Debug
-                    toJson(Map("message" -> s"Sent a Debug message to $s at $now"))
                 case "quote" =>
-                    quoteActor ! QuoteActor.Debug
                     val mapFuture: Future[Any] = quoteActor ? QuoteActor.Debug
                     mapFuture match {
                         case x: Future[_] => toJson(Await.result(x, 3.seconds).asInstanceOf[Map[String, String]])
@@ -126,7 +195,7 @@ object Main {
                     toJson(Map("message" -> s"Sent a Debug message to $s at $now"))
                 case symbol: String =>
                     val mapFuture: Future[Any] =
-                        actorSystem.actorSelection(s"${defaultWatchListActor.path}/$symbol") ? StockActor.Debug
+                        actorSystem.actorSelection(s"/user/$symbol") ? StockActor.Debug
                     mapFuture match {
                         case x: Future[_] => toJson(Await.result(x, 3.seconds).asInstanceOf[Map[String, String]])
                         case _ => toJson(Map("error" -> "Hm... Sat Jan 26 23:42"))
@@ -135,31 +204,11 @@ object Main {
         })
 
         Spark.get("/accessToken", (_: spark.Request, _: spark.Response) => accessToken)
-/*
-        val route =
-            path("ws") {
-                complete(HttpEntity(ContentTypes.`text/plain(UTF-8)`, "// TODO this path for websocket"))
-            } ~
-            get {
-                path("ws-like") {
-                    complete(HttpEntity(ContentTypes.`text/plain(UTF-8)`, "Returns exactly like the websocket"))
-                } ~
-                path("set" / "quote" / Segment / Segment) { (symbol, lastTradePriceString) =>
-                        if (!Set("AMD", "TSLA").contains(symbol))
-                            complete(HttpResponse(status = StatusCodes.BadRequest, entity = HttpEntity(ContentTypes.`text/plain(UTF-8)`, "Invalid symbol: " + symbol)))
-                        else
-                            Try(lastTradePriceString.toDouble) match {
-                                case Failure(ex) => complete(HttpResponse(status = StatusCodes.BadRequest, entity = HttpEntity(ContentTypes.`text/plain(UTF-8)`, lastTradePriceString + " is not a number")))
-                                case Success(lastTradePrice) => complete(HttpEntity(ContentTypes.`text/plain(UTF-8)`, s"Set last trade price of $symbol to $lastTradePrice"))
-                            }
-                }
 
-            }
-
-        val bindingFuture = Http().bindAndHandle(route, "localhost", 8080)
-        StdIn.readLine()
-        bindingFuture.flatMap(_.unbind()).onComplete(_ => actorSystem.terminate())
-*/
+        Spark.post("/:symbol/position-orderList", (request: spark.Request, response: spark.Response) => {
+            val symbol = request.params(":symbol")
+            ""
+        })
     }
 
     private def initializeSpark(actorSystem: ActorSystem): WebsocketListener = {

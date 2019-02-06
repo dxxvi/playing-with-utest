@@ -28,6 +28,8 @@ object StockDatabase {
         instrument2Instrument += (instrument -> i)
     }
 
+    def containsInstrument(instrument: String): Boolean = instrument2Instrument.contains(instrument)
+
     def getInstrumentFromSymbol(symbol: String): Option[Instrument] = symbol2Instrument.get(symbol)
 
     def getInstrumentFromInstrument(instrument: String): Option[Instrument] = instrument2Instrument.get(instrument)

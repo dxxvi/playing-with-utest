@@ -13,7 +13,6 @@
 <body style="margin: .25em; color: #444">
 <div id="tickResponse"></div>
 <p>
-  <button type="button" class="btn btn-link" onclick="tick('defaultWatchList')">Tick DefaultWatchListActor</button>
   <button type="button" class="btn btn-link" onclick="tick('order')">Tick OrderActor</button>
   <button type="button" class="btn btn-link" onclick="tick('quote')">Tick QuoteActor</button>
   <button type="button" class="btn btn-link" onclick="tick('websocket')">Tick WebsocketActor</button>
@@ -29,8 +28,6 @@
   <button type="button" class="btn btn-link" onclick="debug('websocket')">Debug WebsocketActor</button>
 </p>
 <ol>
-  <li>Tick DefaultWatchListActor: to get the default watch list, create Stock actors.</li>
-  <li>Debug DefaultWatchList: commaSeparatedSymbolString shown.</li>
   <li>Debug StockActor: it must show something like NaN and empty lists.</li>
   <li>Debug QuoteActor: symbolsNeedDailyQuote is empty.</li>
   <li>Tick QuoteActor: to fetch all quotes.</li>
