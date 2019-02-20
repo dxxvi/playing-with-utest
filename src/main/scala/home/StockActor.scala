@@ -13,6 +13,7 @@ object StockActor {
     case class LastTradePrice5minQuoteList(_ltp: Double, quoteList: List[QuoteActor.DailyQuote])
             extends StockSealedTrait
     case class PositionAndOrderList(position: Double, orderList: List[Order]) extends StockSealedTrait
+    case class DebugCommandWrapper(debugCommand: DebugCommand.Value) extends StockSealedTrait
     case object Debug extends StockSealedTrait
 
     case class Order(
@@ -35,6 +36,10 @@ object StockActor {
         }
 
         def brief: String = s"created_at:$createdAt, side:$side, cumulative:$cumulativeQuantity, quantity:$quantity, state:$state"
+    }
+
+    object DebugCommand extends Enumeration {
+        val CLEAR_ORDERS = Value
     }
 
     object OrderState extends Enumeration {
@@ -105,9 +110,11 @@ class StockActor(
 
     setStats()
 
+    var inOrders: List[Order] = Nil // all orders that make up the current position
     val orders: collection.mutable.SortedSet[Order] = collection.mutable.SortedSet[Order]()(CreatedAtOrderingForOrders)
     orders ++= orderHistory
     recentOrders foreach { o => updateOrders(o) }
+    createInOrdersAndMatchId()
 
     timersx.startPeriodicTimer(Tick, Tick, 4019.millis)
 
@@ -141,10 +148,34 @@ class StockActor(
                 anyChange = true
             }
             orderList.foreach(o => updateOrders(o))
+            createInOrdersAndMatchId()
 
         case Debug =>
             val map = debug()
             sender() ! map
+
+        case DebugCommandWrapper(DebugCommand.CLEAR_ORDERS) => orders.clear()
+    }
+
+    private def createInOrdersAndMatchId() {
+        import OrderState._
+
+        if (position.isNaN || position == 0) {
+            inOrders = Nil
+            return
+        }
+
+        var _position: Int = 0
+        inOrders = orders.toList.takeWhile(o => {
+            _position = _position + (state(o) match {
+                case FILL => if (o.side == "buy") o.quantity.toInt else -o.quantity.toInt
+                case PARTIAL => if (o.side == "buy") o.cumulativeQuantity.toInt else -o.cumulativeQuantity.toInt
+                case _ => 0
+            })
+            _position != position.toInt
+        })
+
+
     }
 
     private def debug(): Map[String, String] = {
@@ -259,20 +290,34 @@ class StockActor(
         val orderOption: Option[Order] = orders.find(_.id == o.id) // existing order in orders
         val _state = state(o)               // _state: the state of the new order
 
-        if (_state == FAIL) orderOption.foreach(orders -= _)
-        else if (_state == CANCEL) {
-            orderOption.foreach(orders -= _)
-            if (o.cumulativeQuantity > 0) {
-                o.quantity = o.cumulativeQuantity
-                o.state = "filled"
-                updateOrders(o)
+        if (orderOption.isDefined) {
+            if (_state == FAIL || _state == REJECT) {
+                orders -= orderOption.get
+            }
+            else if (_state == CONFIRM || _state == QUEUE) {
+                copy(o, orderOption.get)
+            }
+            else if (_state == PARTIAL) {
+                copy(o, orderOption.get)
+            }
+            else if (_state == CANCEL) {
+                if (o.cumulativeQuantity > 0) {
+                    val previousState = state(orderOption.get)
+                    if (previousState != FILL) {
+                        copy(o, orderOption.get)
+                        orderOption.get.state = "filled"
+                    }
+                }
+                else {
+                    orders -= orderOption.get
+                }
+            }
+            else /* _state is FILL */ {
+                copy(o, orderOption.get)
             }
         }
-        else if (orderOption.isEmpty) orders += o
-        else if (Array(CONFIRM, QUEUE, PARTIAL) contains _state) copy(o, orderOption.get)
-        else /* _state is FILL */ if (state(orderOption.get) != FILL) {
-            copy(o, orderOption.get)
-            // TODO re-calculate the matchId
+        else if (_state != FAIL && _state != CANCEL && _state != REJECT) {
+            orders += o
         }
     }
 }

@@ -397,11 +397,13 @@ object Util extends SttpBackends {
         case JInt(num) => typeOf[T] match {
             case t if t =:= typeOf[Int] => Some(num.toInt).asInstanceOf[Option[T]]
             case t if t =:= typeOf[Long] => Some(num.toLong).asInstanceOf[Option[T]]
+            case t if t =:= typeOf[Double] => Some(num.toDouble).asInstanceOf[Option[T]]
             case _ => None.asInstanceOf[Option[T]]
         }
         case JLong(num) => typeOf[T] match {
             case t if t =:= typeOf[Int] => Some(num.toInt).asInstanceOf[Option[T]]
             case t if t =:= typeOf[Long] => Some(num.toLong).asInstanceOf[Option[T]]
+            case t if t =:= typeOf[Double] => Some(num.toDouble).asInstanceOf[Option[T]]
             case _ => None.asInstanceOf[Option[T]]
         }
         case JBool(bool) => typeOf[T] match {
@@ -937,7 +939,14 @@ object Util extends SttpBackends {
                         .collect {
                             case Some(instrument) if StockDatabase.containsInstrument(instrument) => instrument
                             case Some(instrument) if !StockDatabase.containsInstrument(instrument) =>
-                                println(s"Error: StockDatabase doesn't have $instrument")
+                                println(
+                                    s"""Error: StockDatabase doesn't have $instrument
+                                       |  {
+                                       |    instrument = ${instrument.replace("https://api.robinhood.com/instruments", "${I}")}
+                                       |    name =
+                                       |    simple_name =
+                                       |  }
+                                     """.stripMargin)
                                 System.exit(-1)
                                 "to make the compiler happy, the app will exit before reaching here"
                         }
@@ -945,135 +954,151 @@ object Util extends SttpBackends {
         }
     }
 
+    /**
+      * Main.accessToken, StockDatabase and Main.watchedSymbols must be ready.
+      */
     def writeOrderHistoryToFile(config: Config): Unit = {
         import java.nio.file._
         import java.nio.file.StandardOpenOption._
+        import com.softwaremill.sttp.Uri._
         import org.json4s.native.Serialization
 
         implicit val backend: SttpBackend[Id, Nothing] = Util.configureCoreJavaHttpBackend(config)
-        val SERVER = config.getString("server")
-        var nextUrl = s"$SERVER/orders/"
-        /*
-         * {
-         *   "previous": null,
-         *   "results": [
-         *     {
-         *       "updated_at": "2019-01-29T18:05:38.081543Z",
-         *       "ref_id": "9466c909-4345-4bd6-b03d-49f4293854fc",
-         *       "time_in_force": "gfd",
-         *       "fees": "0.02",
-         *       "cancel": null,
-         *       "response_category": "unknown",
-         *       "id": "56626c76-1495-48f6-92f6-e5c20ba71124",
-         *       "cumulative_quantity": "1.00000",
-         *       "stop_price": null,
-         *       "reject_reason": null,
-         *       "instrument": "https://api.robinhood.com/instruments/2bbdb493-dbb1-4e9c-ac98-6e7c93b117c0/",
-         *       "state": "filled",
-         *       "trigger": "immediate",
-         *       "override_dtbp_checks": false,
-         *       "type": "limit",
-         *       "last_transaction_at": "2019-01-29T18:05:37.866000Z",
-         *       "price": "11.22000000",
-         *       "executions": [
-         *         {
-         *           "timestamp": "2019-01-29T18:05:37.866000Z",
-         *           "price": "11.22000000",
-         *           "settlement_date": "2019-01-31",
-         *           "id": "e3ed82c1-cb0a-43a8-a394-c992d4224dcc",
-         *           "quantity": "1.00000"
-         *         }
-         *       ],
-         *       "extended_hours": false,
-         *       "account": "https://api.robinhood.com/accounts/5RY82436/",
-         *       "url": "https://api.robinhood.com/orders/56626c76-1495-48f6-92f6-e5c20ba71124/",
-         *       "created_at": "2019-01-29T17:47:33.022908Z",
-         *       "side": "sell",
-         *       "override_day_trade_checks": false,
-         *       "position": "https://api.robinhood.com/positions/5RY82436/2bbdb493-dbb1-4e9c-ac98-6e7c93b117c0/",
-         *       "average_price": "11.22000000",
-         *       "quantity": "1.00000"
-         *     },
-         *     {
-         *       "updated_at": "2019-01-04T14:33:30.411975Z",
-         *       "ref_id": "50070df0-75c7-42ff-8c59-e7b9e0f48952",
-         *       "time_in_force": "gfd",
-         *       "fees": "0.02",
-         *       "cancel": null,
-         *       "response_category": "unknown",
-         *       "id": "c7092a2f-47d2-4664-a587-25bb4924bef5",
-         *       "cumulative_quantity": "5.00000",
-         *       "stop_price": null,
-         *       "reject_reason": null,
-         *       "instrument": "https://api.robinhood.com/instruments/2bbdb493-dbb1-4e9c-ac98-6e7c93b117c0/",
-         *       "state": "filled",
-         *       "trigger": "immediate",
-         *       "override_dtbp_checks": false,
-         *       "type": "limit",
-         *       "last_transaction_at": "2019-01-04T14:33:30.122000Z",
-         *       "price": "13.93000000",
-         *       "executions": [
-         *         {
-         *           "timestamp": "2019-01-04T14:33:30.122000Z",
-         *           "price": "13.93000000",
-         *           "settlement_date": "2019-01-08",
-         *           "id": "3d1d634f-dc1a-468c-9c00-27e7c684e00c",
-         *           "quantity": "5.00000"
-         *         }
-         *       ],
-         *       "extended_hours": false,
-         *       "account": "https://api.robinhood.com/accounts/5RY82436/",
-         *       "url": "https://api.robinhood.com/orders/c7092a2f-47d2-4664-a587-25bb4924bef5/",
-         *       "created_at": "2019-01-04T14:33:03.209546Z",
-         *       "side": "sell",
-         *       "override_day_trade_checks": false,
-         *       "position": "https://api.robinhood.com/positions/5RY82436/2bbdb493-dbb1-4e9c-ac98-6e7c93b117c0/",
-         *       "average_price": "13.93000000",
-         *       "quantity": "5.00000"
-         *     }
-         *   ],
-         *   "next": "https://api.robinhood.com/orders/?cursor=cD0yMDE5LTAxLTA0KzE0JTNBMzMlM0EwMy4yMDk1NDYlMkIwMCUzQTAw"
-         * }
-         */
         val path = Paths.get("order-history.txt")
         Files.deleteIfExists(path)
-        while (nextUrl != "") {
-            val t1 = System.currentTimeMillis
-            sttp
-                    .auth.bearer(home.Main.accessToken)
-                    .get(uri"$nextUrl")
-                    .send()
-                    .body match {
-                case Left(s) =>
-                    println(s"Error: $s")
-                    nextUrl = ""
-                case Right(s) =>
-                    val jValue: JValue = parse(s)
-                    (jValue \ "results").asInstanceOf[JArray].arr foreach (jv => {
-                        val jString = Serialization.write(jv
-                                .removeField(_._1 == "account")
-                                .removeField(_._1 == "url")
-                                .removeField(_._1 == "position")
-                                .removeField(_._1 == "ref_id")
-                                .removeField(_._1 == "cancel")
-                                .removeField(_._1 == "time_in_force")
-                                .removeField(_._1 == "stop_price")
-                                .removeField(_._1 == "trigger")
-                                .removeField(_._1 == "override_dtbp_checks")
-                                .removeField(_._1 == "override_day_trade_checks")
-                                .removeField(_._1 == "response_category")
-                                .removeField(_._1 == "reject_reason")
-                                .removeField(_._1 == "extended_hours")
-                        )(DefaultFormats)
-                        Files.write(path, java.util.Collections.singleton(jString), CREATE, APPEND)
-                    })
-                    val nextUrlOption = Util.fromJValueToOption[String](jValue \ "next")
-                    nextUrl = if (nextUrlOption.isEmpty) "" else nextUrlOption.get
+        val SERVER = config.getString("server")
+
+        Main.watchedSymbols.foreach(symbol => {
+            val instrument = StockDatabase.getInstrumentFromSymbol(symbol) match {
+                case None =>
+                    println(s"StockDatabase doesn't have $symbol")
+                    System.exit(-1)
+                    "to make the compiler happy"
+                case Some(x) => x.instrument
             }
-            val t2 = System.currentTimeMillis
-            println(t2 - t1)
-            Thread.sleep(3000)
-        }
+            var nextUri: Uri = uri"$SERVER/orders/"
+                    .queryFragment(QueryFragment.KeyValue("instrument", instrument, valueEncoding = QueryFragmentEncoding.All))
+            while (nextUri.host != "none") {
+                val t1 = System.currentTimeMillis
+                /*
+                 * {
+                 *   "previous": null,
+                 *   "results": [
+                 *     {
+                 *       "updated_at": "2019-01-29T18:05:38.081543Z",
+                 *       "ref_id": "9466c909-4345-4bd6-b03d-49f4293854fc",
+                 *       "time_in_force": "gfd",
+                 *       "fees": "0.02",
+                 *       "cancel": null,
+                 *       "response_category": "unknown",
+                 *       "id": "56626c76-1495-48f6-92f6-e5c20ba71124",
+                 *       "cumulative_quantity": "1.00000",
+                 *       "stop_price": null,
+                 *       "reject_reason": null,
+                 *       "instrument": "https://api.robinhood.com/instruments/2bbdb493-dbb1-4e9c-ac98-6e7c93b117c0/",
+                 *       "state": "filled",
+                 *       "trigger": "immediate",
+                 *       "override_dtbp_checks": false,
+                 *       "type": "limit",
+                 *       "last_transaction_at": "2019-01-29T18:05:37.866000Z",
+                 *       "price": "11.22000000",
+                 *       "executions": [
+                 *         {
+                 *           "timestamp": "2019-01-29T18:05:37.866000Z",
+                 *           "price": "11.22000000",
+                 *           "settlement_date": "2019-01-31",
+                 *           "id": "e3ed82c1-cb0a-43a8-a394-c992d4224dcc",
+                 *           "quantity": "1.00000"
+                 *         }
+                 *       ],
+                 *       "extended_hours": false,
+                 *       "account": "https://api.robinhood.com/accounts/5RY82436/",
+                 *       "url": "https://api.robinhood.com/orders/56626c76-1495-48f6-92f6-e5c20ba71124/",
+                 *       "created_at": "2019-01-29T17:47:33.022908Z",
+                 *       "side": "sell",
+                 *       "override_day_trade_checks": false,
+                 *       "position": "https://api.robinhood.com/positions/5RY82436/2bbdb493-dbb1-4e9c-ac98-6e7c93b117c0/",
+                 *       "average_price": "11.22000000",
+                 *       "quantity": "1.00000"
+                 *     },
+                 *     {
+                 *       "updated_at": "2019-01-04T14:33:30.411975Z",
+                 *       "ref_id": "50070df0-75c7-42ff-8c59-e7b9e0f48952",
+                 *       "time_in_force": "gfd",
+                 *       "fees": "0.02",
+                 *       "cancel": null,
+                 *       "response_category": "unknown",
+                 *       "id": "c7092a2f-47d2-4664-a587-25bb4924bef5",
+                 *       "cumulative_quantity": "5.00000",
+                 *       "stop_price": null,
+                 *       "reject_reason": null,
+                 *       "instrument": "https://api.robinhood.com/instruments/2bbdb493-dbb1-4e9c-ac98-6e7c93b117c0/",
+                 *       "state": "filled",
+                 *       "trigger": "immediate",
+                 *       "override_dtbp_checks": false,
+                 *       "type": "limit",
+                 *       "last_transaction_at": "2019-01-04T14:33:30.122000Z",
+                 *       "price": "13.93000000",
+                 *       "executions": [
+                 *         {
+                 *           "timestamp": "2019-01-04T14:33:30.122000Z",
+                 *           "price": "13.93000000",
+                 *           "settlement_date": "2019-01-08",
+                 *           "id": "3d1d634f-dc1a-468c-9c00-27e7c684e00c",
+                 *           "quantity": "5.00000"
+                 *         }
+                 *       ],
+                 *       "extended_hours": false,
+                 *       "account": "https://api.robinhood.com/accounts/5RY82436/",
+                 *       "url": "https://api.robinhood.com/orders/c7092a2f-47d2-4664-a587-25bb4924bef5/",
+                 *       "created_at": "2019-01-04T14:33:03.209546Z",
+                 *       "side": "sell",
+                 *       "override_day_trade_checks": false,
+                 *       "position": "https://api.robinhood.com/positions/5RY82436/2bbdb493-dbb1-4e9c-ac98-6e7c93b117c0/",
+                 *       "average_price": "13.93000000",
+                 *       "quantity": "5.00000"
+                 *     }
+                 *   ],
+                 *   "next": "https://api.robinhood.com/orders/?cursor=cD0yMDE5LTAxLTA0KzE0JTNBMzMlM0EwMy4yMDk1NDYlMkIwMCUzQTAw"
+                 * }
+                 */
+                sttp
+                        .auth.bearer(home.Main.accessToken)
+                        .get(nextUri)
+                        .send()
+                        .body match {
+                    case Left(s) =>
+                        println(s"Error: $s")
+                        nextUri = Uri("none", None, "none", Some(4), Vector.empty, Vector.empty, None)
+                    case Right(s) =>
+                        val jValue: JValue = parse(s)
+                        (jValue \ "results").asInstanceOf[JArray].arr foreach (jv => {
+                            val jString = Serialization.write(jv
+                                    .removeField(_._1 == "account")
+                                    .removeField(_._1 == "url")
+                                    .removeField(_._1 == "position")
+                                    .removeField(_._1 == "ref_id")
+                                    .removeField(_._1 == "cancel")
+                                    .removeField(_._1 == "time_in_force")
+                                    .removeField(_._1 == "stop_price")
+                                    .removeField(_._1 == "trigger")
+                                    .removeField(_._1 == "override_dtbp_checks")
+                                    .removeField(_._1 == "override_day_trade_checks")
+                                    .removeField(_._1 == "response_category")
+                                    .removeField(_._1 == "reject_reason")
+                                    .removeField(_._1 == "extended_hours")
+                            )(DefaultFormats)
+                            Files.writeString(path, jString + "\n", CREATE, APPEND)
+                        })
+                        val nextUrlOption = Util.fromJValueToOption[String](jValue \ "next")
+                        nextUri = if (nextUrlOption.isDefined) uri"${nextUrlOption.get}" else
+                            Uri("none", None, "none", Some(4), Vector.empty, Vector.empty, None)
+                }
+                val t2 = System.currentTimeMillis
+                println(t2 - t1)
+                Thread.sleep(2000)
+            }
+        })
     }
 
     /**

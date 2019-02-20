@@ -205,9 +205,50 @@ object Main extends SttpBackends {
 
         Spark.get("/accessToken", (_: spark.Request, _: spark.Response) => accessToken)
 
-        Spark.post("/:symbol/position-orderList", (request: spark.Request, response: spark.Response) => {
-            val symbol = request.params(":symbol")
-            ""
+        Spark.get("/:symbol/debug/:debugCommand", (req: spark.Request, res: spark.Response) => {
+            res.`type`("application/json")
+            val symbol = req.params(":symbol")
+            val debugCommand: StockActor.DebugCommand.Value =
+                StockActor.DebugCommand.withName(req.params(":debugCommand"))
+            actorSystem.actorSelection(s"/user/$symbol") ! StockActor.DebugCommandWrapper(debugCommand)
+            "{}"
+        })
+
+        Spark.post("/:symbol/position-orderList", (req: spark.Request, res: spark.Response) => {
+            import org.json4s._
+            import org.json4s.native.JsonMethods._
+
+            val symbol = req.params(":symbol")
+            /*
+            The request body is like this: {
+              position: 1,
+              orders: [
+                {"updated_at":"2018-07-31T16:32:14.860509Z","id":"5a47ef91-9fed-43fc-9b6f-6f6525ac8a70","cumulative_quantity":"1.00000","state":"filled","created_at":"2018-07-31T12:38:51.393562Z","side":"buy","average_price":"99.89000000","quantity":"1.00000"},
+                {"updated_at":"2018-07-31T16:32:14.860509Z","id":"6b58f0a2-a0fe-540d-ac70-707636bd9b81","cumulative_quantity":"1.00000","state":"confirmed","created_at":"2018-07-31T12:38:52.404673Z","side":"buy","average_price":"99.89000000","quantity":"1.00000"}
+              ]
+            }
+             */
+            Try {
+                val jValue = parse(req.body)
+                val position = Util.fromJValueToOption[Double](jValue \ "position").get
+                val orders = (jValue \ "orders").asInstanceOf[JArray].arr.map(jv => {
+                    val updatedAt = Util.fromJValueToOption[String](jv \ "updated_at").get
+                    val id = Util.fromJValueToOption[String](jv \ "id").get
+                    val cumulativeQuantity = Util.fromJValueToOption[Double](jv \ "cumulative_quantity").getOrElse(Double.NaN)
+                    val state = Util.fromJValueToOption[String](jv \ "state").get
+                    val price = Util.fromJValueToOption[Double](jv \ "price").getOrElse(Double.NaN)
+                    val createdAt = Util.fromJValueToOption[String](jv \ "created_at").get
+                    val side = Util.fromJValueToOption[String](jv \ "side").get
+                    val averagePrice = Util.fromJValueToOption[Double](jv \ "average_price").getOrElse(Double.NaN)
+                    val quantity = Util.fromJValueToOption[Double](jv \ "quantity").get
+                    StockActor.Order(averagePrice, createdAt, cumulativeQuantity, id, price, quantity, side, state, updatedAt)
+                })
+                val stockActor = actorSystem.actorSelection(s"/user/$symbol")
+                stockActor ! StockActor.PositionAndOrderList(position, orders)
+            } match {
+                case Success(_) => "{}"
+                case Failure(ex) => s"""{"error":"${ex.getMessage}"}"""
+            }
         })
     }
 
