@@ -1,89 +1,76 @@
 package home.sparkjava.model
 
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-
-import home.sparkjava.Util
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.json4s.native.Serialization
 
-object Orders extends Util {
+object Orders extends home.sparkjava.Util {
     def deserialize(s: String): Orders = {
         val jValue = parse(s)
-        val next: Option[String] = jValue \ "next" match {
-            case JString(nextUrl) => Some(nextUrl)
-            case _ => None
-        }
-        var issueFound = false // true when there's issue in converting json to OrderElement
-        val results: Option[List[OrderElement]] = jValue \ "results" match {
-            case JArray(jValues) =>
-                val orderElements = jValues.map(jv => {
-                    val updated_at = fromStringToOption[String](jv, "updated_at")
-                    val created_at = fromStringToOption[String](jv, "created_at")
-                    val instrument = fromStringToOption[String](jv, "instrument")
-                    if (updated_at.isEmpty || created_at.isEmpty || instrument.isEmpty) issueFound = true
-                    OrderElement(
-                        updated_at.getOrElse("_"),
-                        created_at.getOrElse("_"),
-                        fromStringToOption[Double](jv, "fees"),
-                        fromStringToOption[String](jv, "id"),
-                        fromStringToOption[Int](jv, "cumulative_quantity"),
-                        fromStringToOption[String](jv, "reject_reason"),
-                        instrument.getOrElse("_"),
-                        fromStringToOption[String](jv, "state"),
-                        fromStringToOption[Double](jv, "price"),
-                        fromStringToOption[Double](jv, "average_price"),
-                        fromStringToOption[String](jv, "side"),
-                        fromStringToOption[Int](jv, "quantity")
-                    )
-                })
-                if (issueFound) {
-                    println(s"${LocalTime.now.format(DateTimeFormatter.ISO_LOCAL_TIME)} issues w/ deserializing order $s")
-                    None
-                } else Some(orderElements)
-            case _ => None
+        val next: Option[String] = fromJValueToOption[String](jValue \ "next")
+        val results: List[OrderElement] = jValue \ "results" match {
+            case JArray(jValues) => jValues
+                    .map(toOrderElement)
+                    .collect { case Some(orderElement) => orderElement }
+
+            case _ =>
+                println(s"Error: check the results field in $s")
+                System.exit(-1)
+                Nil
         }
         Orders(next, results)
     }
 
+    def toOrderElement(jv: JValue): Option[OrderElement] = for {
+        updated_at <- fromJValueToOption[String](jv \ "updated_at")
+        created_at <- fromJValueToOption[String](jv \ "created_at")
+        instrument <- fromJValueToOption[String](jv \ "instrument")
+        id         <- fromJValueToOption[String](jv \ "id")
+        state      <- fromJValueToOption[String](jv \ "state")
+        side       <- fromJValueToOption[String](jv \ "side")
+        fees                = fromJValueToOption[Double](jv \ "fees")
+        cumulative_quantity = fromJValueToOption[Int](jv \ "cumulative_quantity")
+        quantity            = fromJValueToOption[Int](jv \ "quantity")
+        reject_reason       = fromJValueToOption[String](jv \ "reject_reason")
+        price               = fromJValueToOption[Double](jv \ "price")
+        average_price       = fromJValueToOption[Double](jv \ "average_price")
+        if quantity.isDefined || cumulative_quantity.isDefined
+    } yield OrderElement(updated_at, created_at, fees, id, cumulative_quantity, reject_reason,
+        instrument, state, price, average_price, side, quantity)
+
     def serialize(o: OrderElement): String = Serialization.write[OrderElement](o)(DefaultFormats)
 }
 
-case class Orders(next: Option[String], results: Option[List[OrderElement]])
+case class Orders(next: Option[String], results: List[OrderElement])
 
 case class OrderElement(
     updated_at: String,
     created_at: String,
     fees: Option[Double],
-    id: Option[String],
+    id: String,
     cumulative_quantity: Option[Int],
     reject_reason: Option[String],
     instrument: String,
-    state: Option[String],
+    state: String,
     price: Option[Double],
     average_price: Option[Double],
-    side: Option[String],
+    side: String,
     quantity: Option[Int],
     matchId: Option[String] = None
 ) {
-    def this(_created_at: String, _id: String, _cumulative_quantity: Int, _state: String, _price: Double, _side: String,
-             matchId: Option[String]) = this("_", _created_at, None, Some(_id),
-        Some(_cumulative_quantity), None, "_", Some(_state), Some(_price), None, Some(_side), None, matchId)
-
     override def toString: String =
         "(" +
         s"$updated_at," +
         s"$created_at," +
         s"${if (fees.isEmpty) None else fees.get}," +
-        s"${if (id.isEmpty) None else id.get}," +
+        s"$id," +
         s"${if (cumulative_quantity.isEmpty) None else cumulative_quantity.get}," +
         s"${if (reject_reason.isEmpty) None else reject_reason.get}," +
         s"$instrument," +
-        s"${if (state.isEmpty) None else state.get}," +
+        s"$state," +
         s"${if (price.isEmpty) None else price.get}," +
         s"${if (average_price.isEmpty) None else average_price.get}," +
-        s"${if (side.isEmpty) None else side.get}," +
+        s"$side," +
         s"${if (quantity.isEmpty) None else quantity.get}," +
         s"${if (matchId.isEmpty) None else matchId.get}" +
         ")"

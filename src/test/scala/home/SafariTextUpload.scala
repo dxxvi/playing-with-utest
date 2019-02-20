@@ -8,13 +8,15 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
-import utest._
+import org.junit.jupiter.api.Test
 
 import scala.concurrent.ExecutionContext
 import scala.io.StdIn
 
-object SafariTextUpload extends TestSuite { val tests: Tests = Tests {
-    "Receives text from safari using Akka HTTP" - {
+class SafariTextUpload {
+    // Receives text from safari using Akka HTTP
+    @Test
+    def test1() {
         implicit val actorSystem: ActorSystem = ActorSystem("safari")
         implicit val actorMaterializer: ActorMaterializer = ActorMaterializer()
         implicit val executionContext: ExecutionContext = actorSystem.dispatcher
@@ -36,7 +38,9 @@ object SafariTextUpload extends TestSuite { val tests: Tests = Tests {
         bindingFuture.flatMap(_.unbind()).onComplete(_ => actorSystem.terminate())
     }
 
-    "Receives text from safari using SparkJava" - {
+    // Receives text from safari using SparkJava
+    @Test
+    def test2() {
         import java.nio.file.{Files, Paths}
         import java.nio.file.StandardOpenOption._
         import spark.{Request, Response}
@@ -62,7 +66,9 @@ object SafariTextUpload extends TestSuite { val tests: Tests = Tests {
         scala.io.StdIn.readLine()
     }
 
-    "beautify html files" - {
+    // beautify html files
+    @Test
+    def test3() {
         import java.nio.file.{Files, Paths}
         import java.nio.file.StandardOpenOption._
         import scala.io.Source
@@ -177,4 +183,4 @@ object SafariTextUpload extends TestSuite { val tests: Tests = Tests {
             Files.write(Paths.get(fileName), s.getBytes, CREATE, TRUNCATE_EXISTING)
         })
     }
-}}
+}

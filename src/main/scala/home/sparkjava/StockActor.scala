@@ -4,38 +4,53 @@ import java.security.MessageDigest
 import java.time.DayOfWeek._
 import java.time.{LocalDate, LocalTime}
 import java.time.format.DateTimeFormatter
-import java.util.Date
 
 import akka.actor.{Actor, Props, Timers}
+import akka.event.{LogSource, Logging, LoggingAdapter}
 import com.typesafe.config.Config
-import org.apache.logging.log4j.ThreadContext
 import org.json4s._
 import org.json4s.native.Serialization
-import message.{DailyQuoteReturn, GetDailyQuote, HistoricalOrders, Tick}
+import message.Tick
 import model._
 
 import scala.annotation.tailrec
 import scala.math._
 
 object StockActor {
-    def props(symbol: String, config: Config): Props = Props(new StockActor(symbol, config))
+    case class QuoteOpenHighLow(q: Quote, open: Double, high: Double, low: Double)
+
+    def props(
+                 symbol: String,
+                 config: Config,
+                 historicalOrders: List[OrderElement],
+                 q: Quote,
+                 dQuotes: List[DailyQuote],
+                 p: Position,
+                 todayOpen: Double,
+                 todayHigh: Double,
+                 todayLow: Double
+             ): Props =
+        Props(new StockActor(symbol, config, historicalOrders, q, dQuotes, p, todayOpen, todayHigh, todayLow))
 }
 
-class StockActor(symbol: String, config: Config) extends Actor with Util with Timers {
+class StockActor(
+                    symbol: String,
+                    config: Config,
+                    historicalOrders: List[OrderElement],
+                    var q: Quote,
+                    dQuotes: List[DailyQuote],
+                    var p: Position,
+                    var todayOpen: Double,
+                    var todayHigh: Double,
+                    var todayLow: Double
+                ) extends Actor with Util with Timers {
+    import StockActor._
+
+    implicit val logSource: LogSource[AnyRef] = (_: AnyRef) => symbol
+    val log: LoggingAdapter = Logging(context.system, this)
     val isWeekDay: Boolean = ! Seq(SATURDAY, SUNDAY).contains(LocalDate.now.getDayOfWeek)
     val md5Digest: MessageDigest = MessageDigest.getInstance("MD5")
     val isDow: Boolean = isDow(symbol)
-    var fu = Fundamental(
-        Some(-.1), Some(-.1), Some(""), Some(-.1), None, Some(-.1), None, Some(-.1), Some(-.1), Some(-.1), "",
-        "", 0, 9999
-    )
-    var p = Position(
-        Some(-.1), Some(-.1), Some(-.1), Some(-.1), Some(-.1), None, None, Some(-.1), Some(-.1), None, Some(-.1),
-        Some(-.1), Some(-.1), Some(-1)
-    )
-    var q = Quote(
-        None, None, None, None, None, None, None, None, None, None, None, None, None, None, None
-    )
 
     var lastRoundOrdersHash = ""
     var lastEstimateHash = ""
@@ -43,18 +58,19 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
     var lastFundamentalHash = ""
     var lastQuoteHash = ""
     var lastCurrentStatusHash = ""
-    var gotHistoricalOrders = false
     var hlSentToBrowser = false  // HL49, HL31, HL10, HO49, HO10, OL49, OL10, CL49 sent to browser
 
     var instrument = ""
-    var canSendHistoricalOrders = false
-    var lastTimeHistoricalQuotesRequested: Long = 0
     var lastTimeBuySell: Long = 0 // in seconds
     val today: String = LocalDate.now.format(DateTimeFormatter.ISO_LOCAL_DATE)
+
     val orders: collection.mutable.SortedSet[OrderElement] =
         collection.mutable.SortedSet[OrderElement]()(Ordering.by[OrderElement, String](_.created_at)(Main.timestampOrdering.reverse))
+    orders ++= historicalOrders.collect {
+        case oe @ OrderElement(_, _, _, _, cumulative_quantity, _, _, state, _, _, _, _, _) if isAcceptableOrderState(state, oe) =>
+            if (state == "cancelled") oe.copy(state = "filled", quantity = cumulative_quantity) else oe
+    }
 
-    var openPrice: Double = Double.NaN
     var HL49: Double = Double.NaN
     var HL31: Double = Double.NaN
     var HL10: Double = Double.NaN
@@ -68,131 +84,91 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
     var HO: List[DailyQuote] = Nil
     var OL: List[DailyQuote] = Nil
     var L: List[DailyQuote] = Nil
-    var highCurrent: String = ""
-    var currentLow: String = ""
-    var openCurrent: String = ""
+    // HPC (todayHigh - previousClose) and PCL (previousClose - todayLow) sorted from lowest - highest
+    var HPC: List[(String /* beginsAt */, Double /* today_highest - previous_close */)] = Nil
+    var PCL: List[(String /* beginsAt */, Double /* previous_close - today_lowest */)]  = Nil
+    setStats()
 
-    var debug: Boolean = false
     var thresholdBuy: Double = -1
     var thresholdSell: Double = -1
 
-    val _receive: Receive = {
-        case _fu: Fundamental => if (_fu.low.isDefined && _fu.high.isDefined) {
-            fu = _fu
-            if (q.last_trade_price.exists(_ > fu.high.get)) fu = fu.copy(high = q.last_trade_price)
-            if (q.last_trade_price.exists(_ < fu.low.get))  fu = fu.copy(low = q.last_trade_price)
-            openPrice = _fu.open.getOrElse(openPrice)
-            sendFundamental
-            instrument = fu.instrument
-        }
-        case _o: OrderElement => if (gotHistoricalOrders) {
-            val o = if (_o.state.contains("cancelled") && _o.cumulative_quantity.exists(_ > 0))
-                _o.copy(state = Some("filled"))
+    override def receive: Receive = {
+        case _o: OrderElement =>
+            val o = if (_o.state == "cancelled" && _o.cumulative_quantity.exists(_ > 0))
+                _o.copy(state = "filled", quantity = _o.cumulative_quantity)
 /*
             // TODO this is for testing on weekends
             else if (_o.state.contains("queued")) _o.copy(state = Some("confirmed"))
 */
             else _o
             orders -= o
-            if (o.state.exists(_.contains("filled")) || o.state.exists(_.contains("confirmed"))) orders += o
+            if (o.state == "filled" || o.state =="confirmed") orders += o
             // orders sent to browser when StockActor receives a Position which is every 4 secs
-        }
+
         case _p: Position =>   // we receive this every 4 or 30 seconds
             p = _p
             sendPosition
-            if (p.instrument.nonEmpty) instrument = p.instrument.get
+            if (p.instrument.nonEmpty) instrument = p.instrument
 
             if (orders.nonEmpty) {
                 var totalShares: Int = 0
                 val x = lastRoundOrders() // x has (un)confirmed, (partially) filled orders
                 val _lastRoundOrders = assignMatchId(x)
-                if (q.last_trade_price.isDefined && instrument != "" && thresholdBuy > 0 && thresholdSell > 0 && shouldDoBuySell) {
-                    shouldBuySell(_lastRoundOrders, q.last_trade_price.get, debug) foreach { t =>
+                if (instrument != "" && thresholdBuy > 0 && thresholdSell > 0 && shouldDoBuySell) {
+                    shouldBuySell(_lastRoundOrders, q.last_trade_price) foreach { t =>
                         // (action, quantity, price, orderElement, reason)
                         context.actorSelection(s"../../${OrderActor.NAME}") ! OrderActor.BuySell(t._1, symbol, instrument, t._2, t._3)
                         lastTimeBuySell = System.currentTimeMillis / 1000
-                        logger.warn(s"Just ${t._1.toUpperCase} ${t._2} $symbol $$${t._3} " +
-                                s"${t._4.copy(instrument = "~")} ${t._5} ${auditInfo()}")
+                        log.warning(s"Just ${t._1.toUpperCase} ${t._2} $symbol $$${t._3} " +
+                                s"${t._4.copy(instrument = "~")} ${t._5}")
                     }
                 }
                 val lastRoundOrdersString = _lastRoundOrders.map(oe => {
                     val cq = oe.cumulative_quantity.get
-                    totalShares += (if (oe.side.get == "buy") cq else -cq)
+                    totalShares += (if (oe.side == "buy") cq else -cq)
                     s"${oe.toString}  $totalShares"
                 }).mkString("\n")
                 val newHash = new String(MessageDigest.getInstance("MD5").digest(lastRoundOrdersString.getBytes))
                 if (newHash != lastRoundOrdersHash) {
-                    logger.debug(s"Last round orders before assigning matchId:\n${x.map(_.toString).mkString("\n")}")
+                    log.debug(s"Last round orders before assigning matchId:\n${x.map(_.toString).mkString("\n")}")
                     lastRoundOrdersHash = newHash
-                    logger.debug(s"Orders sent to browser: position ${p.quantity}\n$lastRoundOrdersString")
+                    log.debug(s"Orders sent to browser: position ${p.quantity}\n$lastRoundOrdersString")
                     sendOrdersToBrowser(_lastRoundOrders)
                 }
             }
-            debug = false
-        case _q: Quote => // the QuoteActor is sure that symbol, last_trade_price and instrument are there
+        case QuoteOpenHighLow(_q, open, high, low) => // the QuoteActor is sure that symbol, last_trade_price and instrument are there
             val T = 19
             q = _q
+            if (!open.isNaN) todayOpen = open
+            if (!high.isNaN) todayHigh = high
+            if (!low.isNaN)  todayLow  = low
             sendQuote
-            instrument = q.instrument.get
-
-            getHistoricalOrders(T)
+            instrument = q.instrument
 
             val now = System.currentTimeMillis/1000
-            if (HL49.isNaN && (now - lastTimeHistoricalQuotesRequested > T)) {
-                lastTimeHistoricalQuotesRequested = now
-                context.actorSelection(s"../../${QuoteActor.NAME}") ! GetDailyQuote(List(symbol), 0)
-            }
-            if (!HL49.isNaN && !hlSentToBrowser) {
+            if (!hlSentToBrowser) {
                 hlSentToBrowser = true
                 val map: Map[String, Double] = Map("HL49" -> HL49, "HL31" -> HL31, "HL10" -> HL10, "HO49" -> HO49,
                     "HO10" -> HO10, "OL49" -> OL49, "OL10" -> OL10, "CL49" -> CL49)
                 val message = s"$symbol: HISTORICAL_QUOTES: ${Serialization.write(map)(DefaultFormats)}"
                 context.actorSelection(s"../../${WebSocketActor.NAME}") ! message
             }
-            if (!HL49.isNaN && !openPrice.isNaN && fu.high.isDefined && fu.low.isDefined) {
-                val map = collection.mutable.Map[String, String]()
-                map += ("HCurrent" -> ("HL" + HL.takeWhile(dq => dq.high_price - dq.low_price < fu.high.get - q.last_trade_price.get).size))
-                map += ("CurrentL" -> ("HL" + HL.takeWhile(dq => dq.high_price - dq.low_price < q.last_trade_price.get - fu.low.get).size))
-                if (q.last_trade_price.get > openPrice)
-                    map += ("CurrentO" -> ("HO" + HO.takeWhile(dq => dq.high_price - dq.open_price < q.last_trade_price.get - openPrice).size))
-                else
-                    map += ("OCurrent" -> ("OL" + OL.takeWhile(dq => dq.open_price - dq.low_price < openPrice - q.last_trade_price.get).size))
-                val message = s"$symbol: CURRENT_STATUS: ${Serialization.write(map)(DefaultFormats)}"
-                val currentStatusHash = new String(md5Digest.digest(message.getBytes))
-                if (lastCurrentStatusHash != currentStatusHash) {
-                    context.actorSelection(s"../../${WebSocketActor.NAME}") ! message
-                    lastCurrentStatusHash = currentStatusHash
-                }
+            val map = collection.mutable.Map[String, String]()
+            map += ("HCurrent" -> ("HL" + HL.takeWhile(dq => dq.high_price - dq.low_price < todayHigh - q.last_trade_price).size))
+            map += ("CurrentL" -> ("HL" + HL.takeWhile(dq => dq.high_price - dq.low_price < q.last_trade_price - todayLow).size))
+            if (q.last_trade_price > todayOpen)
+                map += ("CurrentO" -> ("HO" + HO.takeWhile(dq => dq.high_price - dq.open_price < q.last_trade_price - todayOpen).size))
+            else
+                map += ("OCurrent" -> ("OL" + OL.takeWhile(dq => dq.open_price - dq.low_price < todayOpen - q.last_trade_price).size))
+            val message = s"$symbol: CURRENT_STATUS: ${Serialization.write(map)(DefaultFormats)}"
+            val currentStatusHash = new String(md5Digest.digest(message.getBytes))
+            if (lastCurrentStatusHash != currentStatusHash) {
+                context.actorSelection(s"/user/${WebSocketActor.NAME}") ! message
+                lastCurrentStatusHash = currentStatusHash
             }
-        case MainActor.GoAheadSendHistoricalOrders => canSendHistoricalOrders = true
-        case MainActor.DonotSendHistoricalOrders => canSendHistoricalOrders = false
-        case HistoricalOrders(_, _, _, _orders, _) =>
-            gotHistoricalOrders = true
-            orders ++= _orders.collect {
-                case oe @ OrderElement(_, _, _, _, _, _, _, Some(state), _, _, _, _, _) if isAcceptableOrderState(state, oe) =>
-                    if (state == "cancelled") oe.copy(state = Some("filled")) else oe
-            }
-            logger.debug(s"Got HistoricalOrders:\n${orders.toList.map(_.toString).mkString("\n")}")
-        case DailyQuoteReturn(dQuotes) =>
-            val N = 62
-            val dailyQuotes: List[DailyQuote] = dQuotes.reverse.take(N)
 
-            HL = dailyQuotes.sortWith((dq1, dq2) => dq1.high_price - dq1.low_price < dq2.high_price - dq2.low_price)
-            HL49 = HL(49).high_price - HL(49).low_price
-            HL31 = HL(31).high_price - HL(31).low_price
-            HL10 = HL(10).high_price - HL(10).low_price
-            HO = dailyQuotes.sortWith((dq1, dq2) => dq1.high_price - dq1.open_price < dq2.high_price - dq2.open_price)
-            HO49 = HO(49).high_price - HO(49).open_price
-            HO10 = HO(10).high_price - HO(10).open_price
-            OL = dailyQuotes.sortWith((dq1, dq2) => dq1.open_price - dq1.low_price < dq2.open_price - dq2.low_price)
-            OL49 = OL(49).open_price - OL(49).low_price
-            OL10 = OL(10).open_price - OL(10).low_price
-            val CL = dailyQuotes.sortWith((dq1, dq2) => dq1.close_price - dq1.low_price < dq2.close_price - dq2.low_price)
-            CL49 = CL(49).close_price - CL(49).low_price
-            L = dQuotes.reverse.take(10).sortWith((dq1, dq2) => dq1.low_price < dq2.low_price)
-            L3 = L(2).low_price
         case Tick => // Tick means there's a new web socket connection. purpose: send the symbol to the browser
-            if (p.quantity.get >= 0) sendPosition else sendFundamental
+            if (p.quantity >= 0) sendPosition else sendFundamental
             lastRoundOrdersHash = ""
             lastEstimateHash = ""
             lastPositionHash = ""
@@ -201,18 +177,9 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
             lastCurrentStatusHash = ""
             hlSentToBrowser = false
         case "DEBUG" =>
-            debug = true
-            logger.warn(auditInfo())
-            logger.warn(
-                s"""isDow: $isDow, Fundamental: $fu, Position: $p, Quote: $q,
-                   | gotHistoricalOrders: $gotHistoricalOrders, instrument: $instrument,
-                   | lastTimeHistoricalQuotesRequested: ${new Date(lastTimeHistoricalQuotesRequested * 1000)},
-                   | lastTimeBuySell: ${new Date(lastTimeBuySell * 1000)}, lastTimeBuySell: ${new Date(lastTimeBuySell * 1000)},
-                   | orders: ${orders.map(_.toString).mkString("\n")}
-                   | """.stripMargin)
+            val map = debug()
+            sender() ! map
     }
-    override def receive: Receive = sideEffect andThen _receive
-    private def sideEffect: PartialFunction[Any, Any] = { case x => ThreadContext.put("symbol", symbol); x }
 
     /**
       * @param tbOrders to-browser orders
@@ -236,11 +203,11 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
                         }
                         else (working(i), working(i + 1))
 
-                    val matchId = combineIds(buySellT._1.id.get, buySellT._2.id.get)
+                    val matchId = combineIds(buySellT._1.id, buySellT._2.id)
                     val buy = buySellT._1.copy(matchId = Some(matchId))
                     val sell = buySellT._2.copy(matchId = Some(matchId))
                     _withMatchIds = withMatchIds :+ buy :+ sell
-                    _working = working.filter(oe => !oe.id.contains(buy.id.get) && !oe.id.contains(sell.id.get))
+                    _working = working.filter(oe => !oe.id.contains(buy.id) && !oe.id.contains(sell.id))
                 }
                 else if (doBuySellMatch(working(i + 1), working(i)).contains(true)) {
                     matchFound = true
@@ -253,11 +220,11 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
                         }
                         else (working(i + 1), working(i))
 
-                    val matchId = combineIds(buySellT._1.id.get, buySellT._2.id.get)
+                    val matchId = combineIds(buySellT._1.id, buySellT._2.id)
                     val buy = buySellT._1.copy(matchId = Some(matchId))
                     val sell = buySellT._2.copy(matchId = Some(matchId))
                     _withMatchIds = withMatchIds :+ buy :+ sell
-                    _working = working.filter(oe => !oe.id.contains(buy.id.get) && !oe.id.contains(sell.id.get))
+                    _working = working.filter(oe => !oe.id.contains(buy.id) && !oe.id.contains(sell.id))
                 }
                 i += 1
             }
@@ -274,33 +241,31 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
         f(List[OrderElement](), tbOrders)
     }
 
-    private def auditInfo(): String = s"HL49: $HL49, HL31: $HL31, HL10: $HL10, HO49: $HO49, HO10: $HO10, OL49: $OL49, " +
-            s"OL10: $OL10, CL49: $CL49, lowests last 10 days: ${L.map(_.low_price).mkString(", ")}, " +
-            s"thresholdBuy: $thresholdBuy, thresholdSell: $thresholdSell, " +
-            s"${fu.copy(instrument = "~")} ${p.copy(instrument = Some("~"))} $q"
-
     private def combineIds(s1: String, s2: String): String = if (s1 < s2) s"$s1-$s2" else s"$s2-$s1"
 
+    private def debug(): Map[String, String] = {
+        log.info(
+            s"""
+              |  ltp -> ${q.last_trade_price}
+              |  HL49 -> $HL49
+              |  orders -> orders.map(Orders.serialize).mkString("\n")
+            """.stripMargin)
+        Map(
+            "ltp" -> q.last_trade_price.toString,
+            "HL49" -> HL49.toString,
+            "orders" -> orders.map(Orders.serialize).mkString("\n")
+        )
+    }
+
     private def doBuySellMatch(o1: OrderElement, o2: OrderElement): Option[Boolean] = for {
-        side1 <- o1.side
-        side2 <- o2.side
-        if side1 == "buy" && side2 == "sell"
         cumulative_quantity1 <- o1.cumulative_quantity
         cumulative_quantity2 <- o2.cumulative_quantity
         if cumulative_quantity1 == cumulative_quantity2
+        if o1.side == "buy" && o2.side == "sell" && o1.state == "filled" && o2.state == "filled"
         average_price1 <- o1.average_price
         average_price2 <- o2.average_price
         if average_price1 < average_price2
     } yield true
-
-    private def getHistoricalOrders(T: Int) {
-        if (p.quantity.exists(_ >= 0) && orders.isEmpty && !gotHistoricalOrders && canSendHistoricalOrders) {
-            context.actorSelection(s"../../${OrderActor.NAME}") ! HistoricalOrders(symbol, instrument, 4, Nil, None)
-            canSendHistoricalOrders = false
-        }
-        else if (!gotHistoricalOrders && !canSendHistoricalOrders)
-            context.actorSelection(s"../../${MainActor.NAME}") ! MainActor.CanStockActorSendHistoricalOrders
-    }
 
     private def isAcceptableOrderState(state: String, oe: OrderElement): Boolean =
         state == "filled" || state.contains("confirmed") || (
@@ -345,14 +310,14 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
 
         // cpfOrders contains (un)confirmed and partially_filled orders
         val cpfOrders = orders.toList
-                .takeWhile(_.state.exists(s => s.contains("confirmed") || s.contains("partially_filled")))
+                .takeWhile(o => o.state == "confirmed" || o.state == "partially_filled")
         val currentSum = cpfOrders.foldLeft(0)((n, oe) =>
-            if (oe.state.exists(_.contains("partially_filled")))
-                if (oe.side.contains("buy")) n + oe.cumulative_quantity.getOrElse(0)
+            if (oe.state == "partially_filled")
+                if (oe.side == "buy") n + oe.cumulative_quantity.getOrElse(0)
                 else n - oe.cumulative_quantity.getOrElse(0)
             else n
         )
-        f(p.quantity.get, currentSum, cpfOrders, orders.toList)
+        f(p.quantity, currentSum, cpfOrders, orders.toList)
     }
 
     private def readThresholdBuySell() {
@@ -361,6 +326,7 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
     }
 
     private def sendFundamental {
+/* TODO
         val sentFu = fu.copy(pe_ratio = None, average_volume = None, average_volume_2_weeks = None,
             thresholdBuy = thresholdBuy, thresholdSell = thresholdSell)
         val message = s"$symbol: FUNDAMENTAL: ${Fundamental.serialize(sentFu)}"
@@ -369,6 +335,7 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
             lastFundamentalHash = fundamentalHash
             context.actorSelection(s"../../${WebSocketActor.NAME}") ! message
         }
+*/
     }
 
     private def sendOrdersToBrowser(os: List[OrderElement]) {
@@ -386,70 +353,64 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
     }
 
     private def sendQuote {
-        if (q.last_trade_price.isDefined && q.last_trade_price.get > 0) {
-            val message = s"$symbol: QUOTE: ${Quote.serialize(q.copy(updated_at = None, ask_price = None,
-                ask_size = None, bid_price = None, bid_size = None, adjusted_previous_close = None,
-                previous_close = None, previous_close_date = None))}"
-            val quoteHash = new String(md5Digest.digest(message.getBytes))
-            if (quoteHash != lastQuoteHash) {
-                lastQuoteHash = quoteHash
-                context.actorSelection(s"../../${WebSocketActor.NAME}") ! message
-            }
+        val message = s"$symbol: QUOTE: ${Quote.serialize(q.copy(updated_at = None, ask_price = None,
+            ask_size = None, bid_price = None, bid_size = None, adjusted_previous_close = None,
+            previous_close = Double.NaN, previous_close_date = None))}"
+        val quoteHash = new String(md5Digest.digest(message.getBytes))
+        if (quoteHash != lastQuoteHash) {
+            lastQuoteHash = quoteHash
+            context.actorSelection(s"../../${WebSocketActor.NAME}") ! message
         }
     }
 
     private def shouldBuySell(
-                                     oes: List[OrderElement],
-                                     ltp: Double     /* last trade price */,
-                                     _d: Boolean     /* true means debug */,
-                                     T: Long = 99    /* the amount of seconds we need to wait since last time buy/sell*/
+                                 oes: List[OrderElement],
+                                 ltp: Double     /* last trade price */,
+                                 T: Long = 99    /* the amount of seconds we need to wait since last time buy/sell*/
                              ): Option[(String, Int, Double, OrderElement, String)] = oes match {
         // returns (action, quantity, price, orderElement used to give this decision)
         case Nil =>
             val N = None
             val now = System.currentTimeMillis / 1000
             val quantity = (10 / ltp + 1).round.toInt
-            val cond1 = !HL49.isNaN && fu.high.exists(ltp <= _ - HL49)
-            val cond2 = !OL49.isNaN && ltp <= openPrice - OL49
-            val cond3 = !L3.isNaN && ltp < L3
+            val cond1 = ltp <= todayHigh - HL49
+            val cond2 = ltp <= todayOpen - OL49
+            val cond3 = ltp < L3
             if ((cond1 || cond2) && cond3 && ltp < thresholdBuy && now - lastTimeBuySell > T) {
                 val newBuyReason =
                     if (cond1) "New buy: HL49 reached" else if (cond2) "New buy: OL49 reach" else "shouldn't be seen"
                 val buyPrice = (ltp * 100).round.toDouble / 100
-                Some(("buy", quantity, buyPrice, OrderElement("_", "_", N, N, N, N, "~", N, N, N, N, N), newBuyReason))
+                Some(("buy", quantity, buyPrice, OrderElement("_", "_", N, "~", N, N, "~", "~", N, N, "~", N), newBuyReason))
             }
             else
                 None
         case _ =>
-            val hasBuy  = oes.exists(oe => oe.state.exists(_.contains("confirmed")) && oe.side.contains("buy"))
-            val hasSell = oes.exists(oe => oe.state.exists(_.contains("confirmed")) && oe.side.contains("sell"))
-            if (_d) logger.debug(s"oes: ${oes.map(_.toString).mkString("\n")}\nhasBuy: $hasBuy, hasSell: $hasSell")
+            val hasBuy  = oes.exists(oe => oe.state == "confirmed" && oe.side == "buy")
+            val hasSell = oes.exists(oe => oe.state == "confirmed" && oe.side == "sell")
 
             val decisionFunction: PartialFunction[OrderElement, (String, Int, Double, OrderElement, String)] = {
-                case oe @ OrderElement(updated_at, _, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
+                case oe @ OrderElement(updated_at, _, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, "buy", _, _)
                     if !hasSell && isTodayAndMoreThanFromNow(updated_at) && shouldSellForTodayBuy(ltp, price, T).isDefined =>
                     ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100, oe, shouldSellForTodayBuy(ltp, price, T).get)
-                case oe @ OrderElement(_, created_at, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, _)
+                case oe @ OrderElement(_, created_at, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, "buy", _, _)
                     if !hasSell && !isToday(created_at) && shouldSellForPastBuy(ltp, price, T).isDefined  =>
                     ("sell", cumulative_quantity, (ltp*100).round.toDouble / 100, oe, shouldSellForPastBuy(ltp, price, T).get)
-                case oe @ OrderElement(updated_at, _, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
+                case oe @ OrderElement(updated_at, _, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, "sell", _, _)
                     if !hasBuy && isTodayAndMoreThanFromNow(updated_at) && shouldBuyTodaySell(ltp, price, T).isDefined =>
                     ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100, oe, shouldBuyTodaySell(ltp, price, T).get)
-                case oe @ OrderElement(_, created_at, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("sell"), _, _)
+                case oe @ OrderElement(_, created_at, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, "sell", _, _)
                     if !hasBuy && !isToday(created_at) && shouldBuyPastSell(ltp, price, T).isDefined =>
                     ("buy", cumulative_quantity, (ltp*100).round.toDouble / 100, oe, shouldBuyPastSell(ltp, price, T).get)
-                case oe @ OrderElement(updated_at, _, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, None)
+                case oe @ OrderElement(updated_at, _, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, "buy", _, None)
                     if !hasBuy && isTodayAndMoreThanFromNow(updated_at) && shouldBuyMoreToday(ltp, price, T).isDefined =>
                     ("buy", cumulative_quantity + 1, (ltp*100).round.toDouble / 100, oe, shouldBuyMoreToday(ltp, price, T).get)
-                case oe @ OrderElement(_, created_at, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, Some("buy"), _, None)
+                case oe @ OrderElement(_, created_at, _, _, Some(cumulative_quantity), _, _, _, Some(price), _, "buy", _, None)
                     if !hasBuy && !isToday(created_at) && shouldBuyMoreForPast(ltp, price, T).isDefined =>
                     ("buy", cumulative_quantity + 1, (ltp*100).round.toDouble / 100, oe, shouldBuyMoreForPast(ltp, price, T).get)
             }
             val filledOEs = oes.filter(_.state.contains("filled"))
             val decision1 = filledOEs.headOption collect decisionFunction
-            if (_d) logger.debug(s"decision1: $decision1")
             val decision2 = filledOEs.dropWhile(_.matchId.isDefined).headOption collect decisionFunction
-            if (_d) logger.debug(s"decision2: $decision2")
 
             val decision = if (decision1.isEmpty) decision2
                     else if (decision2.isEmpty) decision1
@@ -465,38 +426,31 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
     }
 
     private def shouldBuyPastSell(ltp: Double, sellPrice: Double, T: Long): Option[String] = {
-        val todayDelta = for {
-            fuLow <- fu.low
-            fuHigh <- fu.high
-        } yield fuHigh - fuLow
-        val cond1 = todayDelta.nonEmpty && !HL49.isNaN && ltp <= fu.high.get - HL49 &&
-                ltp <= sellPrice - max(.05, todayDelta.get/10)
-        val cond2 = todayDelta.nonEmpty && !HL31.isNaN && !HL10.isNaN && !OL10.isNaN &&
-                Main.dowFuture > 100 && ltp < sellPrice - HL31 && (ltp < fu.high.get - HL10 || ltp < openPrice - OL10)
+        val todayDelta = todayHigh - todayLow
+        val cond1 = ltp <= todayHigh - HL49 && ltp <= sellPrice - max(.05, todayDelta/9)
+        val cond2 = Main.dowFuture > 100 && ltp < sellPrice - HL31 && (ltp < todayHigh - HL10 || ltp < todayOpen - OL10)
         if (ltp < thresholdBuy && (System.currentTimeMillis/1000 - lastTimeBuySell > T) && (cond1 || cond2))
-            if (cond1) Some(s"Buy past sell: < todayHighest - HL49 and < sellPrice - todayDelta/10 (${todayDelta.get/10})")
+            if (cond1) Some(s"Buy past sell: < todayHighest - HL49 and < sellPrice - todayDelta/9 (${todayDelta/9})")
             else Some(s"Buy past sell: dowFuture > 100 and < sellPrice - HL31 and (< todayHighest - HL10 or openPrice - OL10)")
         else None
     }
 
     private def shouldBuyTodaySell(ltp: Double, sellPrice: Double, T: Long): Option[String] = {
-        val todayDelta = for {
-            fuHigh <- fu.high
-            fuLow <- fu.low
-        } yield fuHigh - fuLow
-        if (todayDelta.nonEmpty && ltp < fu.low.get + todayDelta.get/4 && ltp <= sellPrice - todayDelta.get/5 &&
+        val todayDelta = todayHigh - todayLow
+        if (ltp < todayLow + todayDelta/4 && ltp <= sellPrice - todayDelta/5 &&
                 (ltp < thresholdBuy) && (System.currentTimeMillis/1000 - lastTimeBuySell > T))
             Some(s"Buy today sell: in the lowest quarter and < sellPrice - todayDelta/5")
         else None
     }
 
     private def shouldBuyMoreForPast(ltp: Double, buyPrice: Double, T: Long): Option[String] = {
-        val cond1 = fu.high.nonEmpty && !HL49.isNaN && ltp <= fu.high.get - HL49
-        val cond2 = !OL49.isNaN && !openPrice.isNaN && ltp <= openPrice - OL49
-        val cond3 = !HL31.isNaN && fu.high.nonEmpty && ltp < buyPrice - HL31 && ltp < fu.high.get - HL31
+        val todayDelta = todayHigh - todayLow
+        val cond1 = ltp <= todayHigh - HL49 && ltp <= buyPrice - todayDelta/4
+        val cond2 = ltp <= todayOpen - OL49 && ltp <= buyPrice - todayDelta/4
+        val cond3 = !HL31.isNaN && ltp < buyPrice - HL31 && ltp < todayHigh - HL31
         if (ltp < thresholdBuy && (System.currentTimeMillis / 1000 - lastTimeBuySell > T) && (cond1 || cond2 || cond3))
-            if (cond1) Some(s"Buy more for past: < todayHighest - HL49")
-            else if (cond2) Some(s"Buy more for past: < openPrice - OL49")
+            if (cond1) Some(s"Buy more for past: < todayHighest - HL49 and < buyPrice - delta/4")
+            else if (cond2) Some(s"Buy more for past: < openPrice - OL49 and < buyPrice - delta/4")
             else Some(s"Buy more for past: < buyPrice - HL31 and < todayHighest - HL31")
         else None
     }
@@ -518,40 +472,73 @@ class StockActor(symbol: String, config: Config) extends Actor with Util with Ti
     }
 
     private def shouldSellForPastBuy(ltp: Double, buyPrice: Double, T: Long): Option[String] = {
-        val todayDelta = for {
-            fuHigh <- fu.high
-            fuLow <- fu.low
-        } yield fuHigh - fuLow
-        val cond1 = !HO49.isNaN && todayDelta.nonEmpty && ltp >= openPrice + HO49 &&
-                ltp > buyPrice + max(.05, todayDelta.get/15)
-        val cond2 = !HL49.isNaN && todayDelta.nonEmpty && ltp >= fu.low.get + HL49 &&
-                ltp > buyPrice + max(.05, todayDelta.get/15)
-        val cond3_1 = !HL10.isNaN && fu.high.nonEmpty && ltp < fu.high.get - HL10
-        val cond3_2 = !OL10.isNaN && ltp < openPrice - OL10
-        val cond3 = !HL31.isNaN && ltp > buyPrice + HL31 && (cond3_1 || cond3_2)
+        val todayDelta = todayHigh - todayLow
+        val cond1 = ltp >= todayOpen + HO49 && ltp > buyPrice + max(.05, todayDelta/15)
+        val cond2 = ltp >= todayLow + HL49 && ltp > buyPrice + max(.05, todayDelta/15)
+        val cond3_1 = ltp > todayOpen + HO10
+        val cond3_2 = ltp > todayLow + HL10
+        val cond3 = ltp > buyPrice + HL31 && (cond3_1 || cond3_2)
         if ((cond1 || cond2 || cond3) && (System.currentTimeMillis / 1000 - lastTimeBuySell > T) && ltp > thresholdSell)
             if (cond1) Some(s"Sell past buy: HO49 reached")
             else if (cond2) Some(s"Sell past buy: HL49 reached")
-            else if (cond3_1) Some(s"Sell past buy: < todayHighest - HL10 and > buyPrice + HL31")
-            else Some(s"Sell past buy: < openPrice - OL10 and > buyPrice + HL31")
+            else if (cond3_1) Some(s"Sell past buy: > openPrice + HO10 and > buyPrice + HL31")
+            else Some(s"Sell past buy: > lowestPrice + HL10 and > buyPrice + HL31")
         else None
     }
 
     private def shouldSellForTodayBuy(ltp: Double, buyPrice: Double, T: Long): Option[String] = {
         val hour = LocalTime.now.getHour
-        val todayDelta = for {
-            h <- fu.high
-            l <- fu.low
-        } yield h - l
-        val cond1 = todayDelta.nonEmpty && hour < 15 && ltp >= buyPrice + max(.05, todayDelta.get/15) &&
-                ltp > fu.low.get + todayDelta.get/4
-        val cond2 = todayDelta.nonEmpty && hour == 15 && ltp >= buyPrice + max(.05, todayDelta.get/15) &&
-                ltp > fu.low.get + CL49
+        val todayDelta = todayHigh - todayLow
+        val cond1 = hour < 15 && ltp >= buyPrice + max(.05, todayDelta/15) &&
+                ltp > todayLow + todayDelta/4
+        val cond2 = hour == 15 && ltp >= buyPrice + max(.05, todayDelta/15) &&
+                ltp > todayLow + CL49
         if ((cond1 || cond2) && (System.currentTimeMillis / 1000 - lastTimeBuySell > T) && (ltp > thresholdSell)) {
-            if (cond1) Some(s"Sell today buy: before 3pm and > todayDelta/15 (${todayDelta.get/15})")
-            else Some(s"Sell today buy: after 3pm and > todayDelta/15 and > todayLowest(${fu.low.get}) + CL49($CL49)")
+            if (cond1) Some(s"Sell today buy: before 3pm and > todayDelta/15 (${todayDelta/15})")
+            else Some(s"Sell today buy: after 3pm and > todayDelta/15 and > todayLowest($todayLow) + CL49($CL49)")
         }
         else None
+    }
+
+    private def setStats() {
+        val N = 62
+        val dailyQuotes: List[DailyQuote] = dQuotes.reverse.take(N)
+
+        HL = dailyQuotes.sortWith((dq1, dq2) => dq1.high_price - dq1.low_price < dq2.high_price - dq2.low_price)
+        HL49 = f"${HL(49).high_price - HL(49).low_price}%4.4f".toDouble
+        HL31 = f"${HL(31).high_price - HL(31).low_price}%4.4f".toDouble
+        HL10 = f"${HL(10).high_price - HL(10).low_price}%4.4f".toDouble
+        HO = dailyQuotes.sortWith((dq1, dq2) => dq1.high_price - dq1.open_price < dq2.high_price - dq2.open_price)
+        HO49 = f"${HO(49).high_price - HO(49).open_price}%4.4f".toDouble
+        HO10 = f"${HO(10).high_price - HO(10).open_price}%4.4f".toDouble
+        OL = dailyQuotes.sortWith((dq1, dq2) => dq1.open_price - dq1.low_price < dq2.open_price - dq2.low_price)
+        OL49 = f"${OL(49).open_price - OL(49).low_price}%4.4f".toDouble
+        OL10 = f"${OL(10).open_price - OL(10).low_price}%4.4f".toDouble
+        val CL = dailyQuotes.sortWith((dq1, dq2) => dq1.close_price - dq1.low_price < dq2.close_price - dq2.low_price)
+        CL49 = f"${CL(49).close_price - CL(49).low_price}%4.4f".toDouble
+        L = dQuotes.reverse.take(10).sortWith((dq1, dq2) => dq1.low_price < dq2.low_price)
+        L3 = L(2).low_price
+
+        var temp: Double = 0
+        val M = 90                     // calculate HPC, PCL for the last M days only
+        HPC = dQuotes
+                .map(dq => {
+                    val previousClose = temp
+                    temp = dq.close_price
+                    (dq.begins_at, f"${dq.high_price - previousClose}%4.4f".toDouble)
+                })
+                .reverse
+                .take(M)
+                .sortWith(_._2 < _._2)
+        PCL = dQuotes
+                .map(dq => {
+                    val previousClose = temp
+                    temp = dq.close_price
+                    (dq.begins_at, f"${previousClose - dq.low_price}%4.4f".toDouble)
+                })
+                .reverse
+                .take(M)
+                .sortWith(_._2 < _._2)
     }
 
     readThresholdBuySell()

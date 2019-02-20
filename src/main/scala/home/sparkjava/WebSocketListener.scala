@@ -2,13 +2,12 @@ package home.sparkjava
 
 import akka.actor.{ActorSelection, ActorSystem}
 import message.{AddSymbol, Tick}
-import org.apache.logging.log4j.scala.Logging
 import org.eclipse.jetty.websocket.api.Session
 import org.json4s.DefaultFormats
 import org.json4s.native.Serialization
 
-class WebSocketListener(system: ActorSystem, mainActorPath: String)
-        extends org.eclipse.jetty.websocket.api.WebSocketListener with Logging {
+class WebSocketListener(system: ActorSystem)
+        extends org.eclipse.jetty.websocket.api.WebSocketListener {
     private val BUY: String = "BUY: "
     private val CANCEL: String = "CANCEL: "
     private val DEBUG: String = "DEBUG: "
@@ -23,31 +22,23 @@ class WebSocketListener(system: ActorSystem, mainActorPath: String)
     }
 
     override def onWebSocketClose(i: Int, s: String): Unit = {
-        logger.debug("WebSocket closed.")
         session = None
     }
 
     override def onWebSocketConnect(session: Session): Unit = {
-        logger.debug("WebSocket connected.")
         this.session = Some(session)
 
         send(s"DOW_STOCKS: ${Serialization.write(Main.dowStocks)(DefaultFormats)}")
-
-        system.actorSelection(s"$mainActorPath/*") ! Tick
-        // send FundamentalActor a Tick so that it calculates fundamentals and sends to StockActor which sends to browser
-        system.actorSelection(s"$mainActorPath/../${FundamentalActor.NAME}") ! Tick
     }
 
     override def onWebSocketError(throwable: Throwable): Unit = {
-        logger.debug(s"WebSocket error: ${throwable.getMessage}")
     }
 
     override def onWebSocketBinary(bytes: Array[Byte], i: Int, i1: Int): Unit = {
-        logger.debug("On WebSocket binary.")
     }
 
     override def onWebSocketText(s: String): Unit = {
-        val orderActor: ActorSelection = system.actorSelection(s"$mainActorPath/../${OrderActor.NAME}")
+        val orderActor: ActorSelection = system.actorSelection(s"/user/${OrderActor.NAME}")
         if (s startsWith CANCEL)
             orderActor ! OrderActor.Cancel(s.replace(CANCEL, ""))
         else if ((s.startsWith(BUY) || s.startsWith(SELL)) && s.count(_ == ' ') == 4) {
@@ -60,19 +51,6 @@ class WebSocketListener(system: ActorSystem, mainActorPath: String)
                 array(2).toInt,
                 array(3).toDouble
             )
-        }
-        else if (s startsWith DEBUG) {
-            val symbol = s.replace(DEBUG, "")                  // this is a symbol or actor name
-            system.actorSelection(s"$mainActorPath/symbol-$symbol") ! "DEBUG"
-//            system.actorSelection(s"$mainActorPath/../$symbol") ! "DEBUG"
-        }
-        else if (s startsWith FUNDAMENTAL_REVIEW) {
-            val symbol = s.replace(FUNDAMENTAL_REVIEW, "")
-            system.actorSelection(s"$mainActorPath/../${FundamentalActor.NAME}") ! FundamentalActor.FundamentalReview(symbol)
-        }
-        else if (s startsWith WATCHLIST_ADD) {
-            val symbol = s.replace(WATCHLIST_ADD, "")
-            system.actorSelection(s"$mainActorPath/../${DefaultWatchListActor.NAME}") ! AddSymbol(symbol)
         }
     }
 }

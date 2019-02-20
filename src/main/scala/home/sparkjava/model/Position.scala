@@ -8,23 +8,42 @@ import org.json4s.native.Serialization
 object Position extends Util {
     def deserialize(s: String): List[Position] = {
         parse(s) \ "results" match {
-            case JArray(jValues) => jValues map { jValue => Position(
-                fromStringToOption[Double](jValue, "shares_held_for_stock_grants") ,
-                fromStringToOption[Double](jValue, "pending_average_buy_price"),
-                fromStringToOption[Double](jValue, "shares_held_for_options_events"),
-                fromStringToOption[Double](jValue, "intraday_average_buy_price"),
-                fromStringToOption[Double](jValue, "shares_held_for_options_collateral"),
-                fromStringToOption[String](jValue, "created_at"),
-                fromStringToOption[String](jValue, "updated_at"),
-                fromStringToOption[Double](jValue, "shares_held_for_buys"),
-                fromStringToOption[Double](jValue, "average_buy_price"),
-                fromStringToOption[String](jValue, "instrument"),
-                fromStringToOption[Double](jValue, "intraday_quantity"),
-                fromStringToOption[Double](jValue, "shares_held_for_sells"),
-                fromStringToOption[Double](jValue, "shares_pending_from_options_events"),
-                fromStringToOption[Int](jValue, "quantity")
-            )}
-            case _ => List[Position]()
+            case JArray(jValues) => jValues
+                    .map(jv => for {
+                        instrument <- fromJValueToOption[String](jv \ "instrument")
+                        quantity <- fromJValueToOption[Int](jv \ "quantity")
+                        shares_held_for_stock_grants   = fromJValueToOption[Double](jv \ "shares_held_for_stock_grants")
+                        pending_average_buy_price      = fromJValueToOption[Double](jv \ "pending_average_buy_price")
+                        shares_held_for_options_events = fromJValueToOption[Double](jv \ "shares_held_for_options_events")
+                        intraday_average_buy_price     = fromJValueToOption[Double](jv \ "intraday_average_buy_price")
+                        created_at                     = fromJValueToOption[String](jv \ "created_at")
+                        updated_at                     = fromJValueToOption[String](jv \ "updated_at")
+                        shares_held_for_buys           = fromJValueToOption[Double](jv \ "shares_held_for_buys")
+                        average_buy_price              = fromJValueToOption[Double](jv \ "average_buy_price")
+                        intraday_quantity              = fromJValueToOption[Double](jv \ "intraday_quantity")
+                        shares_held_for_sells          = fromJValueToOption[Double](jv \ "shares_held_for_sells")
+                        shares_held_for_options_collateral = fromJValueToOption[Double](jv \ "shares_held_for_options_collateral")
+                        shares_pending_from_options_events = fromJValueToOption[Double](jv \ "shares_pending_from_options_events")
+                    } yield Position(
+                        shares_held_for_stock_grants,
+                        pending_average_buy_price,
+                        shares_held_for_options_events,
+                        intraday_average_buy_price,
+                        shares_held_for_options_collateral,
+                        created_at,
+                        updated_at,
+                        shares_held_for_buys,
+                        average_buy_price,
+                        instrument,
+                        intraday_quantity,
+                        shares_held_for_sells,
+                        shares_pending_from_options_events,
+                        quantity
+                    ))
+                    .collect { case Some(position) => position }
+            case _ =>
+                println(s"Error: this doesn't look like a position response: $s")
+                Nil
         }
     }
 
@@ -40,9 +59,9 @@ case class Position(
                            updated_at: Option[String],
                            shares_held_for_buys: Option[Double],
                            average_buy_price: Option[Double],
-                           instrument: Option[String],
+                           instrument: String,
                            intraday_quantity: Option[Double],
                            shares_held_for_sells: Option[Double],
                            shares_pending_from_options_events: Option[Double],
-                           quantity: Option[Int]
+                           quantity: Int
                    )

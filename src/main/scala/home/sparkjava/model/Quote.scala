@@ -13,28 +13,32 @@ object Quote extends Util {
       */
     def deserialize(s: String): List[Quote] = {
         parse(s) \ "results" match {
-            case JArray(jValues) => jValues map { jValue => Quote(
-                fromStringToOption[Double](jValue, "adjusted_previous_close"),
-                fromStringToOption[Double](jValue, "ask_price"),
-                fromToOption[Int](jValue, "ask_size"),
-                fromStringToOption[Double](jValue, "bid_price"),
-                fromToOption[Int](jValue, "bid_size"),
-                fromToOption[Boolean](jValue, "has_traded"),
-                fromToOption[String](jValue, "instrument"),
-                fromStringToOption[Double](jValue, "last_extended_hours_trade_price"),
-                /*
-                 * we have to round the last_trade_price or we'll send a lot of messages to the browser because the
-                 * last_trade_price changes only $.0001.
-                 */
-                fromStringToOption[Double](jValue, "last_trade_price").map(ltp => (ltp * 100).round.toDouble / 100),
-                fromToOption[String](jValue, "last_trade_price_source"),
-                fromStringToOption[Double](jValue, "previous_close"),
-                fromToOption[String](jValue, "previous_close_date"),
-                fromToOption[String](jValue, "symbol"),
-                fromToOption[Boolean](jValue, "trading_halted"),
-                fromToOption[String](jValue, "updated_at")
-            )}
-            case _ => List[Quote]()
+            case JArray(jValues) => jValues
+                    .map(jv => for {
+                        instrument <- fromJValueToOption[String](jv \ "instrument")
+                        ltp <- fromJValueToOption[Double](jv \ "last_trade_price")
+                        if !ltp.isNaN
+                        symbol <- fromJValueToOption[String](jv \ "symbol")
+                        adjusted_previous_close = fromJValueToOption[Double](jv \ "adjusted_previous_close")
+                        ask_price               = fromJValueToOption[Double](jv \ "ask_price")
+                        ask_size                = fromJValueToOption[Int](jv \ "ask_size")
+                        bid_price               = fromJValueToOption[Double](jv \ "bid_price")
+                        bid_size                = fromJValueToOption[Int](jv \ "bid_size")
+                        has_traded              = fromJValueToOption[Boolean](jv \ "has_traded")
+                        last_extended_hours_trade_price = fromJValueToOption[Double](jv \ "last_extended_hours_trade_price")
+                        last_trade_price_source = fromJValueToOption[String](jv \ "last_trade_price_source")
+                        previous_close         <- fromJValueToOption[Double](jv \ "previous_close")
+                        if !previous_close.isNaN
+                        previous_close_date     = fromJValueToOption[String](jv \ "previous_close_date")
+                        trading_halted          = fromJValueToOption[Boolean](jv \ "trading_halted")
+                        updated_at              = fromJValueToOption[String](jv \ "updated_at")
+                    } yield Quote(
+                        adjusted_previous_close, ask_price, ask_size, bid_price, bid_size, has_traded, instrument,
+                        last_extended_hours_trade_price, ltp, last_trade_price_source, previous_close,
+                        previous_close_date, symbol, trading_halted, updated_at
+                    ))
+                    .collect { case Some(q) => q }
+            case _ => Nil
         }
     }
 
@@ -48,13 +52,13 @@ case class Quote(
                         bid_price: Option[Double],
                         bid_size: Option[Int],
                         has_traded: Option[Boolean],
-                        instrument: Option[String],
+                        instrument: String,
                         last_extended_hours_trade_price: Option[Double],
-                        last_trade_price: Option[Double],
+                        last_trade_price: Double,
                         last_trade_price_source: Option[String],
-                        previous_close: Option[Double],
+                        previous_close: Double,
                         previous_close_date: Option[String],
-                        symbol: Option[String],
+                        symbol: String,
                         trading_halted: Option[Boolean],
                         updated_at: Option[String]
                 )
@@ -63,46 +67,55 @@ object DailyQuote extends Util {
     /**
       * @param s like in quotes-daily.json
       */
-    def deserialize(s: String): Map[String, List[DailyQuote]] = {
-        parse(s) \ "results" match {
-            case JArray(jValues) =>
-                val x = jValues map { jValue => {
-                    val historicals: List[DailyQuote] = historicalsJValueToDailyQuoteList(jValue \ "historicals")
-                    fromToOption[String](jValue, "symbol") match {
-                        case Some(symbol) => (symbol, historicals)
-                        case None => ("", historicals)
-                    }
-                }}
-                x.toMap
-            case _ => Map[String, List[DailyQuote]]()
-        }
-    }
+    def deserialize(s: String): Map[String /* symbol */, List[DailyQuote]] =
+        (parse(s) \ "results").asInstanceOf[JArray].arr
+                .map(jv => for {
+                    symbol <- fromJValueToOption[String](jv \ "symbol")
+                    dailyQuoteList = getIntervalQuotesFromJArray((jv \ "historicals").asInstanceOf[JArray])
+                } yield (symbol, dailyQuoteList)
+                )
+                .collect {
+                    case Some(tuple) => tuple
+                }
+                .toMap
 
     /**
-      * @param s the result of https://api.robinhood.com/quotes/historicals/AMD/?interval=day&span=year
+      * @param ja looks like this:
+      * [
+      *   {
+      *     "begins_at": "2019-01-28T14:30:00Z",
+      *     "close_price": "19.505000",
+      *     "high_price": "19.560000",
+      *     "interpolated": false,
+      *     "low_price": "19.200000",
+      *     "open_price": "19.200000",
+      *     "session": "reg",
+      *     "volume": 228090
+      *   },
+      *   {
+      *     "begins_at": "2019-01-28T16:10:00Z",
+      *     "close_price": "19.835000",
+      *     "high_price": "19.865000",
+      *     "interpolated": false,
+      *     "low_price": "19.800000",
+      *     "open_price": "19.820000",
+      *     "session": "reg",
+      *     "volume": 22993
+      *   }
+      * ]
       */
-    def deserialize2(s: String): List[DailyQuote] = historicalsJValueToDailyQuoteList(parse(s) \ "historicals")
-
-    private def historicalsJValueToDailyQuoteList(jValue: JValue): List[DailyQuote] = jValue match {
-        case JArray(_historicals) =>
-            _historicals map { _h => Try({
-                val begins_at = (_h \ "begins_at").asInstanceOf[JString]
-                val open_price = (_h \ "open_price").asInstanceOf[JString]
-                val close_price = (_h \ "close_price").asInstanceOf[JString]
-                val high_price = (_h \ "high_price").asInstanceOf[JString]
-                val low_price = (_h \ "low_price").asInstanceOf[JString]
-                DailyQuote(
-                    begins_at.values,
-                    open_price.values.toDouble,
-                    close_price.values.toDouble,
-                    high_price.values.toDouble,
-                    low_price.values.toDouble
-                )
-            }).getOrElse(DailyQuote("", Double.NaN, Double.NaN, Double.NaN, Double.NaN))} filter { dq =>
-                !dq.open_price.isNaN && !dq.close_price.isNaN && !dq.high_price.isNaN && !dq.low_price.isNaN
-            }
-        case _ => List[DailyQuote]()
-    }
+    private def getIntervalQuotesFromJArray(ja: JArray): List[DailyQuote] = ja.arr
+            .map(jv =>
+                for {
+                    beginsAt   <- fromJValueToOption[String](jv \ "begins_at")
+                    openPrice  <- fromJValueToOption[Double](jv \ "open_price")
+                    closePrice <- fromJValueToOption[Double](jv \ "close_price")
+                    highPrice  <- fromJValueToOption[Double](jv \ "high_price")
+                    lowPrice   <- fromJValueToOption[Double](jv \ "low_price")
+                    volume     <- fromJValueToOption[Int](jv \ "volume")
+                } yield DailyQuote(beginsAt, openPrice, closePrice, highPrice, lowPrice, volume)
+            )
+            .collect { case Some(dailyQuote) => dailyQuote }
 }
 
 case class DailyQuote(
@@ -110,5 +123,6 @@ case class DailyQuote(
     open_price: Double,
     close_price: Double,
     high_price: Double,
-    low_price: Double
+    low_price: Double,
+    volume: Int
 )
