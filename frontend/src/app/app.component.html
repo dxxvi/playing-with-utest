@@ -1,0 +1,62 @@
+<div style="display: flex; flex-wrap: wrap">
+  <div *ngFor="let stock of stocks" class="stock">
+    <table style="width: 100%">
+      <tr>
+        <td>{{ stock.name }}</td>
+        <td style="text-align: center">{{ stock.ltp }}</td>
+        <td style="text-align: right">{{ stock.quantity }}</td>
+      </tr>
+    </table>
+    <table class="stats">
+      <tr>
+        <td></td><td>HL</td><td>HO</td><td>OL</td><td>HPC</td><td>PCL</td><td>H</td><td>L</td>
+      </tr>
+      <tr>
+        <td>1m</td>
+        <td>{{ stock.stats.hl1m }}</td>
+        <td>{{ stock.stats.ho1m }}</td>
+        <td>{{ stock.stats.ol1m }}</td>
+        <td>{{ stock.stats.hpc1m }}</td>
+        <td>{{ stock.stats.pcl1m }}</td>
+        <td>{{ stock.stats.h1m }}</td>
+        <td>{{ stock.stats.l1m }}</td>
+      </tr>
+      <tr>
+        <td>3m</td>
+        <td>{{ stock.stats.hl3m }}</td>
+        <td>{{ stock.stats.ho3m }}</td>
+        <td>{{ stock.stats.ol3m }}</td>
+        <td>{{ stock.stats.hpc3m }}</td>
+        <td>{{ stock.stats.pcl3m }}</td>
+        <td>{{ stock.stats.h3m }}</td>
+        <td>{{ stock.stats.l3m }}</td>
+      </tr>
+    </table>
+    <table style="width: 100%; border-collapse: collapse"
+           [hidden]="stock.orders === null || stock.orders.length === 0">
+      <tr>
+        <td>
+          <span class="b" (click)="hideShow(stock.name, true)" [hidden]="stock.doneHidden">&#x23F6;</span>
+        </td>
+        <td style="text-align: right">
+          <span class="b" (click)="hideShow(stock.name, false)" [hidden]="!stock.doneHidden">&#x23F7;</span>
+        </td>
+      </tr>
+    </table>
+    <table class="orders">
+      <tr *ngFor="let o of stock.orders" [ngClass]="calculateCssClasses(stock.name, o)"
+          [hidden]="stock.doneHidden && o.matchId !== null && o.matchId !== ''">
+        <td>
+          <div>
+            <div style="float: left">{{ o.createdAt }}</div>
+            <div style="float: right; cursor: pointer" [hidden]="o.state === 'filled'" (click)="cancelOrder(o.id)">&#x1F5D1;&nbsp;</div>
+          </div>
+        </td>
+        <td style="color: #333">{{ o.quantity }}</td>
+        <td style="color: #666">x</td>
+        <td>{{ o.price }}</td>
+        <td><i *ngIf="o.matchId" style="color: #333">(</i>{{ o.matchId }}<i *ngIf="o.matchId" style="color: #333">)</i></td>
+      </tr>
+    </table>
+  </div>
+</div>

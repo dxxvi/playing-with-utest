@@ -2,7 +2,7 @@
   <timestamp key="byDate" datePattern="yyyyMMdd"/>
 
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-    <filter class="home.sparkjava.MDCManipulatingFilter">
+    <filter class="home.logback.MDCManipulatingFilter">
       <level>INFO</level>
     </filter>
     <encoder>
@@ -17,7 +17,7 @@
     </discriminator>
     <sift>
       <appender name="FILE-${akkaSource}" class="ch.qos.logback.core.FileAppender">
-        <filter class="home.sparkjava.MDCManipulatingFilter">
+        <filter class="home.logback.MDCManipulatingFilter">
           <level>DEBUG</level>
         </filter>
         <file>/dev/shm/${byDate}/${akkaSource}.log</file>

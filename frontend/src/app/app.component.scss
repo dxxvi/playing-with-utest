@@ -1,0 +1,22 @@
+div.stock {
+  background-color: #fff;
+  border-radius: .3rem;
+  padding: .4rem;
+  margin: 1rem 1rem 0 0;
+  min-width: 17rem;
+}
+table.orders {
+  width: 100%;
+  font-family: monospace;
+}
+table.orders tr.done { opacity: .5 }
+table.orders tr.buy { color: #f55 }
+table.orders tr.sell { color: #36f }
+table.orders tr.notfilled { font-style: italic; font-family: 'Roboto Condensed',sans-serif; opacity: .82 }
+span.b { cursor: pointer; font-size: xx-large; line-height: 1 }
+
+table.stats {
+  width: 100%;
+  border-collapse: collapse;
+}
+table.stats td { padding: .2rem; border: 1px solid #ddd }

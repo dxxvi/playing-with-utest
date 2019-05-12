@@ -1,0 +1,26 @@
+{
+  "/m1": {
+    "target": "http://localhost:4567",
+    "secure": false
+  },
+  "/clear-hash": {
+    "target": "http://localhost:4567",
+    "secure": false
+  },
+  "/cancel": {
+    "target": "http://localhost:4567",
+    "secure": false
+  },
+  "/tick": {
+    "target": "http://localhost:4567",
+    "secure": false
+  },
+  "/debug": {
+    "target": "http://localhost:4567",
+    "secure": false
+  },
+  "/order": {
+    "target": "http://localhost:4567",
+    "secure": false
+  }
+}
