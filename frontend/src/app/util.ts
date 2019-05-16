@@ -20,7 +20,9 @@ export class Util {
             quantity: s.quantity,
             orders: (s.orders !== null && s.orders.length > 0) ? s.orders.slice(0) : [],
             doneHidden: s.doneHidden,
-            stats: s.stats
+            stats: s.stats,
+            shouldBuy: s.shouldBuy,
+            shouldSell: s.shouldSell
         }
     }
 }

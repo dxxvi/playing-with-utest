@@ -5,6 +5,8 @@ export interface Stock {
     orders: Array<Order>;
     doneHidden: boolean;
     stats: Stats;
+    shouldBuy: boolean;
+    shouldSell: boolean;
 }
 
 export interface Order {
@@ -18,26 +20,30 @@ export interface Order {
 }
 
 export interface Stats {
-    hl1m: number;
-    ho1m: number;
-    ol1m: number;
-    hpc1m: number;
-    pcl1m: number;
-    h1m: number;
-    l1m: number;
-    hl3m: number;
-    ho3m: number;
-    ol3m: number;
-    hpc3m: number;
-    pcl3m: number;
+    currl3m: number;
+    hcurr3m: number;
+    curro3m: number;
+    ocurr3m: number;
+    currpc3m: number;
+    pccurr3m: number;
     h3m: number;
     l3m: number;
+    currl1m: number;
+    hcurr1m: number;
+    curro1m: number;
+    ocurr1m: number;
+    currpc1m: number;
+    pccurr1m: number;
+    h1m: number;
+    l1m: number;
 }
 
 export interface M1 {
-    symbol: string,
-    ltp: number,
-    quantity: number,
-    orders: Array<Order>,
-    stats: Stats
+    symbol: string;
+    ltp: number;
+    quantity: number;
+    orders: Array<Order>;
+    stats: Stats;
+    shouldBuy: boolean;
+    shouldSell: boolean;
 }

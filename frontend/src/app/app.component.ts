@@ -47,7 +47,9 @@ export class AppComponent implements OnInit {
                                 }
                             }),
                             doneHidden: false,
-                            stats: m1.stats
+                            stats: m1.stats,
+                            shouldBuy: m1.shouldBuy,
+                            shouldSell: m1.shouldSell
                         });
                     });
                     _stocks.sort((a, b) => {

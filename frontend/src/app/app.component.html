@@ -9,34 +9,39 @@
     </table>
     <table class="stats">
       <tr>
-        <td></td><td>HL</td><td>HO</td><td>OL</td><td>HPC</td><td>PCL</td><td>H</td><td>L</td>
+        <td></td><td>cL</td><td>cO</td><td>Oc</td><td>cPC</td><td>PCc</td><td>H</td><td>L</td>
       </tr>
       <tr>
         <td>1m</td>
-        <td>{{ stock.stats.hl1m }}</td>
-        <td>{{ stock.stats.ho1m }}</td>
-        <td>{{ stock.stats.ol1m }}</td>
-        <td>{{ stock.stats.hpc1m }}</td>
-        <td>{{ stock.stats.pcl1m }}</td>
+        <td>{{ stock.stats.currl1m }}</td>
+        <td>{{ stock.stats.curro1m }}</td>
+        <td>{{ stock.stats.ocurr1m }}</td>
+        <td>{{ stock.stats.currpc1m }}</td>
+        <td>{{ stock.stats.pccurr1m }}</td>
         <td>{{ stock.stats.h1m }}</td>
         <td>{{ stock.stats.l1m }}</td>
       </tr>
       <tr>
         <td>3m</td>
-        <td>{{ stock.stats.hl3m }}</td>
-        <td>{{ stock.stats.ho3m }}</td>
-        <td>{{ stock.stats.ol3m }}</td>
-        <td>{{ stock.stats.hpc3m }}</td>
-        <td>{{ stock.stats.pcl3m }}</td>
+        <td>{{ stock.stats.currl3m }}</td>
+        <td>{{ stock.stats.curro3m }}</td>
+        <td>{{ stock.stats.ocurr3m }}</td>
+        <td>{{ stock.stats.currpc3m }}</td>
+        <td>{{ stock.stats.pccurr3m }}</td>
         <td>{{ stock.stats.h3m }}</td>
         <td>{{ stock.stats.l3m }}</td>
       </tr>
     </table>
-    <table style="width: 100%; border-collapse: collapse"
-           [hidden]="stock.orders === null || stock.orders.length === 0">
+    <table style="width: 100%; border-collapse: collapse">
       <tr>
         <td>
           <span class="b" (click)="hideShow(stock.name, true)" [hidden]="stock.doneHidden">&#x23F6;</span>
+        </td>
+        <td>
+          <span style="color: #f00" class="c" [hidden]="!stock.shouldBuy">&#x21a1;</span>
+        </td>
+        <td>
+          <span style="color: #26f" class="c" [hidden]="!stock.shouldSell">&#x219f;</span>
         </td>
         <td style="text-align: right">
           <span class="b" (click)="hideShow(stock.name, false)" [hidden]="!stock.doneHidden">&#x23F7;</span>

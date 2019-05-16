@@ -8,7 +8,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.softwaremill.sttp.{Id, SttpBackend}
 import home.message.{Debug, M1, MakeOrder, MakeOrderDone, StockInfo}
-import home.model.{LastTradePrice, Order, Stats}
+import home.model.{LastTradePrice, Order, Stats, StatsCurrent}
 import home.util.OrderOrdering
 import org.json4s._
 import org.json4s.native.Serialization
@@ -73,18 +73,22 @@ class StockActor(accessToken: String,
 
             recentOrders.foreach(update(_, standardizedOrders))
             val effectiveOrders = getEffectiveOrders(quantityAccount._1, standardizedOrders.toList, log)
+            val statsCurrent = stats.toStatsCurrent(ltp.price)
             val jObject = JObject(
-                "symbol"   -> JString(symbol),
-                "ltp"      -> JDouble(f"${ltp.price}%.2f".toDouble),
-                "quantity" -> JInt(quantityAccount._1.toInt),
-                "orders"   -> Order.toJArray(effectiveOrders),
-                "stats"    -> stats.toJObject(ltp.price)
+                "symbol"     -> JString(symbol),
+                "ltp"        -> JDouble(f"${ltp.price}%.2f".toDouble),
+                "quantity"   -> JInt(quantityAccount._1.toInt),
+                "orders"     -> Order.toJArray(effectiveOrders),
+                "stats"      -> statsCurrent.toJObject,
+                "shouldBuy"  -> JBool(shouldBuy(statsCurrent)),
+                "shouldSell" -> JBool(shouldSell(statsCurrent))
             )
             val m1 = Serialization.write(jObject)(DefaultFormats)
             val _m1Hash = new String(md5Digest.digest(m1.getBytes))
             if (_m1Hash != m1Hash) {
                 m1Hash = _m1Hash
                 webSocketActorRef ! M1(jObject)
+                fx(effectiveOrders, statsCurrent)
             }
 
         case mo @ MakeOrder(side, quantity, price) =>
@@ -107,5 +111,36 @@ class StockActor(accessToken: String,
                 "stats" -> JString(stats.toString),
                 "standardized-orders" -> Order.toJArray(standardizedOrders.toList)
             )
+    }
+
+    private def fx(effectiveOrders: List[Order], statsCurrent: StatsCurrent): Unit = {
+        val (isBuying, isSelling) = effectiveOrders.foldLeft((false, false))((b, order) => (
+                b._1 || (order.side == "buy"  && order.state != "filled"),
+                b._2 || (order.side == "sell" && order.state != "filled")
+        ))
+
+        if (!isBuying) {
+
+        }
+
+        if (!isSelling) {
+
+        }
+    }
+
+    private def shouldBuy(statsCurrent: StatsCurrent): Boolean = {
+        val cond1 = statsCurrent.l1m < 15 || statsCurrent.l3m < 15
+        val cond2 = statsCurrent.ocurr1m > 80 || statsCurrent.ocurr3m > 80
+        val cond3 = statsCurrent.pccurr1m > 80 || statsCurrent.pccurr3m > 80
+        val cond4 = statsCurrent.hcurr1m > 80 || statsCurrent.hcurr3m > 80
+        cond1 && (cond2 || cond3 || cond4)
+    }
+
+    private def shouldSell(statsCurrent: StatsCurrent): Boolean = {
+        val cond1 = statsCurrent.h1m > 80 || statsCurrent.h3m > 80
+        val cond2 = statsCurrent.currl1m > 80 || statsCurrent.currl3m > 80
+        val cond3 = statsCurrent.curro1m > 80 || statsCurrent.curro3m > 80
+        val cond4 = statsCurrent.currpc1m > 80 || statsCurrent.currpc3m > 80
+        cond1 && (cond2 || cond3 || cond4)
     }
 }

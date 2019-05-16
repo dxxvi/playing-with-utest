@@ -1,8 +1,5 @@
 package home.model
 
-import org.json4s._
-import org.json4s.JsonDSL._
-
 case class Stats(
     HL_3m: Array[Double],    // each array has 99 elements representing the 1, 2, ... 99 percentile
     HO_3m: Array[Double],
@@ -43,21 +40,23 @@ case class Stats(
            |  open: $open
            |  previousClose: $previousClose""".stripMargin
     
-    def toJObject(ltp: Double): JObject = JObject(
-        "hl3m"  -> JInt(hl3m(ltp - low)),
-        "ho3m"  -> JInt(ho3m(ltp - open)),
-        "ol3m"  -> JInt(ol3m(open - ltp)),
-        "hpc3m" -> JInt(hpc3m(ltp - previousClose)),
-        "pcl3m" -> JInt(pcl3m(previousClose - ltp)),
-        "h3m"   -> JInt(h3m(ltp)),
-        "l3m"   -> JInt(l3m(ltp)),
-        "hl1m"  -> JInt(hl1m(ltp - low)),
-        "ho1m"  -> JInt(ho1m(ltp - open)),
-        "ol1m"  -> JInt(ol1m(open - ltp)),
-        "hpc1m" -> JInt(hpc1m(ltp - previousClose)),
-        "pcl1m" -> JInt(pcl1m(previousClose - ltp)),
-        "h1m"   -> JInt(h1m(ltp)),
-        "l1m"   -> JInt(l1m(ltp))
+    def toStatsCurrent(ltp: Double): StatsCurrent = StatsCurrent(
+        hl3m(ltp - low),
+        hl3m(high -ltp),
+        ho3m(ltp - open),
+        ol3m(open - ltp),
+        hpc3m(ltp - previousClose),
+        pcl3m(previousClose - ltp),
+        h3m(ltp),
+        l3m(ltp),
+        hl1m(ltp - low),
+        hl1m(high - ltp),
+        ho1m(ltp - open),
+        ol1m(open - ltp),
+        hpc1m(ltp - previousClose),
+        pcl1m(previousClose - ltp),
+        h1m(ltp),
+        l1m(ltp)
     )
     
     def hl3m(d: Double): Int = HL_3m.takeWhile(_ <= d).length
