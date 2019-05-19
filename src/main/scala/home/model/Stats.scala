@@ -74,4 +74,6 @@ case class Stats(
     def pcl1m(d: Double): Int = PCL_1m.takeWhile(_ <= d).length
     def h1m(d: Double): Int = H_1m.takeWhile(_ <= d).length
     def l1m(d: Double): Int = L_1m.takeWhile(_ <= d).length
+
+    def delta: Double = high - low
 }
