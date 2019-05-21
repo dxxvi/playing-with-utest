@@ -1,9 +1,2 @@
-A way to send text via post requests.
-
-```bash
-http POST :8080 < file.json
-```
-
-```json
-{ "body": "text content" }
-```
+A GreaseMonkey/TamperMonkey intercepts XHR requests on https://robinhood.com, sends data to this application.
+That data will be saved to files. 
