@@ -20,11 +20,13 @@ object Robinhood {
         implicit val timeout: Timeout = Timeout(5.seconds)
         implicit val ec: ExecutionContext = actorSystem.dispatcher
 
+        val fileActor = actorSystem.actorOf(FileActor.props())
+
         val route: Route =
             path("quotes") {
                 post {
                     extractRequestEntity { entity =>
-                        val actorRef = actorSystem.actorOf(MyActor.props())
+                        val actorRef = actorSystem.actorOf(MyActor.props(fileActor))
                         entity.getDataBytes().runWith(Sink.actorRef(actorRef, MyActor.Done), materializer)
                         complete(HttpEntity(ContentTypes.`application/json`, "{}"))
                     }
