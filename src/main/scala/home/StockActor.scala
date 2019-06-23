@@ -1,5 +1,7 @@
 package home
 
+import java.nio.file.{Files, Path}
+import java.nio.file.StandardOpenOption._
 import java.security.MessageDigest
 
 import akka.actor.{Actor, ActorRef, Props}
@@ -8,12 +10,11 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.softwaremill.sttp.{Id, SttpBackend}
 import home.message.{Debug, M1, MakeOrder, MakeOrderDone, StockInfo}
-import home.model.{LastTradePrice, Order, Stats, StatsCurrent}
+import home.model.{LastTradePrice, Order, Quote, Stats, StatsCurrent}
 import home.util.OrderOrdering
 import org.json4s._
 import org.json4s.native.Serialization
 
-import scala.collection.mutable.ListBuffer
 import scala.collection.{LinearSeq, mutable}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -29,7 +30,9 @@ object StockActor {
         Props(new StockActor(accessToken, symbol, stats, standardizedOrders, webSocketActorRef, ltps, be1, be2))
 
     private val F: Array[Int] = Array(1, 2, 3, 5, 8, 13, 21, 34, 55, 89)
-    def smallest(n: Double): Int = F find (_ > n) getOrElse 1 // returns the smallest in F > n or 1
+    def smallest(n: Double): Int = F find (_ > n) getOrElse 1 // returns the smallest # in F which is > n or 1
+
+    case class FiveMinQuotes(quotes: List[Quote])
 }
 
 class StockActor(accessToken: String,
@@ -49,7 +52,7 @@ class StockActor(accessToken: String,
     var m1Hash = ""
     var account = ""
 
-    val ltps: ListBuffer[LastTradePrice] = ListBuffer.empty ++ _ltps
+    val ltps: mutable.SortedSet[LastTradePrice] = mutable.SortedSet.empty[LastTradePrice](LastTradePrice.Ordering) ++= _ltps
     if (ltps.nonEmpty) {
         var previousEMA = ltps.head.price
         ltps.foreach(ltp => {
@@ -70,22 +73,23 @@ class StockActor(accessToken: String,
                     ltp.ema = ltp.price
                 else
                     ltp.ema = LastTradePrice.alpha * ltp.price + (1 - LastTradePrice.alpha) * ltps.last.ema
-                ltps append ltp
+                ltps add ltp
+                Files.write(Path.of(symbol), (ltp.toString + "\n").getBytes, CREATE, APPEND)
             }
             stats.high = math.max(stats.high, ltp.price)
             stats.low  = math.min(stats.low, ltp.price)
 
             recentOrders.foreach(update(_, standardizedOrders))
             val effectiveOrders = getEffectiveOrders(quantityAccount._1, standardizedOrders.toList, log)
-            val statsCurrent = stats.toStatsCurrent(ltp.price)
+            val statsCurrent:StatsCurrent = stats.toStatsCurrent(ltp.price)
             val jObject = JObject(
-                "symbol"     -> JString(symbol),
-                "ltp"        -> JDouble(f"${ltp.price}%.2f".toDouble),
-                "quantity"   -> JInt(quantityAccount._1.toInt),
-                "orders"     -> Order.toJArray(effectiveOrders),
-                "stats"      -> statsCurrent.toJObject,
-                "shouldBuy"  -> JBool(shouldBuy(statsCurrent)),
-                "shouldSell" -> JBool(shouldSell(statsCurrent))
+                "symbol"        -> JString(symbol),
+                "ltp"           -> JDouble(f"${ltp.price}%.2f".toDouble),
+                "quantity"      -> JInt(quantityAccount._1.toInt),
+                "orders"        -> Order.toJArray(effectiveOrders),
+                "stats"         -> statsCurrent.toJObject,
+                "shouldBuy"     -> JBool(shouldBuy(statsCurrent)),
+                "shouldSell"    -> JBool(shouldSell(statsCurrent))
             )
             val m1 = Serialization.write(jObject)(DefaultFormats)
             val _m1Hash = new String(md5Digest.digest(m1.getBytes))
@@ -108,6 +112,9 @@ class StockActor(accessToken: String,
         case MakeOrderDone =>
 
         case M1.ClearHash => m1Hash = ""
+
+        case FiveMinQuotes(quotes) =>
+            quotes.headOption foreach (q => stats.open = q.open)
 
         case Debug =>
             sender() ! JObject(
@@ -132,13 +139,13 @@ class StockActor(accessToken: String,
 
             case Some(lOrder) if lOrder.matchId.isEmpty && lOrder.side == "buy" => // buy again or sell
                 if (!isBuying && _shouldBuy && ltp.price < lOrder.price - math.max(.05, stats.delta/4))
-                    MakeOrder("buy", smallest(10 / ltp.price), ltp.price)
+                    self ! MakeOrder("buy", smallest(10 / ltp.price), ltp.price)
                 if (!isSelling && _shouldSell && ltp.price > lOrder.price + math.max(.05, stats.delta/5))
-                    MakeOrder("sell", lOrder.quantity.toInt, ltp.price)
+                    self ! MakeOrder("sell", lOrder.quantity.toInt, ltp.price)
 
             case Some(lOrder) if lOrder.matchId.isEmpty && lOrder.side == "sell" => // TODO buy back or sell again
                 if (!isBuying && shouldBuyBack(statsCurrent) && ltp.price < lOrder.price - math.max(.05, stats.delta/5))
-                    MakeOrder("buy", lOrder.quantity.toInt, ltp.price)
+                    self ! MakeOrder("buy", lOrder.quantity.toInt, ltp.price)
 
             case Some(lOrder) if lOrder.side == "buy" => // matchId is not empty; this is a buy back order
             case Some(lOrder) if lOrder.side == "sell" => // matchId is not empty; this order is done. Don't look at it.

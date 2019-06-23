@@ -1,9 +1,15 @@
 div.stock {
-  background-color: #fff;
+  background-color: rgba(255,255,255,.9);
   border-radius: .3rem;
   padding: .4rem;
   margin: 1rem 1rem 0 0;
   min-width: 17rem;
+  position: relative;
+  z-index: 9;
+}
+div.symbol {
+  position: absolute; z-index: 5; left: .5rem; top: 2rem; font-size: 5rem; font-weight: 600; color: rgba(9,9,239,.19);
+  letter-spacing: .6rem;
 }
 table.orders {
   width: 100%;

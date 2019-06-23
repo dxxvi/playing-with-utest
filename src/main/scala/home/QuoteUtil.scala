@@ -42,7 +42,7 @@ trait QuoteUtil extends home.util.JsonUtil with AppUtil {
                           log: LoggingAdapter): Future[Map[String /* symbol */, Stats]] = {
         def f(quotes: List[Quote], g: Quote => Double): Array[Double] = {
             val descriptiveStatistics = new DescriptiveStatistics(quotes.map(g).toArray)
-            (1 to 99).map(descriptiveStatistics.getPercentile(_)).toArray
+            (1 to 100).map(descriptiveStatistics.getPercentile(_)).toArray
         }
         
         getDailyQuotes(accessToken, symbols)

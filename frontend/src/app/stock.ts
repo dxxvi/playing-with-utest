@@ -36,6 +36,10 @@ export interface Stats {
     pccurr1m: number;
     h1m: number;
     l1m: number;
+    high: number;
+    low: number;
+    open: number;
+    previousClose: number;
 }
 
 export interface M1 {

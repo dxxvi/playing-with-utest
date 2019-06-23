@@ -1,25 +1,49 @@
 package home.model
 
 case class Stats(
-    HL_3m: Array[Double],    // each array has 99 elements representing the 1, 2, ... 99 percentile
-    HO_3m: Array[Double],
-    OL_3m: Array[Double],
-    HPC_3m: Array[Double],
-    PCL_3m: Array[Double],
-    H_3m: Array[Double],
-    L_3m: Array[Double],
-    HL_1m: Array[Double],
-    HO_1m: Array[Double],
-    OL_1m: Array[Double],
-    HPC_1m: Array[Double],
-    PCL_1m: Array[Double],
-    H_1m: Array[Double],
-    L_1m: Array[Double],
+    _HL_3m: Array[Double],    // each array has 100 elements representing the 1, 2, ... 100 percentile
+    _HO_3m: Array[Double],
+    _OL_3m: Array[Double],
+    _HPC_3m: Array[Double],
+    _PCL_3m: Array[Double],
+    _H_3m: Array[Double],
+    _L_3m: Array[Double],
+    _HL_1m: Array[Double],
+    _HO_1m: Array[Double],
+    _OL_1m: Array[Double],
+    _HPC_1m: Array[Double],
+    _PCL_1m: Array[Double],
+    _H_1m: Array[Double],
+    _L_1m: Array[Double],
     var high: Double = Double.MinPositiveValue,
     var low: Double = Double.MaxValue,
     var open: Double = Double.NaN,
     var previousClose: Double = Double.NaN
 ) {
+    val HL_3m: Array[Double]  = makeLongerArray(_HL_3m) // has 199 elements representing the 1, 2, ... 199 percentile
+    val HO_3m: Array[Double]  = makeLongerArray(_HO_3m)
+    val OL_3m: Array[Double]  = makeLongerArray(_OL_3m)
+    val HPC_3m: Array[Double] = makeLongerArray(_HPC_3m)
+    val PCL_3m: Array[Double] = makeLongerArray(_PCL_3m)
+    val H_3m: Array[Double]   = makeLongerArray(_H_3m)
+    val L_3m: Array[Double]   = makeLongerArray(_L_3m)
+    val HL_1m: Array[Double]  = makeLongerArray(_HL_1m)
+    val HO_1m: Array[Double]  = makeLongerArray(_HO_1m)
+    val OL_1m: Array[Double]  = makeLongerArray(_OL_1m)
+    val HPC_1m: Array[Double] = makeLongerArray(_HPC_1m)
+    val PCL_1m: Array[Double] = makeLongerArray(_PCL_1m)
+    val H_1m: Array[Double]   = makeLongerArray(_H_1m)
+    val L_1m: Array[Double]   = makeLongerArray(_L_1m)
+
+    /**
+      * @return an array of a(0) a(1) ... a(n) a(n)+a(n)-a(n-1) a(n)+a(n)-a(n-2) ... a(n)+a(n)-a(0)
+      */
+    private def makeLongerArray(a: Array[Double]): Array[Double] = {
+        val n = a.length - 1
+        val tail = (1 to n) map (i => a(n) + a(n) - a(n-i))
+        a ++ tail
+    }
+
     override def toString: String =
         s"""  HL_3m: [${HL_3m.map(d => f"$d%.2f").mkString(", ")}]
            |  HO_3m: [${HO_3m.map(d => f"$d%.2f").mkString(", ")}]
@@ -56,7 +80,11 @@ case class Stats(
         hpc1m(ltp - previousClose),
         pcl1m(previousClose - ltp),
         h1m(ltp),
-        l1m(ltp)
+        l1m(ltp),
+        if (high.isNaN) high else f"$high%.2f".toDouble,
+        if (low.isNaN) low else f"$low%.2f".toDouble,
+        if (open.isNaN) open else f"$open%.2f".toDouble,
+        if (previousClose.isNaN) previousClose else f"$previousClose%.2f".toDouble
     )
     
     def hl3m(d: Double): Int = HL_3m.takeWhile(_ <= d).length

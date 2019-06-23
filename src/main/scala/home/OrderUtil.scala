@@ -43,7 +43,9 @@ trait OrderUtil extends JsonUtil with AppUtil {
                 })
                 .toList
         assignMatchId(effectiveOrders)
-        effectiveOrders
+        if (quantity == 0) { // effectiveOrders is empty but there might be a confirmed order
+            orders.headOption.filter(_.state contains "confirmed").toList
+        } else effectiveOrders
     }
 
     /**
@@ -142,7 +144,9 @@ trait OrderUtil extends JsonUtil with AppUtil {
                 .send()
                 .collect {
                     case Response(Left(_), _, statusText, _, _) =>
-                        log.error("/orders/ returns errors: {}", statusText)
+                        log.error("/orders/ returns errors: {}, so skip the next heart beat", statusText)
+                        val heartbeatActor = Main.actorSystem.actorSelection(s"/user/${HeartbeatActor.NAME}")
+                        heartbeatActor ! HeartbeatActor.Skip
                         """{"result": []}"""
                     case Response(Right(s), _, _, _, _) => s
                 }
@@ -224,7 +228,9 @@ trait OrderUtil extends JsonUtil with AppUtil {
                   price: Double)
                  (implicit be: SttpBackend[Future, Source[ByteString, Any]],
                            ec: ExecutionContext,
-                           log: LoggingAdapter): Future[Response[String]] = {
+                           log: LoggingAdapter): Unit /*Future[Response[String]]*/ = {
+        log.warning(s"$side $quantity $symbol at $price")
+/*
         val jObject = JObject(
             "account"       -> JString(account),
             "instrument"    -> JString(s"https://api.robinhood.com/instruments/$instrument/"),
@@ -243,6 +249,7 @@ trait OrderUtil extends JsonUtil with AppUtil {
                 .post(uri"https://api.robinhood.com/orders/")
                 .response(asString)
                 .send()
+*/
     }
 
     /**

@@ -12,7 +12,7 @@ import home.model.{Order, Quote}
 import home.util.{AccessTokenUtil, LoggingAdapterImpl}
 import org.apache.poi.ss.usermodel.{BorderStyle, CellType, HorizontalAlignment, VerticalAlignment}
 import org.apache.poi.ss.util.{CellRangeAddress, RegionUtil}
-import org.apache.poi.xssf.usermodel.{XSSFCellStyle, XSSFSheet, XSSFWorkbook}
+import org.apache.poi.xssf.usermodel.{XSSFCell, XSSFCellStyle, XSSFRow, XSSFSheet, XSSFWorkbook}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -177,12 +177,12 @@ object GenerateExcel extends OrderUtil with AccessTokenUtil with PositionUtil wi
                 val r = sheet.createRow(i + 1)
                 val datetime = q.beginsAt.substring(5).replace("Z", "").replace("T", " ")
                 val date = datetime.substring(0, 5)
-                var c = r.createCell(0); c.setCellType(CellType.STRING); c.setCellValue(datetime)        // A
-                c = r.createCell(1); c.setCellType(CellType.NUMERIC); c.setCellValue(f"${q.open}%4.4f".toDouble)  // B
-                c = r.createCell(2); c.setCellType(CellType.NUMERIC); c.setCellValue(f"${q.high}%4.4f".toDouble)  // C
-                c = r.createCell(3); c.setCellType(CellType.NUMERIC); c.setCellValue(f"${q.low}%4.4f".toDouble)   // D
-                c = r.createCell(4); c.setCellType(CellType.NUMERIC); c.setCellValue(f"${q.close}%4.4f".toDouble) // E
-                c = r.createCell(5); c.setCellFormula(s"(C${i + 2}+D${i + 2})/2")                                 // F
+                createCell(r, 0, CellType.STRING).setCellValue(datetime)                     // A
+                createCell(r, 1, CellType.NUMERIC).setCellValue(f"${q.open}%4.4f".toDouble)  // B
+                createCell(r, 2, CellType.NUMERIC).setCellValue(f"${q.high}%4.4f".toDouble)  // C
+                createCell(r, 3, CellType.NUMERIC).setCellValue(f"${q.low}%4.4f".toDouble)   // D
+                createCell(r, 4, CellType.NUMERIC).setCellValue(f"${q.close}%4.4f".toDouble) // E
+                val c = r.createCell(5); c.setCellFormula(s"(C${i + 2}+D${i + 2})/2")        // F
                 if (nextDate != "" && nextDate != date) {
                     // TODO there's a problem here: we're working on row i+1 but we go back to row i to modify some cell
                     sheet.getRow(i).getCell(6).setCellFormula(s"F${i + 1}")
@@ -200,13 +200,10 @@ object GenerateExcel extends OrderUtil with AccessTokenUtil with PositionUtil wi
         System.exit(0)                 // TODO because of Akka, this main method cannot exit?
     }
 
-    /**
-      * @param uuid can be any hex string with '-' inside
-      * @return that hex number % (36*36) then converted to a string [0-9a-z]{2}
-      */
-    private def shortenUuid(uuid: String): String = {
-        val x = new BigInteger(uuid.replaceAll("-", ""), 16).mod(new BigInteger(36*36 + "")).intValue()
-        Integer.toString(x, 36)
+    private def createCell(row: XSSFRow, columIndex: Int, cellType: CellType): XSSFCell = {
+        val c = row.createCell(columIndex)
+        c.setCellType(cellType)
+        c
     }
 
     private def setCellF(sheet: XSSFSheet, firstRow: Int, lastRow: Int, col: Int, value: String,
@@ -218,5 +215,14 @@ object GenerateExcel extends OrderUtil with AccessTokenUtil with PositionUtil wi
         val hlCellRangeAddress = new CellRangeAddress(firstRow, lastRow, col, col)
         sheet.addMergedRegion(hlCellRangeAddress)
         RegionUtil.setBorderLeft(BorderStyle.MEDIUM, hlCellRangeAddress, sheet)
+    }
+
+    /**
+     * @param uuid can be any hex string with '-' inside
+     * @return that hex number % (36*36) then converted to a string [0-9a-z]{2}
+     */
+    private def shortenUuid(uuid: String): String = {
+        val x = new BigInteger(uuid.replaceAll("-", ""), 16).mod(new BigInteger(36*36 + "")).intValue()
+        Integer.toString(x, 36)
     }
 }

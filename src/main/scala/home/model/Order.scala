@@ -1,9 +1,14 @@
 package home.model
 
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
 import org.json4s._
 import org.json4s.JsonDSL._
 
 object Order {
+    val TODAY: String = LocalDate.now.format(DateTimeFormatter.ISO_DATE)
+
     def toJObject(o: Order): JObject =
             ("createdAt" -> o.createdAt.substring(5).replace("T", " ").replaceAll("\\.?[0-9]{0,6}Z$", "")) ~
             ("id" -> o.id) ~
@@ -39,4 +44,6 @@ case class Order(
            |  quantity:   $quantity,
            |  state:      $state
          """.stripMargin
+
+    def isToday: Boolean = createdAt startsWith Order.TODAY
 }

@@ -1,6 +1,7 @@
 .idea/
 target/
 **/node_modules/
+**/dist/
 *.xlsx
 order-history.json
 StockDatabase.json

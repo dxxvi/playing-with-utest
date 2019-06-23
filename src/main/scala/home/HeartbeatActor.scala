@@ -7,7 +7,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.softwaremill.sttp._
 import home.message.{Debug, M1, StockInfo, Tick}
-import home.model.{LastTradePrice, Order}
+import home.model.{LastTradePrice, Order, Quote}
 import org.json4s._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -16,42 +16,58 @@ import scala.concurrent.duration._
 object HeartbeatActor {
     val NAME = "Heartbeat"
 
+    val UNWANTED_LTP_FIELDS: Set[String] = Set("previousClose", "instrument", "ema")
+
     def props(accessToken: String, symbols: List[String], stockDatabase: StockDatabase)
              (implicit be1: SttpBackend[Future, Source[ByteString, Any]],
                        be2: SttpBackend[Id, Nothing]): Props =
             Props(new HeartbeatActor(accessToken, symbols, be1, be2))
 
+    case object OpenPrice
+    case object Skip
     case class HeartbeatTuple(ltps: List[LastTradePrice],
                               instrument2RecentStandardizedOrders: Map[String /* instrument */, List[Order]],
                               instrument2Position: Map[String /*instrument*/, (Double /*quantity*/, String /*account*/)])
+    case class FiveMinQuotes(list: List[(String, String, String, List[Quote])])
 }
 
 class HeartbeatActor(accessToken: String,
                      symbols: List[String],
                      implicit val be1: SttpBackend[Future, Source[ByteString, Any]],
                                   be2: SttpBackend[Id, Nothing]) extends Actor with Timers with LastTradePriceUtil
-        with OrderUtil with PositionUtil {
+        with OrderUtil with QuoteUtil with PositionUtil {
     import HeartbeatActor._
     implicit val log: LoggingAdapter = Logging(context.system, this)(_ => HeartbeatActor.NAME)
     implicit val ec: ExecutionContext = context.dispatcher
+
+    var _ltps: List[LastTradePrice] = List.empty
+    var _instrument2Orders: Map[String, List[Order]] = Map.empty
+    var _instrument2Position: Map[String, (Double, String)] = Map.empty
+    var skip: Boolean = false
 
     timers.startPeriodicTimer(Tick, Tick, 4567.millis)
 
     override def receive: Receive = {
         case Tick =>
-            val ltpsFuture = getLastTradePrices(accessToken, symbols)
-            val recentStandardizedOrdersFuture = getRecentStandardizedOrders(accessToken)
-            val positionsFuture = getAllPositions(accessToken)
-            val heartbeatTupleFuture: Future[HeartbeatTuple] = for {
-                ltps <- ltpsFuture
-                recentStandardizedOrders <- recentStandardizedOrdersFuture
-                positions <- positionsFuture
-            } yield HeartbeatTuple(ltps, toOrderMap(recentStandardizedOrders), positions)
-            heartbeatTupleFuture pipeTo self
+            if (skip) {
+                skip = false
+            }
+            else {
+                val ltpsFuture = getLastTradePrices(accessToken, symbols)
+                val recentStandardizedOrdersFuture = getRecentStandardizedOrders(accessToken)
+                val positionsFuture = getAllPositions(accessToken)
+                val heartbeatTupleFuture: Future[HeartbeatTuple] = for {
+                    ltps <- ltpsFuture
+                    recentStandardizedOrders <- recentStandardizedOrdersFuture
+                    positions <- positionsFuture
+                } yield HeartbeatTuple(ltps, toOrderMap(recentStandardizedOrders), positions)
+                heartbeatTupleFuture pipeTo self
+            }
 
         case HeartbeatTuple(ltps, instrument2Orders, instrument2PositionAccount) =>
-            log.debug("got HeartbeatTuple, ltps: {}; instrument2Orders: {}, instrument2Position: {}",
-                ltps, instrument2Orders, instrument2PositionAccount)
+            this._ltps = ltps
+            this._instrument2Orders = instrument2Orders
+            this._instrument2Position = instrument2PositionAccount
             ltps foreach { case ltp @ LastTradePrice(_, _, symbol, instrument, _, _) =>
                     val orders = instrument2Orders.getOrElse(instrument, Nil)
                     if (instrument2PositionAccount contains instrument) {
@@ -60,7 +76,20 @@ class HeartbeatActor(accessToken: String,
                     }
             }
 
-        case Debug => sender() ! JObject()
+        case Debug => sender() ! JObject(
+            "ltps" -> JArray(_ltps.map(_.toJObject.removeField(t => UNWANTED_LTP_FIELDS contains t._1))),
+            "instrument2Orders" -> JObject(_instrument2Orders.mapValues(Order.toJArray).toList),
+            "instrument2Position" -> JObject(_instrument2Position.mapValues(t => JInt(t._1.toInt)).toList)
+        )
+
+        case Skip => skip = true
+
+        case OpenPrice =>
+            get5minQuotes(accessToken, symbols).map(FiveMinQuotes) pipeTo self
+
+        case FiveMinQuotes(list) => list foreach {
+            case (symbol, _, _, quotes) => context.actorSelection(s"/user/$symbol") ! StockActor.FiveMinQuotes(quotes)
+        }
 
         case M1.ClearHash => // ignored
     }

@@ -1,5 +1,7 @@
 package home
 
+import java.io.FileInputStream
+import java.nio.file.Path
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -32,14 +34,22 @@ import scala.util.{Failure, Success}
 object Main extends AccessTokenUtil with AppUtil with LastTradePriceUtil with OrderUtil with PositionUtil with QuoteUtil
         with SttpBackendUtil {
     implicit val log: LoggingAdapter = LoggingAdapterImpl
+    implicit val actorSystem: ActorSystem = ActorSystem("R")
 
     case class HLLtpsTuple(high: Double /*todayHigh*/, low: Double /*todayLow*/, open: Double, previousClose: Double,
                            ltps: LinearSeq[LastTradePrice])
 
     def main(args: Array[String]): Unit = {
-        implicit val actorSystem: ActorSystem = ActorSystem("R")
         implicit val materializer: ActorMaterializer = ActorMaterializer()
         implicit val timeout: Timeout = Timeout(5.seconds)
+
+        val webHome = sys.env.get("webHome") match {
+            case Some(x) => x
+            case _ =>
+                println("Need to run: export webHome=xxx")
+                System.exit(-1)
+                ""
+        }
 
         val accessToken: String = getAccessTokenOrExit
         val credentialConfig = ConfigFactory.load("credentials.conf")
@@ -112,6 +122,7 @@ object Main extends AccessTokenUtil with AppUtil with LastTradePriceUtil with Or
                 complete(HttpEntity(ContentTypes.`application/json`,
                     s"""{"detail":"${cancelOrder(accessToken, orderId)}"}"""))
             } ~
+            // debug/AMD, debug/Heartbeat
             path("debug" / Segment) { actorName =>
                 onComplete(actorSystem.actorSelection(s"/user/$actorName") ? Debug) {
                     case Success(jObject: JObject) => complete {
@@ -127,6 +138,7 @@ object Main extends AccessTokenUtil with AppUtil with LastTradePriceUtil with Or
                     }
                 }
             } ~
+            // order/amd/buy/2/29.04
             path("order" / Segment / Segment / IntNumber / DoubleNumber ) { (symbol, side, quantity, price) =>
                 onComplete(actorSystem.actorSelection(s"/user/${symbol.toUpperCase}") ? MakeOrder(side, quantity, price)) {
                     case Success(_) => complete(HttpEntity(ContentTypes.`application/json`, "{}"))
@@ -135,7 +147,12 @@ object Main extends AccessTokenUtil with AppUtil with LastTradePriceUtil with Or
                             entity = HttpEntity(ContentTypes.`application/json`, s"""{"detail":"${ex.getMessage}"}"""))
                     }
                 }
-            } ~ // order/amd/buy/2/29.04
+            } ~
+            path("openprice") {
+                actorSystem.actorSelection(s"/user/${HeartbeatActor.NAME}") ! HeartbeatActor.OpenPrice
+                complete(HttpEntity(ContentTypes.`application/json`,
+                    s"""{"detail":"Sent OpenPrice to HeartbeatActor at ${LocalDateTime.now.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)}"}"""))
+            } ~
             get {
                 entity(as[HttpRequest]) { requestData =>
                     complete {
@@ -143,10 +160,10 @@ object Main extends AccessTokenUtil with AppUtil with LastTradePriceUtil with Or
                             case "/" | "" => "index.html"
                             case x        => x
                         }
-                        var inputStream = classOf[StockActor].getResourceAsStream(s"/static/$fileName")
+                        var inputStream = new FileInputStream(Path.of(webHome, fileName).toFile)
                         val bytes = inputStream.readAllBytes()
                         inputStream.close()
-                        inputStream = classOf[StockActor].getResourceAsStream(s"/static/$fileName")
+                        inputStream = new FileInputStream(Path.of(webHome, fileName).toFile)
                         val mime = tika.detect(inputStream, fileName)
                         inputStream.close()
                         val contentType = ContentType.parse(mime) match {
@@ -196,7 +213,7 @@ object Main extends AccessTokenUtil with AppUtil with LastTradePriceUtil with Or
                         val lastTradePrices = quotes
                                 .collect {
                                     case Quote(beginsAt, _open, _, high, low, _) if beginsAt startsWith today =>
-                                        if (open.isNaN) open = _open
+                                        if (open.isNaN || open < 0) open = _open
                                         LastTradePrice((high + low)/2, ltp.previousClose, symbol, ltp.instrument,
                                             addSeconds(beginsAt, 9))
                                 } :+ ltp

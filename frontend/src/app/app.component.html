@@ -1,19 +1,23 @@
 <div style="display: flex; flex-wrap: wrap">
   <div *ngFor="let stock of stocks" class="stock">
+    <div class="symbol">{{ stock.name }}</div>
     <table style="width: 100%">
       <tr>
-        <td>{{ stock.name }}</td>
+        <td style="text-align: center"><sup style="font-weight: 300">PC</sup> {{ stock.stats.previousClose }}</td>
+        <td style="text-align: center"><sup style="font-weight: 300">O</sup> {{ stock.stats.open }}</td>
+        <td style="text-align: center"><sup>{{ stock.stats.high }}</sup>&nbsp;<sub>{{ stock.stats.low }}</sub></td>
         <td style="text-align: center">{{ stock.ltp }}</td>
-        <td style="text-align: right">{{ stock.quantity }}</td>
+        <td style="text-align: right; font-size: large">{{ stock.quantity }}</td>
       </tr>
     </table>
     <table class="stats">
       <tr>
-        <td></td><td>cL</td><td>cO</td><td>Oc</td><td>cPC</td><td>PCc</td><td>H</td><td>L</td>
+        <td></td><td>cL</td><td>Hc</td><td>cO</td><td>Oc</td><td>cPC</td><td>PCc</td><td>H</td><td>L</td>
       </tr>
       <tr>
         <td>1m</td>
         <td>{{ stock.stats.currl1m }}</td>
+        <td>{{ stock.stats.hcurr1m }}</td>
         <td>{{ stock.stats.curro1m }}</td>
         <td>{{ stock.stats.ocurr1m }}</td>
         <td>{{ stock.stats.currpc1m }}</td>
@@ -24,6 +28,7 @@
       <tr>
         <td>3m</td>
         <td>{{ stock.stats.currl3m }}</td>
+        <td>{{ stock.stats.hcurr3m }}</td>
         <td>{{ stock.stats.curro3m }}</td>
         <td>{{ stock.stats.ocurr3m }}</td>
         <td>{{ stock.stats.currpc3m }}</td>

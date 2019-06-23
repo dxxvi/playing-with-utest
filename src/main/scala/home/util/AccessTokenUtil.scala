@@ -19,10 +19,9 @@ trait AccessTokenUtil extends SttpBackendUtil with JsonUtil {
         if (config.hasPath("accessToken")) {
             println(
                 """
-                  |****************************************
-                  |* Use accessToken from system property *
-                  |****************************************
-                """.stripMargin)
+                  |+--------------------------------------+
+                  || Use accessToken from system property |
+                  |+--------------------------------------+""".stripMargin)
             return Right(config.getString("accessToken"))
         }
 
@@ -30,10 +29,9 @@ trait AccessTokenUtil extends SttpBackendUtil with JsonUtil {
             case Some(accessToken) =>
                 println(
                     """
-                      |****************************************************
-                      |* Use accessToken from system environment property *
-                      |****************************************************
-                    """.stripMargin)
+                      |+--------------------------------------------------+
+                      || Use accessToken from system environment property |
+                      |+--------------------------------------------------+""".stripMargin)
                 return Right(accessToken)
             case _ =>
         }
