@@ -20,28 +20,37 @@ case class Stats(
     var open: Double = Double.NaN,
     var previousClose: Double = Double.NaN
 ) {
-    val HL_3m: Array[Double]  = makeLongerArray(_HL_3m) // has 199 elements representing the 1, 2, ... 199 percentile
-    val HO_3m: Array[Double]  = makeLongerArray(_HO_3m)
-    val OL_3m: Array[Double]  = makeLongerArray(_OL_3m)
-    val HPC_3m: Array[Double] = makeLongerArray(_HPC_3m)
-    val PCL_3m: Array[Double] = makeLongerArray(_PCL_3m)
-    val H_3m: Array[Double]   = makeLongerArray(_H_3m)
-    val L_3m: Array[Double]   = makeLongerArray(_L_3m)
-    val HL_1m: Array[Double]  = makeLongerArray(_HL_1m)
-    val HO_1m: Array[Double]  = makeLongerArray(_HO_1m)
-    val OL_1m: Array[Double]  = makeLongerArray(_OL_1m)
-    val HPC_1m: Array[Double] = makeLongerArray(_HPC_1m)
-    val PCL_1m: Array[Double] = makeLongerArray(_PCL_1m)
-    val H_1m: Array[Double]   = makeLongerArray(_H_1m)
-    val L_1m: Array[Double]   = makeLongerArray(_L_1m)
+    val HL_3m: Array[Double]  = makeLongerArrayRight(_HL_3m) // has 199 elements representing the 1, 2, ... 199 percentile
+    val HO_3m: Array[Double]  = makeLongerArrayRight(_HO_3m)
+    val OL_3m: Array[Double]  = makeLongerArrayRight(_OL_3m)
+    val HPC_3m: Array[Double] = makeLongerArrayRight(_HPC_3m)
+    val PCL_3m: Array[Double] = makeLongerArrayRight(_PCL_3m)
+    val H_3m: Array[Double]   = makeLongerArrayRight(_H_3m)
+    val L_3m: Array[Double]   = makeLongerArrayLeft(_L_3m)
+    val HL_1m: Array[Double]  = makeLongerArrayRight(_HL_1m)
+    val HO_1m: Array[Double]  = makeLongerArrayRight(_HO_1m)
+    val OL_1m: Array[Double]  = makeLongerArrayRight(_OL_1m)
+    val HPC_1m: Array[Double] = makeLongerArrayRight(_HPC_1m)
+    val PCL_1m: Array[Double] = makeLongerArrayRight(_PCL_1m)
+    val H_1m: Array[Double]   = makeLongerArrayRight(_H_1m)
+    val L_1m: Array[Double]   = makeLongerArrayLeft(_L_1m)
 
     /**
       * @return an array of a(0) a(1) ... a(n) a(n)+a(n)-a(n-1) a(n)+a(n)-a(n-2) ... a(n)+a(n)-a(0)
       */
-    private def makeLongerArray(a: Array[Double]): Array[Double] = {
+    private def makeLongerArrayRight(a: Array[Double]): Array[Double] = {
         val n = a.length - 1
         val tail = (1 to n) map (i => a(n) + a(n) - a(n-i))
         a ++ tail
+    }
+
+    /**
+     * @return an array of 2a(0)-a(n) ... 2a(0)-a(2) 2a(0)-a(1) a(0) a(1) ... a(n)
+     */
+    private def makeLongerArrayLeft(a: Array[Double]): Array[Double] = {
+        val n = a.length - 1
+        val head = (1 to n).reverse map (i => 2*a(0) - a(i))
+        head.toArray ++ a
     }
 
     override def toString: String =
@@ -87,21 +96,21 @@ case class Stats(
         if (previousClose.isNaN) previousClose else f"$previousClose%.2f".toDouble
     )
     
-    def hl3m(d: Double): Int = HL_3m.takeWhile(_ <= d).length
-    def ho3m(d: Double): Int = HO_3m.takeWhile(_ <= d).length
-    def ol3m(d: Double): Int = OL_3m.takeWhile(_ <= d).length
-    def hpc3m(d: Double): Int = HPC_3m.takeWhile(_ <= d).length
-    def pcl3m(d: Double): Int = PCL_3m.takeWhile(_ <= d).length
-    def h3m(d: Double): Int = H_3m.takeWhile(_ <= d).length
-    def l3m(d: Double): Int = L_3m.takeWhile(_ <= d).length
+    def hl3m(d: Double):  Int = _HL_3m.takeWhile(_ <= d).length
+    def ho3m(d: Double):  Int = _HO_3m.takeWhile(_ <= d).length
+    def ol3m(d: Double):  Int = _OL_3m.takeWhile(_ <= d).length
+    def hpc3m(d: Double): Int = _HPC_3m.takeWhile(_ <= d).length
+    def pcl3m(d: Double): Int = _PCL_3m.takeWhile(_ <= d).length
+    def h3m(d: Double):   Int = _H_3m.takeWhile(_ <= d).length
+    def l3m(d: Double):   Int = _L_3m.takeWhile(_ <= d).length
 
-    def hl1m(d: Double): Int = HL_1m.takeWhile(_ <= d).length
-    def ho1m(d: Double): Int = HO_1m.takeWhile(_ <= d).length
-    def ol1m(d: Double): Int = OL_1m.takeWhile(_ <= d).length
-    def hpc1m(d: Double): Int = HPC_1m.takeWhile(_ <= d).length
-    def pcl1m(d: Double): Int = PCL_1m.takeWhile(_ <= d).length
-    def h1m(d: Double): Int = H_1m.takeWhile(_ <= d).length
-    def l1m(d: Double): Int = L_1m.takeWhile(_ <= d).length
+    def hl1m(d: Double):  Int = _HL_1m.takeWhile(_ <= d).length
+    def ho1m(d: Double):  Int = _HO_1m.takeWhile(_ <= d).length
+    def ol1m(d: Double):  Int = _OL_1m.takeWhile(_ <= d).length
+    def hpc1m(d: Double): Int = _HPC_1m.takeWhile(_ <= d).length
+    def pcl1m(d: Double): Int = _PCL_1m.takeWhile(_ <= d).length
+    def h1m(d: Double):   Int = _H_1m.takeWhile(_ <= d).length
+    def l1m(d: Double):   Int = _L_1m.takeWhile(_ <= d).length
 
     def delta: Double = high - low
 }

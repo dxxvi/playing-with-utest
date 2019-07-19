@@ -43,8 +43,8 @@ trait OrderUtil extends JsonUtil with AppUtil {
                 })
                 .toList
         assignMatchId(effectiveOrders)
-        if (quantity == 0) { // effectiveOrders is empty but there might be a confirmed order
-            orders.headOption.filter(_.state contains "confirmed").toList
+        if (quantity == 0) { // effectiveOrders is empty but there might be confirmed orders
+            orders.filter(_.state contains "confirmed").toList
         } else effectiveOrders
     }
 
@@ -229,7 +229,7 @@ trait OrderUtil extends JsonUtil with AppUtil {
                  (implicit be: SttpBackend[Future, Source[ByteString, Any]],
                            ec: ExecutionContext,
                            log: LoggingAdapter): Unit /*Future[Response[String]]*/ = {
-        log.warning(s"$side $quantity $symbol at $price")
+        log.warning(s"""$side $quantity $symbol at $price""")
 /*
         val jObject = JObject(
             "account"       -> JString(account),

@@ -16,8 +16,8 @@
     <scala.version.minor>8</scala.version.minor>
     <scala.version>${scala.version.major}.${scala.version.minor}</scala.version>
     <akka.version>2.5.22</akka.version>
-    <akka.http.version>10.1.8</akka.http.version>
-    <sttp.version>1.5.15</sttp.version>
+    <!--akka.http.version>10.1.8</akka.http.version-->
+    <sttp.version>1.5.19</sttp.version>
     <junit.version>5.4.2</junit.version>
     <junit.platform.launcher>1.4.2</junit.platform.launcher>
   </properties>

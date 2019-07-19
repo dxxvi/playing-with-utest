@@ -11,7 +11,7 @@ import akka.util.ByteString
 import com.softwaremill.sttp.{Id, SttpBackend}
 import home.message.{Debug, M1, MakeOrder, MakeOrderDone, StockInfo}
 import home.model.{LastTradePrice, Order, Quote, Stats, StatsCurrent}
-import home.util.OrderOrdering
+import home.util.{OrderOrdering, SttpBackendUtil}
 import org.json4s._
 import org.json4s.native.Serialization
 
@@ -43,7 +43,7 @@ class StockActor(accessToken: String,
                  _ltps: LinearSeq[LastTradePrice],
                  implicit val be1: SttpBackend[Future, Source[ByteString, Any]],
                               be2: SttpBackend[Id, Nothing])
-        extends Actor with OrderUtil with StockActorUtil {
+        extends Actor with OrderUtil with StockActorUtil with SttpBackendUtil {
     import StockActor._
     implicit val log: LoggingAdapter = Logging(context.system, this)(_ => symbol)
     implicit val ec: ExecutionContext = context.dispatcher
@@ -88,8 +88,8 @@ class StockActor(accessToken: String,
                 "quantity"      -> JInt(quantityAccount._1.toInt),
                 "orders"        -> Order.toJArray(effectiveOrders),
                 "stats"         -> statsCurrent.toJObject,
-                "shouldBuy"     -> JBool(shouldBuy(statsCurrent)),
-                "shouldSell"    -> JBool(shouldSell(statsCurrent))
+                "shouldBuy"     -> JBool(shouldBuy(statsCurrent)._1),
+                "shouldSell"    -> JBool(shouldSell(statsCurrent)._1)
             )
             val m1 = Serialization.write(jObject)(DefaultFormats)
             val _m1Hash = new String(md5Digest.digest(m1.getBytes))
@@ -105,7 +105,7 @@ class StockActor(accessToken: String,
             }
             else {
                 val instrument = ltps.last.instrument
-                makeOrder(accessToken, symbol.toUpperCase, instrument, side, quantity, account, price)
+                makeOrder(accessToken, symbol.toUpperCase, instrument, side, quantity, account, price)(be1, ec, log)
             }
             sender() ! MakeOrderDone
 
@@ -127,52 +127,89 @@ class StockActor(accessToken: String,
     private def fx(effectiveOrders: List[Order], statsCurrent: StatsCurrent, ltp: LastTradePrice): Unit = {
         val _shouldBuy = shouldBuy(statsCurrent)
         val _shouldSell = shouldSell(statsCurrent)
-        if (!_shouldBuy && !_shouldSell) return
+        if (!_shouldBuy._1 && !_shouldSell._1) return
 
         val (isBuying, isSelling) = effectiveOrders.foldLeft((false, false))((b, order) => (
                 b._1 || (order.side == "buy"  && order.state != "filled"),
                 b._2 || (order.side == "sell" && order.state != "filled")
         ))
-        effectiveOrders.find(_.state == "filled") match {
+        findLastOrder(effectiveOrders) match {
             case None =>
-                if (!isBuying && shouldBuy(statsCurrent)) self ! MakeOrder("buy", smallest(10 / ltp.price), ltp.price)
+                if (!isBuying && shouldBuy(statsCurrent)._1) {
+                    log.warning(_shouldBuy._2)
+                    self ! MakeOrder("buy", smallest(10 / ltp.price), ltp.price)
+                }
 
             case Some(lOrder) if lOrder.matchId.isEmpty && lOrder.side == "buy" => // buy again or sell
-                if (!isBuying && _shouldBuy && ltp.price < lOrder.price - math.max(.05, stats.delta/4))
+                val statsPrev = stats.toStatsCurrent(lOrder.price)
+                if (!isBuying && _shouldBuy._1 && ltp.price < lOrder.price - math.max(.05, stats.delta/4)) {
+                    log.warning(_shouldBuy._2)
                     self ! MakeOrder("buy", smallest(10 / ltp.price), ltp.price)
-                if (!isSelling && _shouldSell && ltp.price > lOrder.price + math.max(.05, stats.delta/5))
+                }
+                if (!isSelling && _shouldSell._1 && ltp.price > lOrder.price + math.max(.05, stats.delta/5)) {
+                    log.warning(_shouldSell._2)
                     self ! MakeOrder("sell", lOrder.quantity.toInt, ltp.price)
+                }
 
             case Some(lOrder) if lOrder.matchId.isEmpty && lOrder.side == "sell" => // TODO buy back or sell again
-                if (!isBuying && shouldBuyBack(statsCurrent) && ltp.price < lOrder.price - math.max(.05, stats.delta/5))
+                val _shouldBuyBack = shouldBuyBack(statsCurrent)
+                if (!isBuying && _shouldBuyBack._1 && ltp.price < lOrder.price - math.max(.05, stats.delta/5)) {
+                    log.warning(_shouldBuyBack._2)
                     self ! MakeOrder("buy", lOrder.quantity.toInt, ltp.price)
+                }
 
             case Some(lOrder) if lOrder.side == "buy" => // matchId is not empty; this is a buy back order
             case Some(lOrder) if lOrder.side == "sell" => // matchId is not empty; this order is done. Don't look at it.
         }
     }
 
-    private def shouldBuy(statsCurrent: StatsCurrent): Boolean = {
-        val cond1 = statsCurrent.l1m < 15 || statsCurrent.l3m < 15
+    private def shouldBuy(statsCurrent: StatsCurrent): (Boolean, String /* reason */) = {
+        val cond1 = statsCurrent.l1m < 115 || statsCurrent.l3m < 115
         val cond2 = statsCurrent.ocurr1m > 80 || statsCurrent.ocurr3m > 80
         val cond3 = statsCurrent.pccurr1m > 80 || statsCurrent.pccurr3m > 80
         val cond4 = statsCurrent.hcurr1m > 80 || statsCurrent.hcurr3m > 80
-        cond1 && (cond2 || cond3 || cond4)
+        val result = cond1 && (cond2 || cond3 || cond4)
+        if (result) {
+            val s1 = s"last month < ${200 - statsCurrent.l1m}%, last 3 months < ${200 - statsCurrent.l3m}%"
+            val s2 = if (cond2) s" last month open-current ${statsCurrent.ocurr1m}%, 3 months ${statsCurrent.ocurr3m}%" else ""
+            val s3 = if (cond3) s" last month previous close - current ${statsCurrent.pccurr1m}%, 3 months ${statsCurrent.pccurr3m}%" else ""
+            val s4 = if (cond4) s" last month high - current ${statsCurrent.hcurr1m}%, 3 months ${statsCurrent.hcurr3m}%" else ""
+            (true, s1 + s2 + s3 + s4)
+        }
+        else (false, "")
     }
 
-    private def shouldSell(statsCurrent: StatsCurrent): Boolean = {
+    private def shouldSell(statsCurrent: StatsCurrent): (Boolean, String /* reason */) = {
         val cond1 = statsCurrent.h1m > 80 || statsCurrent.h3m > 80
         val cond2 = statsCurrent.currl1m > 80 || statsCurrent.currl3m > 80
         val cond3 = statsCurrent.curro1m > 80 || statsCurrent.curro3m > 80
         val cond4 = statsCurrent.currpc1m > 80 || statsCurrent.currpc3m > 80
-        cond1 && (cond2 || cond3 || cond4)
+        val result = cond1 && (cond2 || cond3 || cond4)
+        if (result) {
+            val s1 = s"last month > ${statsCurrent.h1m}%, last 3 months > ${statsCurrent.h3m}%"
+            val s2 = if (cond2) s" current - low-of-today ${statsCurrent.currl1m}%, 3 months ${statsCurrent.currl3m}%" else ""
+            val s3 = if (cond3) s" current-open ${statsCurrent.curro1m}%, 3 months ${statsCurrent.curro3m}%" else ""
+            val s4 = if (cond3) s" current - previous-close ${statsCurrent.currpc1m}%, 3 months ${statsCurrent.currpc3m}%" else ""
+            (true, s1 + s2 + s3 + s4)
+        }
+        else (false, "")
     }
 
-    private def shouldBuyBack(statsCurrent: StatsCurrent): Boolean = {
-        val cond1 = statsCurrent.l1m < 80 || statsCurrent.l3m < 80
+    private def shouldBuyBack(statsCurrent: StatsCurrent): (Boolean, String /* reason */) = {
+        val cond1 = statsCurrent.l1m < 150 || statsCurrent.l3m < 150
         val cond2 = statsCurrent.ocurr1m > 50 || statsCurrent.ocurr3m > 50
         val cond3 = statsCurrent.pccurr1m > 50 || statsCurrent.pccurr3m > 50
         val cond4 = statsCurrent.hcurr1m > 50 || statsCurrent.hcurr3m > 50
-        cond1 && (cond2 || cond3 || cond4)
+        val result = cond1 && (cond2 || cond3 || cond4)
+        if (result) {
+            val s1 = s"buy back: last month < ${200 - statsCurrent.l1m}%, last 3 months < ${200 - statsCurrent.l3m}%"
+            val s2 = if (cond2) s" open-current ${statsCurrent.ocurr1m}%, 3 months ${statsCurrent.ocurr3m}%"
+            val s3 = if (cond3) s" previous-close - current ${statsCurrent.pccurr1m}%, 3 months ${statsCurrent.pccurr3m}%"
+            val s4 = if (cond4) s" high-current ${statsCurrent.hcurr1m}%, 3 months ${statsCurrent.hcurr3m}%"
+            (true, s1 + s2 + s3 + s4)
+        }
+        else (false, "")
     }
+
+    private def findLastOrder(effectiveOrders: List[Order]): Option[Order] = effectiveOrders.find(_.state == "filled")
 }

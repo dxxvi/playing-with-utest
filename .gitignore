@@ -6,4 +6,3 @@ target/
 order-history.json
 StockDatabase.json
 dependency-reduced-pom.xml
-src/main/resources/static/*

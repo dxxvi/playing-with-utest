@@ -106,12 +106,12 @@ object GenerateExcel extends OrderUtil with AccessTokenUtil with PositionUtil wi
 
             quotes.reverse.zipWithIndex foreach { case (q, i) =>
                 val r = sheet.createRow(i + 1)
-                var c = r.createCell(0); c.setCellType(CellType.STRING); c.setCellValue(q.beginsAt.substring(2, 10)) // A
-                c = r.createCell(1); c.setCellType(CellType.NUMERIC); c.setCellValue(f"${q.open}%4.4f".toDouble)              // B
-                c = r.createCell(2); c.setCellType(CellType.NUMERIC); c.setCellValue(f"${q.high}%4.4f".toDouble)              // C
-                c = r.createCell(3); c.setCellType(CellType.NUMERIC); c.setCellValue(f"${q.low}%4.4f".toDouble)               // D
-                c = r.createCell(4); c.setCellType(CellType.NUMERIC); c.setCellValue(f"${q.close}%4.4f".toDouble)             // E
-                c = r.createCell(5); c.setCellFormula(s"C${i + 2}-D${i + 2}")
+                createCell(r, 0, CellType.STRING).setCellValue(q.beginsAt.substring(2, 10))  // A
+                createCell(r, 1, CellType.NUMERIC).setCellValue(f"${q.open}%4.4f".toDouble)  // B
+                createCell(r, 2, CellType.NUMERIC).setCellValue(f"${q.high}%4.4f".toDouble)  // C
+                createCell(r, 3, CellType.NUMERIC).setCellValue(f"${q.low}%4.4f".toDouble)   // D
+                createCell(r, 4, CellType.NUMERIC).setCellValue(f"${q.close}%4.4f".toDouble) // E
+                var c = r.createCell(5); c.setCellFormula(s"C${i + 2}-D${i + 2}")
                 c = r.createCell(6); c.setCellFormula(s"C${i + 2}-B${i + 2}")
                 c = r.createCell(7); c.setCellFormula(s"B${i + 2}-D${i + 2}")
                 c = r.createCell(8); c.setCellFormula(s"C${i + 2}-E${i + 2}")
@@ -132,7 +132,7 @@ object GenerateExcel extends OrderUtil with AccessTokenUtil with PositionUtil wi
             setCellF(sheet, 12, 22, 20, "Previous Close - Low", cellStyle1)
             setCellF(sheet, 0, 10, 20, "High - Previous Close", cellStyle1)
 
-            Seq("Percentile", "1 month", "3 months", "6 months", "1 year").zipWithIndex.foreach(u =>
+            Seq("Percentile", "1 month", "3 months", "6 months", "1 year").zipWithIndex foreach (u =>
                 Seq((0, 14 + u._2), (0, 21 + u._2), (12, 14 + u._2), (12, 21 + u._2), (24, 14 + u._2), (24, 21 + u._2)) foreach { v =>
                     sheet.getRow(v._1).createCell(v._2).setCellValue(u._1)
                 }
@@ -164,13 +164,13 @@ object GenerateExcel extends OrderUtil with AccessTokenUtil with PositionUtil wi
         fiveMinQuotes foreach { case (symbol, _, _, quotes) =>
             val sheet = wb.createSheet(symbol)
             val row = sheet.createRow(0)
-            var cell = row.createCell(0); cell.setCellType(CellType.NUMERIC); cell.setCellValue(0.2)
-            cell = row.createCell(1); cell.setCellType(CellType.STRING); cell.setCellValue("Open")    // B
-            cell = row.createCell(2); cell.setCellType(CellType.STRING); cell.setCellValue("High")    // C
-            cell = row.createCell(3); cell.setCellType(CellType.STRING); cell.setCellValue("Low")     // D
-            cell = row.createCell(4); cell.setCellType(CellType.STRING); cell.setCellValue("Close")   // E
-            cell = row.createCell(5); cell.setCellType(CellType.STRING); cell.setCellValue("Avg")     // F
-            cell = row.createCell(6); cell.setCellType(CellType.STRING); cell.setCellValue("EMA")     // G
+            createCell(row, 0, CellType.NUMERIC).setCellValue(0.2)
+            createCell(row, 1, CellType.STRING).setCellValue("Open")    // B
+            createCell(row, 2, CellType.STRING).setCellValue("High")    // C
+            createCell(row, 3, CellType.STRING).setCellValue("Low")     // D
+            createCell(row, 4, CellType.STRING).setCellValue("Close")   // E
+            createCell(row, 5, CellType.STRING).setCellValue("Avg")     // F
+            createCell(row, 6, CellType.STRING).setCellValue("EMA")     // G
 
             var nextDate = ""
             quotes.reverse.zipWithIndex foreach { case (q, i) =>
@@ -182,7 +182,7 @@ object GenerateExcel extends OrderUtil with AccessTokenUtil with PositionUtil wi
                 createCell(r, 2, CellType.NUMERIC).setCellValue(f"${q.high}%4.4f".toDouble)  // C
                 createCell(r, 3, CellType.NUMERIC).setCellValue(f"${q.low}%4.4f".toDouble)   // D
                 createCell(r, 4, CellType.NUMERIC).setCellValue(f"${q.close}%4.4f".toDouble) // E
-                val c = r.createCell(5); c.setCellFormula(s"(C${i + 2}+D${i + 2})/2")        // F
+                val c = r.createCell(5); c.setCellFormula(s"(C${i + 2}+D${i + 2})/2")       // F
                 if (nextDate != "" && nextDate != date) {
                     // TODO there's a problem here: we're working on row i+1 but we go back to row i to modify some cell
                     sheet.getRow(i).getCell(6).setCellFormula(s"F${i + 1}")
