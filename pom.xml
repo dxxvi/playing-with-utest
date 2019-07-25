@@ -15,11 +15,11 @@
     <scala.version.major>2.12</scala.version.major>
     <scala.version.minor>8</scala.version.minor>
     <scala.version>${scala.version.major}.${scala.version.minor}</scala.version>
-    <akka.version>2.5.22</akka.version>
+    <akka.version>2.5.23</akka.version>
     <!--akka.http.version>10.1.8</akka.http.version-->
-    <sttp.version>1.5.19</sttp.version>
-    <junit.version>5.4.2</junit.version>
-    <junit.platform.launcher>1.4.2</junit.platform.launcher>
+    <sttp.version>1.6.3</sttp.version>
+    <junit.version>5.5.0</junit.version>
+    <junit.platform.launcher>1.5.0</junit.platform.launcher>
   </properties>
 
   <dependencies>
@@ -36,7 +36,7 @@
     <dependency> <!-- https://sttp.readthedocs.io/en/latest/examples.html -->
       <groupId>org.json4s</groupId>
       <artifactId>json4s-native_${scala.version.major}</artifactId>
-      <version>3.6.5</version>
+      <version>3.6.7</version>
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
@@ -132,7 +132,7 @@
       <plugin>
         <groupId>net.alchim31.maven</groupId>
         <artifactId>scala-maven-plugin</artifactId>
-        <version>4.0.2</version>
+        <version>4.1.0</version>
         <executions>
           <execution>
             <goals>
@@ -144,6 +144,7 @@
         <configuration>
           <args>
             <arg>-unchecked</arg>
+            <arg>-Xdev</arg>
             <arg>-Ypartial-unification</arg>
             <arg>-Ywarn-dead-code</arg>
           </args>
@@ -159,10 +160,6 @@
               <goal>shade</goal>
             </goals>
             <configuration>
-<!--
-              <shadedArtifactAttached>true</shadedArtifactAttached>
-              <shadedClassifierName>fat</shadedClassifierName>
--->
               <artifactSet>
                 <includes>
                   <include>*:*</include>
