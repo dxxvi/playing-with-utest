@@ -9,7 +9,7 @@ import akka.util.ByteString
 import com.softwaremill.sttp._
 import com.typesafe.config.ConfigFactory
 import home.model.{Order, Quote}
-import home.util.{AccessTokenUtil, LoggingAdapterImpl}
+import home.util.{AccessTokenUtil, LoggingAdapterImpl, SttpBackendUtil}
 import org.apache.poi.ss.usermodel.{BorderStyle, CellType, HorizontalAlignment, VerticalAlignment}
 import org.apache.poi.ss.util.{CellRangeAddress, RegionUtil}
 import org.apache.poi.xssf.usermodel.{XSSFCell, XSSFCellStyle, XSSFRow, XSSFSheet, XSSFWorkbook}
@@ -17,11 +17,12 @@ import org.apache.poi.xssf.usermodel.{XSSFCell, XSSFCellStyle, XSSFRow, XSSFShee
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-object GenerateExcel extends OrderUtil with AccessTokenUtil with PositionUtil with WatchedListUtil with QuoteUtil {
+object GenerateExcel extends OrderUtil with AccessTokenUtil with PositionUtil with WatchedListUtil with QuoteUtil
+        with SttpBackendUtil {
     def main(args: Array[String]): Unit = {
         val config = ConfigFactory.load("credentials.conf")
 
-        val accessToken = retrieveAccessToken(config).right.get
+        val accessToken = retrieveAccessToken().get
         implicit val backend1: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(config)
         implicit val backend2: SttpBackend[Id, Nothing] = configureCoreJavaHttpBackend(config)
         implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.global

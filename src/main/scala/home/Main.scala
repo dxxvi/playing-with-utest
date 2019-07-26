@@ -6,7 +6,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter._
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorRef, ActorSystem}
 import akka.event.LoggingAdapter
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{ContentType, ContentTypes, HttpEntity, HttpRequest, HttpResponse, StatusCodes}
@@ -82,7 +82,7 @@ object Main extends AccessTokenUtil with AppUtil with LastTradePriceUtil with Or
             HeartbeatActor.NAME
         )
 
-        val route = createRoute()
+        val route = createRoute(heartbeatActor, webSocketActorRef)
         val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", 4567)
         println("Server online at http://localhost:4567/\nPress RETURN to stop...")
         StdIn.readLine()
@@ -91,7 +91,7 @@ object Main extends AccessTokenUtil with AppUtil with LastTradePriceUtil with Or
                 .onComplete(_ => actorSystem.terminate())
     }
 
-    private def createRoute(): Route = {
+    private def createRoute(heartbeatActor: ActorRef, webSocketActorRef: ActorRef): Route = {
         val tika: Tika = new Tika()
         val webHome = sys.env.get("webHome") match {
             case Some(x) => x
@@ -191,9 +191,9 @@ object Main extends AccessTokenUtil with AppUtil with LastTradePriceUtil with Or
                                      (implicit be: SttpBackend[Future, Source[ByteString, Any]],
                                                ec: ExecutionContext): Map[String, HLLtpsTuple] = {
         val today = LocalDate.now() format ISO_LOCAL_DATE
-        val tupleList = Await.result(get5minQuotes(accessToken, symbols), 9.seconds)
+        val tupleList = Await.result(get5minQuotes(accessToken, symbols)(be1, ec, log), 9.seconds)
         val symbol2LastTradePrice: Map[String, LastTradePrice] =
-            Await.result(getLastTradePrices(accessToken, symbols), 9.seconds).toStream
+            Await.result(getLastTradePrices(accessToken, symbols)(be1, ec, log), 9.seconds).toStream
                     .map(ltp => ltp.symbol -> ltp)
                     .toMap
         tupleList.toStream

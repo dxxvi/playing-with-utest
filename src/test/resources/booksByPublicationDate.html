@@ -9,44 +9,46 @@
     a:hover { color: #111; border-bottom: 1px solid #888 }
     .title { font: bold 1.2rem sans-serif; margin-top: 0 }
     .authors, .issued, .publishers { font-family: sans-serif }
-    .publishers { color: #e33}
+    .publishers { color: #e33 }
     img { display: block; float: left; margin-right: 1rem }
     .info { float: left }
     .description { clear: both }
+    div.book { margin-bottom: 2em }
   </style>
 </head>
 <body>
 <div id="books"></div>
 <script type="text/javascript">
   const months = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
   function formatDate(issued) {
-      let s = issued;
-      for (let i = 1; i <= 12; i++) {
-          const x = '-' + (i < 10 ? '0' + i : i) + '-';
-          s = s.replace(x, ' ' + months[i] + ' ')
-      }
-      return s
+    let s = issued;
+    for (let i = 1; i <= 12; i++) {
+      const x = '-' + (i < 10 ? '0' + i : i) + '-';
+      s = s.replace(x, ' ' + months[i] + ' ')
+    }
+    return s
   }
 
   fetch('booksByPublicationDate.json')
-      .then(function(response) {
-          return response.json();
+      .then(function (response) {
+        return response.json();
       })
-      .then(function(books) {
-          books
-              .forEach(book => {
-                  const img = `<img src="${book.coverUrl}" alt="no image">`;
-                  const authors = `<div class="authors">${book.authors.join(', ')}</div>`;
-                  const title = `<p class="title">${book.title}</p>`;
-                  const publishers = `<div class="publishers">${book.publishers.join(', ')}</div>`;
-                  const issued = `<div class="issued">${formatDate(book.issued)}</div>`;
-                  const info = `<div class="info">${title}${authors}${publishers}${issued}</div>`;
-                  const description = `<div class="description">${book.content}</div>`;
-                  const div = document.createElement('div');
-                  div.setAttribute('class', 'book');
-                  div.innerHTML = img + info + description;
-                  document.getElementById('books').appendChild(div)
-              });
+      .then(function (books) {
+        books
+            .forEach(book => {
+              const img = `<img src="${book.coverUrl}" alt="no image">`;
+              const authors = `<div class="authors">${book.authors.join(', ')}</div>`;
+              const title = `<p class="title">${book.title}</p>`;
+              const publishers = `<div class="publishers">${book.publishers.join(', ')}</div>`;
+              const issued = `<div class="issued">${formatDate(book.issued)}</div>`;
+              const info = `<div class="info">${title}${authors}${publishers}${issued}</div>`;
+              const description = `<div class="description">${book.content}</div>`;
+              const div = document.createElement('div');
+              div.setAttribute('class', 'book');
+              div.innerHTML = img + info + description;
+              document.getElementById('books').appendChild(div)
+            });
       });
 </script>
 </body>
