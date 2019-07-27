@@ -80,7 +80,7 @@ class StockActor(accessToken: String,
             stats.low  = math.min(stats.low, ltp.price)
 
             recentOrders.foreach(update(_, standardizedOrders))
-            val effectiveOrders = getEffectiveOrders(quantityAccount._1, standardizedOrders.toList, log)
+            val effectiveOrders = getEffectiveOrders(quantityAccount._1, standardizedOrders.toList, log) // TODO this has confirmed orders as well
             val statsCurrent:StatsCurrent = stats.toStatsCurrent(ltp.price)
             val jObject = JObject(
                 "symbol"        -> JString(symbol),

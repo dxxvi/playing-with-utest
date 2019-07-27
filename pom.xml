@@ -28,11 +28,13 @@
       <artifactId>akka-http-backend_${scala.version.major}</artifactId>
       <version>${sttp.version}</version>
     </dependency>
+<!--
     <dependency>
       <groupId>com.softwaremill.sttp</groupId>
       <artifactId>json4s_${scala.version.major}</artifactId>
       <version>${sttp.version}</version>
     </dependency>
+-->
     <dependency> <!-- https://sttp.readthedocs.io/en/latest/examples.html -->
       <groupId>org.json4s</groupId>
       <artifactId>json4s-native_${scala.version.major}</artifactId>

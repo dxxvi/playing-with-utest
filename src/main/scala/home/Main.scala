@@ -29,7 +29,7 @@ import scala.collection.LinearSeq
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
 import scala.io.StdIn
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 object Main extends AccessTokenUtil with AppUtil with LastTradePriceUtil with OrderUtil with PositionUtil with QuoteUtil
         with SttpBackendUtil {
@@ -43,22 +43,29 @@ object Main extends AccessTokenUtil with AppUtil with LastTradePriceUtil with Or
     implicit val be1: SttpBackend[Future, Source[ByteString, Any]] = configureAkkaHttpBackend(credentialConfig)
     implicit val be2: SttpBackend[Id, Nothing] = configureCoreJavaHttpBackend(credentialConfig)
 
-    var accessToken: String = "NO_ACCESS_TOKEN_YET"
+    var accessToken: Option[String] = sys.env.get("accessToken")
 
     case class HLLtpsTuple(high: Double /*todayHigh*/, low: Double /*todayLow*/, open: Double, previousClose: Double,
                            ltps: LinearSeq[LastTradePrice])
 
     def main(args: Array[String]): Unit = {
-        val stockDatabase = StockDatabase.create(accessToken)
-
-        val positions: Map[String /*instrument*/, (Double, String)] = Await.result(getAllPositions(accessToken), 9.seconds)
-
-        val statsMap: Map[String /*symbol*/, Stats] = Await.result(getStats(accessToken, stockDatabase.allSymbols), 9.seconds)
-
         val webSocketActorRef = actorSystem.actorOf(WebSocketActor.props, WebSocketActor.NAME)
+        val heartbeatActor = actorSystem.actorOf(HeartbeatActor.props(() => accessToken), HeartbeatActor.NAME)
+
+        val route = createRoute(heartbeatActor, webSocketActorRef)
+        val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", 4567)
+
+        while (accessToken.isEmpty) Thread sleep 3000
+
+        val stockDatabase = StockDatabase.create(accessToken.get)
+        heartbeatActor ! HeartbeatActor.AllSymbols(stockDatabase.allSymbols)
+
+        val positions: Map[String /*instrument*/, (Double, String)] = Await.result(getAllPositions(accessToken.get), 9.seconds)
+
+        val statsMap: Map[String /*symbol*/, Stats] = Await.result(getStats(accessToken.get, stockDatabase.allSymbols), 9.seconds)
 
         val symbol2HLLtpsTuple: Map[String, HLLtpsTuple] =
-            getSymbol2HLLtpsTuple(accessToken, stockDatabase.allSymbols)
+            getSymbol2HLLtpsTuple(accessToken.get, stockDatabase.allSymbols)
 
         // create stock actors
         stockDatabase.iterate foreach { case (symbol, instrument) =>
@@ -69,21 +76,14 @@ object Main extends AccessTokenUtil with AppUtil with LastTradePriceUtil with Or
             stats.open = hlLtpsTuple.open
             stats.previousClose = hlLtpsTuple.previousClose
             val standardizedOrders: List[Order] = if (positions.getOrElse(instrument, (0, ""))._1 == 0) Nil else
-                getAllStandardizedOrdersForInstrument(accessToken, instrument) filter (o =>
+                getAllStandardizedOrdersForInstrument(accessToken.get, instrument) filter (o =>
                     o.state != "cancelled" && o.state != "failed" && o.state != "rejected")
             actorSystem.actorOf(
-                StockActor.props(accessToken, symbol, stats, standardizedOrders, webSocketActorRef, hlLtpsTuple.ltps),
+                StockActor.props(accessToken.get, symbol, stats, standardizedOrders, webSocketActorRef, hlLtpsTuple.ltps),
                 symbol
             )
         }
 
-        val heartbeatActor = actorSystem.actorOf(
-            HeartbeatActor.props(accessToken, stockDatabase.allSymbols, stockDatabase),
-            HeartbeatActor.NAME
-        )
-
-        val route = createRoute(heartbeatActor, webSocketActorRef)
-        val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", 4567)
         println("Server online at http://localhost:4567/\nPress RETURN to stop...")
         StdIn.readLine()
         bindingFuture
@@ -128,7 +128,11 @@ object Main extends AccessTokenUtil with AppUtil with LastTradePriceUtil with Or
         } ~
         path("cancel" / Segment) { orderId =>  // cancel an order
             complete(HttpEntity(ContentTypes.`application/json`,
-                s"""{"detail":"${cancelOrder(accessToken, orderId)}"}"""))
+                if (accessToken.isDefined)
+                    s"""{"detail":"${cancelOrder(accessToken.get, orderId)}"}"""
+                else
+                    s"""{"detail":"accessToken is not available yet"}"""
+            ))
         } ~
         // debug/AMD, debug/Heartbeat
         path("debug" / Segment) { actorName =>
@@ -160,6 +164,26 @@ object Main extends AccessTokenUtil with AppUtil with LastTradePriceUtil with Or
             actorSystem.actorSelection(s"/user/${HeartbeatActor.NAME}") ! HeartbeatActor.OpenPrice
             complete(HttpEntity(ContentTypes.`application/json`,
                 s"""{"detail":"Sent OpenPrice to HeartbeatActor at ${LocalDateTime.now format ISO_LOCAL_DATE_TIME}"}"""))
+        } ~
+        path("accessToken") {
+           post {
+               extractStrictEntity(2.seconds) { entity =>
+                   import org.json4s.native.JsonMethods._
+                   val requestBody = entity.data.utf8String
+                   Try(
+                       parse(requestBody) \ "Authorization" match {
+                           case JString(x) => x
+                       }
+                   ) match {
+                       case Success(x) =>
+                           accessToken = Some(x.replace("Bearer ", ""))
+                           complete(HttpEntity(ContentTypes.`text/plain(UTF-8)`, "Got access token"))
+                       case Failure(ex) =>
+                           log.error(ex, s"Error in parsing $requestBody")
+                           complete(HttpEntity(ContentTypes.`text/plain(UTF-8)`, "Error " + ex.getMessage))
+                   }
+               }
+           }
         } ~
         get {
             entity(as[HttpRequest]) { requestData =>

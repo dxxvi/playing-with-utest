@@ -32,14 +32,15 @@ object GenerateExcel extends OrderUtil with AccessTokenUtil with PositionUtil wi
 
         var wb = new XSSFWorkbook()
 
-        val positions = Await.result(getAllPositions(accessToken), 5.seconds)
+        val positions: Map[String /*instrument*/, (Double /*quantity*/, String /*account*/)] =
+            Await.result(getAllPositions(accessToken), 5.seconds)
         positions
                 .collect {
                     case (instrument, (quantity, _)) if quantity > 0 =>
                         val orders = getAllStandardizedOrdersForInstrument(accessToken, instrument)
-                        val effectiveOrders = getEffectiveOrders(quantity, orders, log)
+                        val effectiveOrders =
+                            getEffectiveOrders(quantity, orders, log).filter(o => !o.state.contains("confirmed"))
                         val symbol = stockDatabase.findSymbol(instrument)
-                        assignMatchId(effectiveOrders)
                         (symbol, effectiveOrders)
                 }
                 .toList
@@ -77,6 +78,8 @@ object GenerateExcel extends OrderUtil with AccessTokenUtil with PositionUtil wi
                     row = sheet.getRow(0)
                     row.createCell(10).setCellFormula(s"sum(I2:I$i)")
                     row.createCell(11).setCellFormula(s"sum(J2:J$i)/K1")
+
+                    (0 to 7).foreach(sheet.autoSizeColumn(_, true))
                 }
 
         var fos = new FileOutputStream("orders.xlsx")
@@ -151,6 +154,8 @@ object GenerateExcel extends OrderUtil with AccessTokenUtil with PositionUtil wi
                 val c = sheet.getRow(u._2 + i).createCell(u._3 + v._2)
                 c.setCellFormula(s"PERCENTILE($$${u._1}$$2:$$${u._1}$$${v._1}, ${u._4}${u._2 + i + 1})")
             }
+
+            (0 to 25).filter(i => i != 12 && i != 19).foreach(sheet.autoSizeColumn(_, true))
         }
 
         fos = new FileOutputStream("stocks.xlsx")

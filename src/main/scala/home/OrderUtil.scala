@@ -19,7 +19,7 @@ import scala.concurrent.{ExecutionContext, Future}
 trait OrderUtil extends JsonUtil with AppUtil {
     /**
       * @param orders will be checked if it is sorted descendingly in created_at. Exit the app if it's not.
-      * @return only filled, partially-filled orders that make up this quantity
+      * @return only (un)confirmed, filled, partially-filled orders that make up this quantity
       */
     def getEffectiveOrders(_quantity: Double, orders: List[Order], log: LoggingAdapter): List[Order] = {
         // check if orders is sorted correctly
@@ -31,15 +31,16 @@ trait OrderUtil extends JsonUtil with AppUtil {
             o.createdAt
         })
 
-        var quantity = _quantity.toInt
+        val quantity = _quantity.toInt
+        var q = quantity
         val effectiveOrders = orders.toStream
                 .map(standardizeOrder)
                 .filter(o => Seq("filled", "confirmed", "queued").exists(o.state contains _))
                 .takeWhile(o => {
-                    val b = quantity != 0
+                    val b = q != 0
                     if (o.state == "filled")
-                        quantity += (if (o.side == "buy") -o.quantity.toInt else o.quantity.toInt)
-                    b
+                        q += (if (o.side == "buy") -o.quantity.toInt else o.quantity.toInt)
+                    o.state == "confirmed" || b
                 })
                 .toList
         assignMatchId(effectiveOrders)
@@ -129,6 +130,7 @@ trait OrderUtil extends JsonUtil with AppUtil {
         val nextUriOption: Option[Uri] = Some(
             uri"https://api.robinhood.com/orders/"
                 .queryFragment(QueryFragment.KeyValue("instrument", ins, valueEncoding = QueryFragmentEncoding.All))
+                .queryFragment(QueryFragment.KeyValue("page_size", 200.toString))
         )
         f(nextUriOption, Nil)
     }

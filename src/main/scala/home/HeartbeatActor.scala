@@ -18,10 +18,10 @@ object HeartbeatActor {
 
     val UNWANTED_LTP_FIELDS: Set[String] = Set("previousClose", "instrument", "ema")
 
-    def props(accessToken: String, symbols: List[String], stockDatabase: StockDatabase)
+    def props(accessTokenProvider: () => Option[String])
              (implicit be1: SttpBackend[Future, Source[ByteString, Any]],
                        be2: SttpBackend[Id, Nothing]): Props =
-            Props(new HeartbeatActor(accessToken, symbols, be1, be2))
+            Props(new HeartbeatActor(accessTokenProvider, be1, be2))
 
     case object OpenPrice
     case object Skip
@@ -29,10 +29,10 @@ object HeartbeatActor {
                               instrument2RecentStandardizedOrders: Map[String /* instrument */, List[Order]],
                               instrument2Position: Map[String /*instrument*/, (Double /*quantity*/, String /*account*/)])
     case class FiveMinQuotes(list: List[(String, String, String, List[Quote])])
+    case class AllSymbols(symbols: List[String])
 }
 
-class HeartbeatActor(accessToken: String,
-                     symbols: List[String],
+class HeartbeatActor(accessTokenProvider: () => Option[String],
                      implicit val be1: SttpBackend[Future, Source[ByteString, Any]],
                                   be2: SttpBackend[Id, Nothing]) extends Actor with Timers with LastTradePriceUtil
         with OrderUtil with QuoteUtil with PositionUtil {
@@ -40,7 +40,8 @@ class HeartbeatActor(accessToken: String,
     implicit val log: LoggingAdapter = Logging(context.system, this)(_ => HeartbeatActor.NAME)
     implicit val ec: ExecutionContext = context.dispatcher
 
-    var _ltps: List[LastTradePrice] = List.empty
+    var symbols: List[String] = Nil
+    var _ltps: List[LastTradePrice] = Nil
     var _instrument2Orders: Map[String, List[Order]] = Map.empty
     var _instrument2Position: Map[String, (Double, String)] = Map.empty
     var skip: Boolean = false
@@ -52,10 +53,11 @@ class HeartbeatActor(accessToken: String,
             if (skip) {
                 skip = false
             }
-            else {
-                val ltpsFuture = getLastTradePrices(accessToken, symbols)
-                val recentStandardizedOrdersFuture = getRecentStandardizedOrders(accessToken)
-                val positionsFuture = getAllPositions(accessToken)
+            else if (accessTokenProvider().isDefined && symbols.nonEmpty) {
+                val accessToken = accessTokenProvider().get
+                val ltpsFuture = getLastTradePrices(accessToken, symbols)(be1, ec, log)
+                val recentStandardizedOrdersFuture = getRecentStandardizedOrders(accessToken)(be1, ec, log)
+                val positionsFuture = getAllPositions(accessToken)(be1, ec, log)
                 val heartbeatTupleFuture: Future[HeartbeatTuple] = for {
                     ltps <- ltpsFuture
                     recentStandardizedOrders <- recentStandardizedOrdersFuture
@@ -85,11 +87,14 @@ class HeartbeatActor(accessToken: String,
         case Skip => skip = true
 
         case OpenPrice =>
-            get5minQuotes(accessToken, symbols).map(FiveMinQuotes) pipeTo self
+            if (accessTokenProvider().isDefined && symbols.nonEmpty)
+                get5minQuotes(accessTokenProvider().get, symbols)(be1, ec, log) map FiveMinQuotes pipeTo self
 
         case FiveMinQuotes(list) => list foreach {
             case (symbol, _, _, quotes) => context.actorSelection(s"/user/$symbol") ! StockActor.FiveMinQuotes(quotes)
         }
+
+        case AllSymbols(_symbols) => symbols = _symbols
 
         case M1.ClearHash => // ignored
     }

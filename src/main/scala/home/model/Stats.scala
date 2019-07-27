@@ -54,12 +54,14 @@ case class Stats(
     }
 
     override def toString: String =
-        s"""  HL_3m: [${HL_3m.map(d => f"$d%.2f").mkString(", ")}]
+        s"""  _HL_3m: [${_HL_3m.map(d => f"$d%.2f").mkString(", ")}]
+           |  HL_3m: [${HL_3m.map(d => f"$d%.2f").mkString(", ")}]
            |  HO_3m: [${HO_3m.map(d => f"$d%.2f").mkString(", ")}]
            |  OL_3m: [${OL_3m.map(d => f"$d%.2f").mkString(", ")}]
            |  HPC_3m: [${HPC_3m.map(d => f"$d%.2f").mkString(", ")}]
            |  PCL_3m: [${PCL_3m.map(d => f"$d%.2f").mkString(", ")}]
            |  H_3m: [${H_3m.map(d => f"$d%.2f").mkString(", ")}]
+           |  _L_3m: [${_L_3m.map(d => f"$d%.2f").mkString(", ")}]
            |  L_3m: [${L_3m.map(d => f"$d%.2f").mkString(", ")}]
            |  HL_1m: [${HL_1m.map(d => f"$d%.2f").mkString(", ")}]
            |  HO_1m: [${HO_1m.map(d => f"$d%.2f").mkString(", ")}]

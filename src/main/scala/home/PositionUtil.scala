@@ -21,7 +21,7 @@ trait PositionUtil extends JsonUtil with AppUtil {
     Future[Map[String /*instrument*/, (Double /*quantity*/, String /*account*/)]] =
         sttp
                 .auth.bearer(accessToken)
-                .get(uri"https://api.robinhood.com/positions/")
+                .get(uri"https://api.robinhood.com/positions/?nonzero=true")
                 .response(asString)
                 .send()
                 .collect {
