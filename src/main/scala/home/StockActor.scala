@@ -8,10 +8,10 @@ import akka.actor.{Actor, ActorRef, Props}
 import akka.event.{Logging, LoggingAdapter}
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import com.softwaremill.sttp.{Id, SttpBackend}
 import home.message.{Debug, M1, MakeOrder, MakeOrderDone, StockInfo}
 import home.model.{LastTradePrice, Order, Quote, Stats, StatsCurrent}
 import home.util.{OrderOrdering, SttpBackendUtil}
+import com.softwaremill.sttp.{Id, SttpBackend}
 import org.json4s._
 import org.json4s.native.Serialization
 
@@ -26,7 +26,7 @@ object StockActor {
               webSocketActorRef: ActorRef,
               ltps: LinearSeq[LastTradePrice])
              (implicit be1: SttpBackend[Future, Source[ByteString, Any]],
-                       be2: SttpBackend[Id, Nothing]): Props =
+              be2: SttpBackend[Id, Nothing]): Props =
         Props(new StockActor(accessToken, symbol, stats, standardizedOrders, webSocketActorRef, ltps, be1, be2))
 
     private val F: Array[Int] = Array(1, 2, 3, 5, 8, 13, 21, 34, 55, 89)
@@ -42,7 +42,7 @@ class StockActor(accessToken: String,
                  webSocketActorRef: ActorRef,
                  _ltps: LinearSeq[LastTradePrice],
                  implicit val be1: SttpBackend[Future, Source[ByteString, Any]],
-                              be2: SttpBackend[Id, Nothing])
+                 be2: SttpBackend[Id, Nothing])
         extends Actor with OrderUtil with StockActorUtil with SttpBackendUtil {
     import StockActor._
     implicit val log: LoggingAdapter = Logging(context.system, this)(_ => symbol)
@@ -117,8 +117,9 @@ class StockActor(accessToken: String,
             quotes.headOption foreach (q => stats.open = q.open)
 
         case Debug =>
+            val fieldsToRemove = Set("symbol", "instrument")
             sender() ! JObject(
-                "ltps" -> JArray(ltps.map(_.toJObject.removeField(t => t._1 == "symbol" || t._1 == "instrument")).toList),
+                "ltps" -> JArray(ltps.toList.map(_.toJObject.removeField(fieldsToRemove contains _._1))),
                 "stats" -> JString(stats.toString),
                 "standardized-orders" -> Order.toJArray(standardizedOrders.toList)
             )
@@ -129,7 +130,7 @@ class StockActor(accessToken: String,
         val _shouldSell = shouldSell(statsCurrent)
         if (!_shouldBuy._1 && !_shouldSell._1) return
 
-        val (isBuying, isSelling) = effectiveOrders.foldLeft((false, false))((b, order) => (
+        val (isBuying, isSelling) = effectiveOrders.foldLeft(Tuple2(false, false))((b, order) => (
                 b._1 || (order.side == "buy"  && order.state != "filled"),
                 b._2 || (order.side == "sell" && order.state != "filled")
         ))

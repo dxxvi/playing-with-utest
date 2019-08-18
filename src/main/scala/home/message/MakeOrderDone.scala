@@ -1,5 +1,3 @@
 package home.message
 
-case object MakeOrderDone {
-
-}
+case object MakeOrderDone

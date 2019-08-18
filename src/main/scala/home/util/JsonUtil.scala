@@ -1,14 +1,15 @@
 package home.util
 
 import org.json4s._
+import org.json4s.native.JsonMethods._
 
 import scala.reflect.runtime.universe._
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 
 trait JsonUtil {
     /**
-      * Convert a json4s JValue to an Option of any given type
-      */
+     * Convert a json4s JValue to an Option of any given type
+     */
     def fromJValueToOption[T: TypeTag](jValue: JValue): Option[T] = jValue match {
         case JString(x) => typeOf[T] match {
             case t if t =:= typeOf[String] => Some(x).asInstanceOf[Option[T]]
@@ -58,4 +59,14 @@ trait JsonUtil {
         }
         case _ => None
     }
+
+    /**
+     * Used in Akka HTTP route to parse the accessToken sent by the TamperMonkey running on robinhood
+     * @param json should be in this format { accessToken: "..." }
+     */
+    def getAccessToken(json: String): Option[String] =
+        Try (fromJValueToOption[String](parse(json) \ "accessToken")) match {
+            case Success(x) => x
+            case Failure(_) => None
+        }
 }

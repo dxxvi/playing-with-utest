@@ -5,8 +5,8 @@ import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.spi.FilterReply
 
 /**
-  * This is the Logback's Threshold filter but is hi-jacked to change the sourceThread in the MDC
-  */
+ * This is the Logback's Threshold filter but is hi-jacked to change the sourceThread in the MDC
+ */
 class MDCManipulatingFilter extends ThresholdFilter {
     override def decide(event: ILoggingEvent): FilterReply = {
         val mdc: java.util.Map[String, String] = event.getMDCPropertyMap

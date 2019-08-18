@@ -14,8 +14,8 @@ object WebSocketActor {
 }
 
 /**
-  * This actor is used to make sure that we don't call the jettyWebSocketSession.send parallelly.
-  */
+ * This actor is used to make sure that we don't call the jettyWebSocketSession.send parallelly.
+ */
 class WebSocketActor extends Actor {
     val log: LoggingAdapter = Logging(context.system, this)(_ => WebSocketActor.NAME)
 

@@ -140,7 +140,7 @@ object GenerateExcel extends OrderUtil with AccessTokenUtil with PositionUtil wi
                 Seq((0, 14 + u._2), (0, 21 + u._2), (12, 14 + u._2), (12, 21 + u._2), (24, 14 + u._2), (24, 21 + u._2)) foreach { v =>
                     sheet.getRow(v._1).createCell(v._2).setCellValue(u._1)
                 }
-            )
+                    )
             for (ir <- Seq(1, 13, 25); ic <- Seq(14, 21); i <- 0 to 9) {
                 val c = sheet.getRow(ir + i).createCell(ic)
                 c.setCellType(CellType.NUMERIC)

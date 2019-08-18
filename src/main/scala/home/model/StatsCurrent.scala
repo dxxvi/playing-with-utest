@@ -3,27 +3,27 @@ package home.model
 import org.json4s.{JDouble, JInt, JObject}
 
 case class StatsCurrent(
-    currl3m: Int,  // compare current-low to all high-low
-    hcurr3m: Int,  // compare high-current to all high-low
-    curro3m: Int,  // compare current-open to all high-open
-    ocurr3m: Int,  // compare open-current to all open-low
-    currpc3m: Int, // compare current-previousClose to all high-previousClose
-    pccurr3m: Int, // compare previousClose-current to all previousClose-low
-    h3m: Int,      // compare current to all high
-    l3m: Int,      // compare current to all low
-    currl1m: Int,
-    hcurr1m: Int,
-    curro1m: Int,
-    ocurr1m: Int,
-    currpc1m: Int,
-    pccurr1m: Int,
-    h1m: Int,
-    l1m: Int,
-    high: Double,
-    low: Double,
-    open: Double,
-    previousClose: Double
-) {
+                               currl3m: Int,  // compare current-low to all high-low
+                               hcurr3m: Int,  // compare high-current to all high-low
+                               curro3m: Int,  // compare current-open to all high-open
+                               ocurr3m: Int,  // compare open-current to all open-low
+                               currpc3m: Int, // compare current-previousClose to all high-previousClose
+                               pccurr3m: Int, // compare previousClose-current to all previousClose-low
+                               h3m: Int,      // compare current to all high
+                               l3m: Int,      // compare current to all low
+                               currl1m: Int,
+                               hcurr1m: Int,
+                               curro1m: Int,
+                               ocurr1m: Int,
+                               currpc1m: Int,
+                               pccurr1m: Int,
+                               h1m: Int,
+                               l1m: Int,
+                               high: Double,
+                               low: Double,
+                               open: Double,
+                               previousClose: Double
+                       ) {
     def toJObject: JObject = JObject(
         "currl3m"       -> JInt(currl3m),
         "hcurr3m"       -> JInt(hcurr3m),

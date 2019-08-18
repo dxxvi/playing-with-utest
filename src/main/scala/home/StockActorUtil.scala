@@ -6,10 +6,10 @@ import scala.collection.mutable
 
 trait StockActorUtil extends OrderUtil {
     /**
-      * @param o used to add/modify/remove an order in the given orders
-      * @param orders ordered by OrderOrdering
-      * @return true if orders is changed, otherwise false
-      */
+     * @param o used to add/modify/remove an order in the given orders
+     * @param orders ordered by OrderOrdering
+     * @return true if orders is changed, otherwise false
+     */
     def update(o: Order, orders: mutable.TreeSet[Order]): Boolean = {
         val so = standardizeOrder(o)
         val existingOrderOption: Option[Order] = orders.find(_o => _o.createdAt == so.createdAt && _o.id == so.id)

@@ -1,25 +1,25 @@
 package home.model
 
 case class Stats(
-    _HL_3m: Array[Double],    // each array has 100 elements representing the 1, 2, ... 100 percentile
-    _HO_3m: Array[Double],
-    _OL_3m: Array[Double],
-    _HPC_3m: Array[Double],
-    _PCL_3m: Array[Double],
-    _H_3m: Array[Double],
-    _L_3m: Array[Double],
-    _HL_1m: Array[Double],
-    _HO_1m: Array[Double],
-    _OL_1m: Array[Double],
-    _HPC_1m: Array[Double],
-    _PCL_1m: Array[Double],
-    _H_1m: Array[Double],
-    _L_1m: Array[Double],
-    var high: Double = Double.MinPositiveValue,
-    var low: Double = Double.MaxValue,
-    var open: Double = Double.NaN,
-    var previousClose: Double = Double.NaN
-) {
+                        _HL_3m: Array[Double],    // each array has 100 elements representing the 1, 2, ... 100 percentile
+                        _HO_3m: Array[Double],
+                        _OL_3m: Array[Double],
+                        _HPC_3m: Array[Double],
+                        _PCL_3m: Array[Double],
+                        _H_3m: Array[Double],
+                        _L_3m: Array[Double],
+                        _HL_1m: Array[Double],
+                        _HO_1m: Array[Double],
+                        _OL_1m: Array[Double],
+                        _HPC_1m: Array[Double],
+                        _PCL_1m: Array[Double],
+                        _H_1m: Array[Double],
+                        _L_1m: Array[Double],
+                        var high: Double = Double.MinPositiveValue,
+                        var low: Double = Double.MaxValue,
+                        var open: Double = Double.NaN,
+                        var previousClose: Double = Double.NaN
+                ) {
     val HL_3m: Array[Double]  = makeLongerArrayRight(_HL_3m) // has 199 elements representing the 1, 2, ... 199 percentile
     val HO_3m: Array[Double]  = makeLongerArrayRight(_HO_3m)
     val OL_3m: Array[Double]  = makeLongerArrayRight(_OL_3m)
@@ -36,8 +36,8 @@ case class Stats(
     val L_1m: Array[Double]   = makeLongerArrayLeft(_L_1m)
 
     /**
-      * @return an array of a(0) a(1) ... a(n) a(n)+a(n)-a(n-1) a(n)+a(n)-a(n-2) ... a(n)+a(n)-a(0)
-      */
+     * @return an array of a(0) a(1) ... a(n) a(n)+a(n)-a(n-1) a(n)+a(n)-a(n-2) ... a(n)+a(n)-a(0)
+     */
     private def makeLongerArrayRight(a: Array[Double]): Array[Double] = {
         val n = a.length - 1
         val tail = (1 to n) map (i => a(n) + a(n) - a(n-i))
@@ -74,7 +74,7 @@ case class Stats(
            |  low: $low
            |  open: $open
            |  previousClose: $previousClose""".stripMargin
-    
+
     def toStatsCurrent(ltp: Double): StatsCurrent = StatsCurrent(
         hl3m(ltp - low),
         hl3m(high -ltp),
@@ -97,7 +97,7 @@ case class Stats(
         if (open.isNaN) open else f"$open%.2f".toDouble,
         if (previousClose.isNaN) previousClose else f"$previousClose%.2f".toDouble
     )
-    
+
     def hl3m(d: Double):  Int = _HL_3m.takeWhile(_ <= d).length
     def ho3m(d: Double):  Int = _HO_3m.takeWhile(_ <= d).length
     def ol3m(d: Double):  Int = _OL_3m.takeWhile(_ <= d).length

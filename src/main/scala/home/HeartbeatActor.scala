@@ -5,9 +5,9 @@ import akka.event.{Logging, LoggingAdapter}
 import akka.pattern.pipe
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import com.softwaremill.sttp._
 import home.message.{Debug, M1, StockInfo, Tick}
 import home.model.{LastTradePrice, Order, Quote}
+import com.softwaremill.sttp._
 import org.json4s._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -20,8 +20,8 @@ object HeartbeatActor {
 
     def props(accessTokenProvider: () => Option[String])
              (implicit be1: SttpBackend[Future, Source[ByteString, Any]],
-                       be2: SttpBackend[Id, Nothing]): Props =
-            Props(new HeartbeatActor(accessTokenProvider, be1, be2))
+              be2: SttpBackend[Id, Nothing]): Props =
+        Props(new HeartbeatActor(accessTokenProvider, be1, be2))
 
     case object OpenPrice
     case object Skip
@@ -71,17 +71,17 @@ class HeartbeatActor(accessTokenProvider: () => Option[String],
             this._instrument2Orders = instrument2Orders
             this._instrument2Position = instrument2PositionAccount
             ltps foreach { case ltp @ LastTradePrice(_, _, symbol, instrument, _, _) =>
-                    val orders = instrument2Orders.getOrElse(instrument, Nil)
-                    if (instrument2PositionAccount contains instrument) {
-                        val stockActor = context.actorSelection(s"/user/$symbol")
-                        stockActor ! StockInfo(ltp, instrument2PositionAccount(instrument), orders)
-                    }
+                val orders = instrument2Orders.getOrElse(instrument, Nil)
+                if (instrument2PositionAccount contains instrument) {
+                    val stockActor = context.actorSelection(s"/user/$symbol")
+                    stockActor ! StockInfo(ltp, instrument2PositionAccount(instrument), orders)
+                }
             }
 
         case Debug => sender() ! JObject(
             "ltps" -> JArray(_ltps.map(_.toJObject.removeField(t => UNWANTED_LTP_FIELDS contains t._1))),
-            "instrument2Orders" -> JObject(_instrument2Orders.mapValues(Order.toJArray).toList),
-            "instrument2Position" -> JObject(_instrument2Position.mapValues(t => JInt(t._1.toInt)).toList)
+            "instrument2Orders" -> JObject(_instrument2Orders.view.mapValues(Order.toJArray).toList),
+            "instrument2Position" -> JObject(_instrument2Position.view.mapValues(t => JInt(t._1.toInt)).toList)
         )
 
         case Skip => skip = true

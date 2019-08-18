@@ -7,9 +7,6 @@ import com.typesafe.config.Config
 
 import scala.concurrent.Future
 
-/**
-  * There should be only 1 sttp backend in the whole application.
-  */
 trait SttpBackendUtil {
     def configureAkkaHttpBackend(config: Config): SttpBackend[Future, Source[ByteString, Any]] = {
         import com.softwaremill.sttp.akkahttp._

@@ -3,8 +3,8 @@ package home
 import akka.event.LoggingAdapter
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import com.softwaremill.sttp._
 import home.util.JsonUtil
+import com.softwaremill.sttp._
 import org.json4s.JsonAST._
 import org.json4s.native.JsonMethods._
 
@@ -12,12 +12,12 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait WatchedListUtil extends JsonUtil with AppUtil {
     /**
-      * @return a list of instrument uuid's, e.g. List("776d31c1-e278-4476-9d03-9e7125fe946c", "...", ...)
-      */
+     * @return a list of instrument uuid's, e.g. List("776d31c1-e278-4476-9d03-9e7125fe946c", "...", ...)
+     */
     def retrieveWatchedInstruments(accessToken: String)
                                   (implicit be: SttpBackend[Future, Source[ByteString, Any]],
-                                            ec: ExecutionContext,
-                                            log: LoggingAdapter): Future[List[String]] = {
+                                   ec: ExecutionContext,
+                                   log: LoggingAdapter): Future[List[String]] = {
         sttp
                 .auth.bearer(accessToken)
                 .get(uri"https://api.robinhood.com/watchlists/Default/")

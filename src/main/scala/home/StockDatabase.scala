@@ -18,15 +18,15 @@ import scala.util.Try
 object StockDatabase extends WatchedListUtil {
     def create(accessToken: String)
               (implicit be1: SttpBackend[Future, Source[ByteString, Any]],
-                        be2: SttpBackend[Id, Nothing],
-                        ec: ExecutionContext,
-                        log: LoggingAdapter): StockDatabase = {
+               be2: SttpBackend[Id, Nothing],
+               ec: ExecutionContext,
+               log: LoggingAdapter): StockDatabase = {
         implicit val defaultFormats: DefaultFormats = DefaultFormats
         /**
-          * This file is a json {
-          *   "instrument-1": { ... the json body Robinhood returns ... }, ...
-          * }
-          */
+         * This file is a json {
+         *   "instrument-1": { ... the json body Robinhood returns ... }, ...
+         * }
+         */
         val stockDatabaseFilePath = Path.of("StockDatabase.json")
         val stockDatabaseJObject = if (Files.exists(stockDatabaseFilePath)) {
             parse(Files.readString(stockDatabaseFilePath)).asInstanceOf[JObject]
@@ -112,12 +112,12 @@ object StockDatabase extends WatchedListUtil {
 }
 
 /**
-  * @param symbol2instrument e.g. "DOW" -> "776d31c1-e278-4476-9d03-9e7125fe946c"
-  */
+ * @param symbol2instrument e.g. "DOW" -> "776d31c1-e278-4476-9d03-9e7125fe946c"
+ */
 class StockDatabase(symbol2instrument: Map[String, String]) {
     private val instrument2symbol: Map[String, String] = symbol2instrument.toList
-        .map { case (symbol, instrument) => (instrument, symbol) }
-        .toMap
+            .map { case (symbol, instrument) => (instrument, symbol) }
+            .toMap
 
     def findInstrument(symbol: String): String = symbol2instrument.getOrElse(symbol, s"NO-INSTRUMENT-FOR-$symbol")
 

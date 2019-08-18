@@ -58,7 +58,6 @@ object Main extends AccessTokenUtil with AppUtil with LastTradePriceUtil with Or
         while (accessToken.isEmpty) Thread sleep 3000
 
         val stockDatabase = StockDatabase.create(accessToken.get)
-        heartbeatActor ! HeartbeatActor.AllSymbols(stockDatabase.allSymbols)
 
         val positions: Map[String /*instrument*/, (Double, String)] = Await.result(getAllPositions(accessToken.get), 9.seconds)
 
@@ -83,6 +82,8 @@ object Main extends AccessTokenUtil with AppUtil with LastTradePriceUtil with Or
                 symbol
             )
         }
+
+        heartbeatActor ! HeartbeatActor.AllSymbols(stockDatabase.allSymbols)
 
         println("Server online at http://localhost:4567/\nPress RETURN to stop...")
         StdIn.readLine()
@@ -166,24 +167,24 @@ object Main extends AccessTokenUtil with AppUtil with LastTradePriceUtil with Or
                 s"""{"detail":"Sent OpenPrice to HeartbeatActor at ${LocalDateTime.now format ISO_LOCAL_DATE_TIME}"}"""))
         } ~
         path("accessToken") {
-           post {
-               extractStrictEntity(2.seconds) { entity =>
-                   import org.json4s.native.JsonMethods._
-                   val requestBody = entity.data.utf8String
-                   Try(
-                       parse(requestBody) \ "Authorization" match {
-                           case JString(x) => x
-                       }
-                   ) match {
-                       case Success(x) =>
-                           accessToken = Some(x.replace("Bearer ", ""))
-                           complete(HttpEntity(ContentTypes.`text/plain(UTF-8)`, "Got access token"))
-                       case Failure(ex) =>
-                           log.error(ex, s"Error in parsing $requestBody")
-                           complete(HttpEntity(ContentTypes.`text/plain(UTF-8)`, "Error " + ex.getMessage))
-                   }
-               }
-           }
+            post {
+                extractStrictEntity(2.seconds) { entity =>
+                    import org.json4s.native.JsonMethods._
+                    val requestBody = entity.data.utf8String
+                    Try(
+                        parse(requestBody) \ "Authorization" match {
+                            case JString(x) => x
+                        }
+                    ) match {
+                        case Success(x) =>
+                            accessToken = Some(x.replace("Bearer ", ""))
+                            complete(HttpEntity(ContentTypes.`text/plain(UTF-8)`, "Got access token"))
+                        case Failure(ex) =>
+                            log.error(ex, s"Error in parsing $requestBody")
+                            complete(HttpEntity(ContentTypes.`text/plain(UTF-8)`, "Error " + ex.getMessage))
+                    }
+                }
+            }
         } ~
         get {
             entity(as[HttpRequest]) { requestData =>
@@ -213,14 +214,14 @@ object Main extends AccessTokenUtil with AppUtil with LastTradePriceUtil with Or
 
     private def getSymbol2HLLtpsTuple(accessToken: String, symbols: List[String])
                                      (implicit be: SttpBackend[Future, Source[ByteString, Any]],
-                                               ec: ExecutionContext): Map[String, HLLtpsTuple] = {
+                                      ec: ExecutionContext): Map[String, HLLtpsTuple] = {
         val today = LocalDate.now() format ISO_LOCAL_DATE
         val tupleList = Await.result(get5minQuotes(accessToken, symbols)(be1, ec, log), 9.seconds)
         val symbol2LastTradePrice: Map[String, LastTradePrice] =
-            Await.result(getLastTradePrices(accessToken, symbols)(be1, ec, log), 9.seconds).toStream
+            Await.result(getLastTradePrices(accessToken, symbols)(be1, ec, log), 9.seconds)
                     .map(ltp => ltp.symbol -> ltp)
                     .toMap
-        tupleList.toStream
+        tupleList
                 .map {
                     case (symbol, _, _, quotes) =>
                         var open = Double.NaN
@@ -232,9 +233,9 @@ object Main extends AccessTokenUtil with AppUtil with LastTradePriceUtil with Or
                                         LastTradePrice((high + low)/2, ltp.previousClose, symbol, ltp.instrument,
                                             addSeconds(beginsAt, 9))
                                 } :+ ltp
-                        val (todayHigh, todayLow) = quotes.foldLeft((Double.MinValue, Double.MaxValue))((b, q) => {
+                        val (todayHigh, todayLow) = quotes.foldLeft(Tuple2(Double.MinValue, Double.MaxValue))((b, q) => {
                             val high = if (q.beginsAt startsWith today) math.max(b._1, q.high) else b._1
-                            val low = if (q.beginsAt startsWith today) math.min(b._2, q.low) else b._2
+                            val low  = if (q.beginsAt startsWith today) math.min(b._2, q.low)  else b._2
                             (high, low)
                         })
                         if (lastTradePrices.isEmpty) {

@@ -37,4 +37,3 @@
     <appender-ref ref="SIFT"/>
   </root>
 </configuration>
-

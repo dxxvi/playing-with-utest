@@ -1,5 +1,3 @@
 package home.message
 
-case object Debug {
-
-}
+case object Debug
