@@ -6,7 +6,7 @@ import akka.event.LoggingAdapter
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import com.softwaremill.sttp._
-import org.json4s.DefaultFormats
+import org.json4s._
 import org.json4s.JsonAST.JObject
 import org.json4s.native.JsonMethods._
 import org.json4s.native.Serialization
@@ -18,9 +18,9 @@ import scala.util.Try
 object StockDatabase extends WatchedListUtil {
     def create(accessToken: String)
               (implicit be1: SttpBackend[Future, Source[ByteString, Any]],
-               be2: SttpBackend[Id, Nothing],
-               ec: ExecutionContext,
-               log: LoggingAdapter): StockDatabase = {
+                        be2: SttpBackend[Id, Nothing],
+                        ec: ExecutionContext,
+                        log: LoggingAdapter): StockDatabase = {
         implicit val defaultFormats: DefaultFormats = DefaultFormats
         /**
          * This file is a json {
@@ -34,11 +34,32 @@ object StockDatabase extends WatchedListUtil {
             JObject()
         }
 
-        val instruments = Try(Await.result(retrieveWatchedInstruments(accessToken), 9.seconds))
+        val instruments: Try[List[String]] = Try(Await.result(retrieveWatchedInstruments(accessToken), 9.seconds))
         if (instruments.isFailure) {
             log.error(instruments.failed.get, "Unable to get watched instruments.")
             System.exit(-1)
         }
+
+        val instrumentsNotInStockDatabase = instruments.get.toSet diff stockDatabaseJObject.values.keySet
+        val newInstrumentJValueList = fetchSynchronous(instrumentsNotInStockDatabase, be2) match {
+            case Left(errorString) =>
+                log.error(errorString + "\nExit.")
+                System.exit(-1)
+                Nil
+            case Right(jArray) =>
+                jArray.arr.map(jv => ((jv \ "id").asInstanceOf[JString].s, jv))
+        }
+
+        Files.write(
+            stockDatabaseFilePath,
+            Serialization
+                    .writePretty(JObject(newInstrumentJValueList))
+                    .getBytes,
+            StandardOpenOption.CREATE, StandardOpenOption.APPEND
+        )
+
+        // TODO I still need a list(symbol, instrument) from stockDatabaseJObject and newInstrumentJValueList to create
+        //  StockDatabase
 
         var text = ""
         print(s"You have ${instruments.get.length} watched symbols, processing: ")
@@ -52,7 +73,7 @@ object StockDatabase extends WatchedListUtil {
                     val body = stockDatabaseJObject findField { case (fieldName, _) => fieldName == instrument } match {
                         case Some(field) => Right(Serialization.write(field._2))
                         case _ =>
-                            val _body =
+                            val _body: Either[String, String] =
                                 fetchSynchronous(s"https://api.robinhood.com/instruments/$instrument/", be2, log)
                             Thread.sleep(3000)
                             _body
@@ -90,7 +111,9 @@ object StockDatabase extends WatchedListUtil {
                 }
         Files.write(
             stockDatabaseFilePath,
-            Serialization.writePretty(JObject(instrumentJStringTuples.map(t => (t._1, parse(t._2))))).getBytes(),
+            Serialization
+                    .writePretty(JObject(instrumentJStringTuples.map(t => (t._1, parse(t._2)))))
+                    .getBytes,
             StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING
         )
         val symbolInstrumentTuples: List[(String, String)] = instrumentJStringTuples
@@ -108,6 +131,31 @@ object StockDatabase extends WatchedListUtil {
                                  log: LoggingAdapter): Either[String, String] = {
         implicit val backend: SttpBackend[Id, Nothing] = _backend
         sttp.get(uri"$url").send().body
+    }
+
+    private def fetchSynchronous(instruments: Set[String],
+                                 _backend: SttpBackend[Id, Nothing]): Either[String, JArray] = {
+        implicit val backend: SttpBackend[Id, Nothing] = _backend
+        val seed: Either[String, JArray] = Right(JArray(Nil))
+        instruments
+                .grouped(13)
+                .map("https://api.robinhood.com/instruments/?ids=" + _.mkString(","))
+                .map(url => {
+                    Thread.sleep(3000)
+                    sttp.get(uri"$url").send().body match {
+                        case Left(x) => Left(x)
+                        case Right(s) => Right((parse(s) \ "results").asInstanceOf[JArray])
+                    }
+                })
+                .foldLeft(seed)((_seed, either) => {
+                    _seed match {
+                        case x @ Left(_) => x
+                        case Right(jArray) => either match {
+                            case Left(x) => Left(x)
+                            case Right(anotherJArray) => Right(JArray(anotherJArray.arr +: jArray.arr))
+                        }
+                    }
+                })
     }
 }
 
