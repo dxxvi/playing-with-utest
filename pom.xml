@@ -17,7 +17,7 @@
     <scala.version>${scala.version.major}.${scala.version.minor}</scala.version>
     <akka.http.version>10.1.9</akka.http.version>
     <akka.version>2.5.23</akka.version>
-    <sttp.version>1.6.3</sttp.version>
+    <sttp.version>1.6.4</sttp.version>
     <json4s.version>3.6.7</json4s.version>
     <junit.version>5.5.1</junit.version>
     <junit.platform.launcher>1.5.1</junit.platform.launcher>
@@ -51,8 +51,9 @@
     </dependency>
     <dependency>
       <groupId>org.scala-lang.modules</groupId>
-      <artifactId>scala-xml_2.13</artifactId>
+      <artifactId>scala-xml_${scala.version.major}</artifactId>
       <version>1.2.0</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.typesafe.akka</groupId>
