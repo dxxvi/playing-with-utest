@@ -122,7 +122,6 @@
             <arg>-deprecation</arg>
             <arg>-explaintypes</arg>
             <arg>-feature</arg>
-            <arg>-Xdev</arg>
           </args>
         </configuration>
         <executions>

@@ -61,69 +61,16 @@ object StockDatabase extends WatchedListUtil {
         // TODO I still need a list(symbol, instrument) from stockDatabaseJObject and newInstrumentJValueList to create
         //  StockDatabase
 
-        var text = ""
-        print(s"You have ${instruments.get.length} watched symbols, processing: ")
-        // TODO https://api.robinhood.com/instruments/?ids=id1,id2,id3,... works. It's not important to implement this
-        //  because we already cached it in StockDatabase.json
-        val instrumentJStringTuples: List[(String, String)] = instruments.get.zipWithIndex
-                .map { case (instrument, i) =>
-                    if (text.nonEmpty) print("\b" * text.length)
-                    text = s"${i + 1}"
-                    print(text)
-                    val body = stockDatabaseJObject findField { case (fieldName, _) => fieldName == instrument } match {
-                        case Some(field) => Right(Serialization.write(field._2))
-                        case _ =>
-                            val _body: Either[String, String] =
-                                fetchSynchronous(s"https://api.robinhood.com/instruments/$instrument/", be2, log)
-                            Thread.sleep(3000)
-                            _body
-                    }
-                    (instrument, body)
-                }
-                .collect {
-                    /*
-                     * {
-                         "bloomberg_unique": "EQ0000000046910575",
-                         "country": "US",
-                         "day_trade_ratio": "0.2500",
-                         "fundamentals": "https://api.robinhood.com/fundamentals/DOW/",
-                         "id": "776d31c1-e278-4476-9d03-9e7125fe946c",
-                         "list_date": "2019-04-02",
-                         "maintenance_ratio": "1.0000",
-                         "margin_initial_ratio": "1.0000",
-                         "market": "https://api.robinhood.com/markets/XNYS/",
-                         "min_tick_size": null,
-                         "name": "Dow Inc.",
-                         "quote": "https://api.robinhood.com/quotes/DOW/",
-                         "rhs_tradability": "tradable",
-                         "simple_name": "Dow",
-                         "splits": "https://api.robinhood.com/instruments/776d31c1-e278-4476-9d03-9e7125fe946c/splits/",
-                         "state": "active",
-                         "symbol": "DOW",
-                         "tradability": "tradable",
-                         "tradable_chain_id": "d840ddab-7980-43ac-a9d1-33d4d5d7e590",
-                         "tradeable": true,
-                         "type": "stock",
-                         "url": "https://api.robinhood.com/instruments/776d31c1-e278-4476-9d03-9e7125fe946c/"
-                       }
-                     */
-                    case (instrument, Right(jString)) => (instrument, jString)
-                }
-        Files.write(
-            stockDatabaseFilePath,
-            Serialization
-                    .writePretty(JObject(instrumentJStringTuples.map(t => (t._1, parse(t._2)))))
-                    .getBytes,
-            StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING
-        )
-        val symbolInstrumentTuples: List[(String, String)] = instrumentJStringTuples
-                .map { case (instrument, jString) =>
-                    (instrument, fromJValueToOption[String](parse(jString) \ "symbol"))
-                }
-                .collect { case (instrument, Some(symbol)) => (symbol, instrument) }
+        val existingSymbolInstrumentList = stockDatabaseJObject.values.toList.map { case (instrument, _any) =>
+            ((_any.asInstanceOf[JObject] \ "symbol").asInstanceOf[JString].values, instrument)
+        }
 
-        println()
-        new StockDatabase(symbolInstrumentTuples.toMap)
+        val newSymbolInstrumentList = newInstrumentJValueList.map { case (instrument, jv) => (
+                (jv.asInstanceOf[JObject] \ "symbol").asInstanceOf[JString].s,
+                instrument
+        )}
+
+        new StockDatabase((existingSymbolInstrumentList ++ newSymbolInstrumentList).toMap)
     }
 
     private def fetchSynchronous(url: String,
@@ -146,13 +93,13 @@ object StockDatabase extends WatchedListUtil {
                         case Left(x) => Left(x)
                         case Right(s) => Right((parse(s) \ "results").asInstanceOf[JArray])
                     }
-                })
+                }) // Iterator[Either[String, JArray]]
                 .foldLeft(seed)((_seed, either) => {
                     _seed match {
-                        case x @ Left(_) => x
+                        case Left(x) => Left(x)
                         case Right(jArray) => either match {
                             case Left(x) => Left(x)
-                            case Right(anotherJArray) => Right(JArray(anotherJArray.arr +: jArray.arr))
+                            case Right(anotherJArray) => Right(JArray(anotherJArray.arr ++ jArray.arr))
                         }
                     }
                 })
