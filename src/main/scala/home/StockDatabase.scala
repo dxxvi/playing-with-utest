@@ -58,9 +58,6 @@ object StockDatabase extends WatchedListUtil {
             StandardOpenOption.CREATE, StandardOpenOption.APPEND
         )
 
-        // TODO I still need a list(symbol, instrument) from stockDatabaseJObject and newInstrumentJValueList to create
-        //  StockDatabase
-
         val existingSymbolInstrumentList = stockDatabaseJObject.values.toList.map { case (instrument, _any) =>
             ((_any.asInstanceOf[JObject] \ "symbol").asInstanceOf[JString].values, instrument)
         }
@@ -73,16 +70,11 @@ object StockDatabase extends WatchedListUtil {
         new StockDatabase((existingSymbolInstrumentList ++ newSymbolInstrumentList).toMap)
     }
 
-    private def fetchSynchronous(url: String,
-                                 _backend: SttpBackend[Id, Nothing],
-                                 log: LoggingAdapter): Either[String, String] = {
-        implicit val backend: SttpBackend[Id, Nothing] = _backend
-        sttp.get(uri"$url").send().body
-    }
-
     private def fetchSynchronous(instruments: Set[String],
                                  _backend: SttpBackend[Id, Nothing]): Either[String, JArray] = {
         implicit val backend: SttpBackend[Id, Nothing] = _backend
+        var text = ""
+        print(s"You have ${instruments.size} watched symbols, processing: ")
         val seed: Either[String, JArray] = Right(JArray(Nil))
         instruments
                 .grouped(13)
@@ -91,7 +83,14 @@ object StockDatabase extends WatchedListUtil {
                     Thread.sleep(3000)
                     sttp.get(uri"$url").send().body match {
                         case Left(x) => Left(x)
-                        case Right(s) => Right((parse(s) \ "results").asInstanceOf[JArray])
+                        case Right(s) =>
+                            if (text.nonEmpty) print("\b" * text.length)
+                            val jArrayEither = Right((parse(s) \ "results").asInstanceOf[JArray])
+                            val numberOfProcessedSymbols = jArrayEither.getOrElse(JArray(Nil)).arr.length +
+                                    (if (text.nonEmpty) text.toInt else 0)
+                            text = numberOfProcessedSymbols.toString
+                            print(text)
+                            jArrayEither
                     }
                 }) // Iterator[Either[String, JArray]]
                 .foldLeft(seed)((_seed, either) => {
